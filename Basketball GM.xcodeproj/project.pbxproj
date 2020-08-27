@@ -3,12 +3,15 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3A618D8AD229E1E35176A1C6 /* Pods_Basketball_GM.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C43D9BC029E9415E19A0FF6B /* Pods_Basketball_GM.framework */; };
+		94D5D045E1CD533B8E9C8A61 /* Pods_Basketball_GMTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A86AB129A860BE8B2808F833 /* Pods_Basketball_GMTests.framework */; };
 		F910FA36247850150044E947 /* TeamData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F910FA35247850150044E947 /* TeamData.swift */; };
 		F910FA382478501E0044E947 /* TeamModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F910FA372478501E0044E947 /* TeamModel.swift */; };
+		F91F61FB24F7CFE800BFDA9B /* BoxScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F91F61FA24F7CFE800BFDA9B /* BoxScore.swift */; };
 		F94E3B8C2473CDE900491F68 /* PlayByPlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F94E3B8B2473CDE900491F68 /* PlayByPlayController.swift */; };
 		F94E3B8E24754A0F00491F68 /* OnlineModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F94E3B8D24754A0F00491F68 /* OnlineModel.swift */; };
 		F94E3B9024754B4A00491F68 /* OnlineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F94E3B8F24754B4A00491F68 /* OnlineManager.swift */; };
@@ -43,8 +46,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		39A87E5A8BCBB47D39200B25 /* Pods-Basketball GM.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Basketball GM.release.xcconfig"; path = "Target Support Files/Pods-Basketball GM/Pods-Basketball GM.release.xcconfig"; sourceTree = "<group>"; };
+		997AC08D9C6C7E2FB397A1A8 /* Pods-Basketball GM.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Basketball GM.debug.xcconfig"; path = "Target Support Files/Pods-Basketball GM/Pods-Basketball GM.debug.xcconfig"; sourceTree = "<group>"; };
+		A86AB129A860BE8B2808F833 /* Pods_Basketball_GMTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Basketball_GMTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0038A4E176B2A7FA442AE8 /* Pods-Basketball GMTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Basketball GMTests.release.xcconfig"; path = "Target Support Files/Pods-Basketball GMTests/Pods-Basketball GMTests.release.xcconfig"; sourceTree = "<group>"; };
+		C43D9BC029E9415E19A0FF6B /* Pods_Basketball_GM.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Basketball_GM.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3FADA34B31C0A1FA7338AFD /* Pods-Basketball GMTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Basketball GMTests.debug.xcconfig"; path = "Target Support Files/Pods-Basketball GMTests/Pods-Basketball GMTests.debug.xcconfig"; sourceTree = "<group>"; };
 		F910FA35247850150044E947 /* TeamData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamData.swift; sourceTree = "<group>"; };
 		F910FA372478501E0044E947 /* TeamModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamModel.swift; sourceTree = "<group>"; };
+		F91F61FA24F7CFE800BFDA9B /* BoxScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxScore.swift; sourceTree = "<group>"; };
 		F94E3B8B2473CDE900491F68 /* PlayByPlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayByPlayController.swift; sourceTree = "<group>"; };
 		F94E3B8D24754A0F00491F68 /* OnlineModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnlineModel.swift; sourceTree = "<group>"; };
 		F94E3B8F24754B4A00491F68 /* OnlineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnlineManager.swift; sourceTree = "<group>"; };
@@ -77,6 +87,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3A618D8AD229E1E35176A1C6 /* Pods_Basketball_GM.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,12 +95,33 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				94D5D045E1CD533B8E9C8A61 /* Pods_Basketball_GMTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A6E62C32DBA0C8961F6D79B5 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				997AC08D9C6C7E2FB397A1A8 /* Pods-Basketball GM.debug.xcconfig */,
+				39A87E5A8BCBB47D39200B25 /* Pods-Basketball GM.release.xcconfig */,
+				D3FADA34B31C0A1FA7338AFD /* Pods-Basketball GMTests.debug.xcconfig */,
+				BB0038A4E176B2A7FA442AE8 /* Pods-Basketball GMTests.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		DA1B2511C30E47834C3EFD34 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C43D9BC029E9415E19A0FF6B /* Pods_Basketball_GM.framework */,
+				A86AB129A860BE8B2808F833 /* Pods_Basketball_GMTests.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		F910FA3324784FD50044E947 /* Player data */ = {
 			isa = PBXGroup;
 			children = (
@@ -124,6 +156,8 @@
 				F9AFCA6D2469D2660094A33B /* Basketball GM */,
 				F9AFCA892469D26C0094A33B /* Basketball GMTests */,
 				F9AFCA6C2469D2660094A33B /* Products */,
+				A6E62C32DBA0C8961F6D79B5 /* Pods */,
+				DA1B2511C30E47834C3EFD34 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -139,11 +173,11 @@
 		F9AFCA6D2469D2660094A33B /* Basketball GM */ = {
 			isa = PBXGroup;
 			children = (
+				F9AFCA6E2469D2660094A33B /* AppDelegate.swift */,
+				F9AFCA702469D2660094A33B /* SceneDelegate.swift */,
 				F9AFCA972469D2A10094A33B /* Controller */,
 				F9AFCA962469D29C0094A33B /* View */,
 				F9AFCA952469D2940094A33B /* Model */,
-				F9AFCA6E2469D2660094A33B /* AppDelegate.swift */,
-				F9AFCA702469D2660094A33B /* SceneDelegate.swift */,
 				F9AFCAA4246B34540094A33B /* Constants.swift */,
 				F9AFCA7C2469D26B0094A33B /* Assets.xcassets */,
 				F9AFCA7E2469D26B0094A33B /* LaunchScreen.storyboard */,
@@ -168,6 +202,7 @@
 				F9AFCA982469D2B80094A33B /* Player.swift */,
 				F9AFCA9A2469D31A0094A33B /* Team.swift */,
 				F9AFCA9C2469D3F80094A33B /* Game.swift */,
+				F91F61FA24F7CFE800BFDA9B /* BoxScore.swift */,
 				F9AFCA9E2469DB090094A33B /* NameGenerator.swift */,
 				F9AFCAA02469E7AC0094A33B /* LeagueSimulation.swift */,
 				F9AFCAA2246AD9270094A33B /* PlayerTendency.swift */,
@@ -202,9 +237,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = F9AFCA8F2469D26C0094A33B /* Build configuration list for PBXNativeTarget "Basketball GM" */;
 			buildPhases = (
+				692E52E79B1D0DAF00C3837B /* [CP] Check Pods Manifest.lock */,
 				F9AFCA672469D2660094A33B /* Sources */,
 				F9AFCA682469D2660094A33B /* Frameworks */,
 				F9AFCA692469D2660094A33B /* Resources */,
+				A4BF428249F93B870E429DDE /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -219,6 +256,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = F9AFCA922469D26C0094A33B /* Build configuration list for PBXNativeTarget "Basketball GMTests" */;
 			buildPhases = (
+				258D2228168A05E629BEFDF5 /* [CP] Check Pods Manifest.lock */,
 				F9AFCA822469D26C0094A33B /* Sources */,
 				F9AFCA832469D26C0094A33B /* Frameworks */,
 				F9AFCA842469D26C0094A33B /* Resources */,
@@ -291,6 +329,70 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		258D2228168A05E629BEFDF5 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Basketball GMTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		692E52E79B1D0DAF00C3837B /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Basketball GM-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		A4BF428249F93B870E429DDE /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Basketball GM/Pods-Basketball GM-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Basketball GM/Pods-Basketball GM-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Basketball GM/Pods-Basketball GM-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		F9AFCA672469D2660094A33B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -302,6 +404,7 @@
 				F9AFCA752469D2660094A33B /* SecondViewController.swift in Sources */,
 				F910FA36247850150044E947 /* TeamData.swift in Sources */,
 				F9AFCA732469D2660094A33B /* GameViewController.swift in Sources */,
+				F91F61FB24F7CFE800BFDA9B /* BoxScore.swift in Sources */,
 				F9AFCAA12469E7AC0094A33B /* LeagueSimulation.swift in Sources */,
 				F94E3B8C2473CDE900491F68 /* PlayByPlayController.swift in Sources */,
 				F9AFCA9B2469D31A0094A33B /* Team.swift in Sources */,
@@ -472,6 +575,7 @@
 		};
 		F9AFCA902469D26C0094A33B /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 997AC08D9C6C7E2FB397A1A8 /* Pods-Basketball GM.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
@@ -490,6 +594,7 @@
 		};
 		F9AFCA912469D26C0094A33B /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 39A87E5A8BCBB47D39200B25 /* Pods-Basketball GM.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
@@ -508,6 +613,7 @@
 		};
 		F9AFCA932469D26C0094A33B /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = D3FADA34B31C0A1FA7338AFD /* Pods-Basketball GMTests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -530,6 +636,7 @@
 		};
 		F9AFCA942469D26C0094A33B /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = BB0038A4E176B2A7FA442AE8 /* Pods-Basketball GMTests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";

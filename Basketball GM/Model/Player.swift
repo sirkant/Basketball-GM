@@ -7,58 +7,59 @@
 //
 
 import Foundation
+import RealmSwift
 
 class Player {
-    var name : String
-    var playerTendency = PlayerTendency(tendencyType: "")
+    @objc dynamic var name : String
+    dynamic var playerTendency = PlayerTendency(tendencyType: "")
     
     //MARK: - Offensive stats
     
     //Shooting
-    var insideScoring : Int
-    var midRangeScoring : Int
-    var threePointShot : Int
-    var freeThrows : Int
+    @objc dynamic var insideScoring : Int
+    @objc dynamic var midRangeScoring : Int
+    @objc dynamic var threePointShot : Int
+    @objc dynamic var freeThrows : Int
     
     //Passing
-    var passing : Int
-    var oIQ : Int
+    @objc dynamic var passing : Int
+    @objc dynamic var oIQ : Int
     
     //Other
-    var handles : Int
-    var rebounding : Int
-    var screenSetting : Int
+    @objc dynamic var handles : Int
+    @objc dynamic var rebounding : Int
+    @objc dynamic var screenSetting : Int
     
     //MARK: - Defensive stats
-    var dIQ : Int
-    var defReb: Int
-    var positioning : Int
-    var steals : Int
-    var blocks : Int
+    @objc dynamic var dIQ : Int
+    @objc dynamic var defReb: Int
+    @objc dynamic var positioning : Int
+    @objc dynamic var steals : Int
+    @objc dynamic var blocks : Int
     
     //Physical stats
-    var reach : Int
-    var stamina : Int
-    var strength : Int
-    var basketballMotor : Int
-    var injuryProne : Int
+    @objc dynamic var reach : Int
+    @objc dynamic var stamina : Int
+    @objc dynamic var strength : Int
+    @objc dynamic var basketballMotor : Int
+    @objc dynamic var injuryProne : Int
     
     //MARK: - Mental stats
-    var creativity : Int
-    var determination : Int
-    var profesionalism : Int
-    var potential : Int
-    var offCourtAwareness : Int
-    var defCourtAwareness : Int
+    @objc dynamic var creativity : Int
+    @objc dynamic var determination : Int
+    @objc dynamic var profesionalism : Int
+    @objc dynamic var potential : Int
+    @objc dynamic var offCourtAwareness : Int
+    @objc dynamic var defCourtAwareness : Int
     
     
     init(playerType: String) {
         if playerType == K.sharpshooter {
             //Shooting
-            insideScoring = 40
-            midRangeScoring = 55
-            threePointShot = 70
-            freeThrows = 85
+            insideScoring = 50
+            midRangeScoring = 48
+            threePointShot = 41
+            freeThrows = 88
             
             passing = 40
             oIQ = 40
@@ -76,8 +77,8 @@ class Player {
             
             //Physical stats
             reach = 40
-            stamina = 50
-            strength = 30
+            stamina = 60
+            strength = 40
             basketballMotor = 60
             injuryProne = 50
             
@@ -90,10 +91,10 @@ class Player {
             defCourtAwareness = 30
         } else if playerType == K.insideScorer {
             //Shooting
-            insideScoring = 70
-            midRangeScoring = 55
-            threePointShot = 20
-            freeThrows = 75
+            insideScoring = 60
+            midRangeScoring = 45
+            threePointShot = 30
+            freeThrows = 65
             
             passing = 50
             oIQ = 40
@@ -123,14 +124,12 @@ class Player {
             potential = 50
             offCourtAwareness = 60
             defCourtAwareness = 30
-            
-            name = nameGenerator.pickRandomPlayerNames()
         } else if playerType == K.lockdownDefender {
             //Shooting
             insideScoring = 40
-            midRangeScoring = 40
-            threePointShot = 40
-            freeThrows = 65
+            midRangeScoring = 45
+            threePointShot = 36
+            freeThrows = 70
             
             passing = 40
             oIQ = 30
@@ -142,13 +141,13 @@ class Player {
             //Defensive stats
             dIQ = 70
             defReb = 40
-            positioning = 75
+            positioning = 85
             steals = 60
             blocks = 60
             
             //Physical stats
             reach = 50
-            stamina = 60
+            stamina = 70
             strength = 60
             basketballMotor = 70
             injuryProne = 50
@@ -163,9 +162,9 @@ class Player {
         } else {
             //Shooting
             insideScoring = 50
-            midRangeScoring = 50
-            threePointShot = 50
-            freeThrows = 70
+            midRangeScoring = 45
+            threePointShot = 35
+            freeThrows = 80
             
             passing = 50
             oIQ = 50
@@ -217,7 +216,7 @@ class Player {
     
     func getDefensiveMoveAndRating(offensiveMove: String) -> (String, Int) {
         if offensiveMove == K.shootInside {
-            let randomRating = Int.random(in: 0 ... (defReb + positioning + blocks + defCourtAwareness)/3)
+            let randomRating = Int.random(in: 0 ... (defReb + positioning + blocks + defCourtAwareness + dIQ)/5)
             return (K.insideDef, randomRating)
         } else if offensiveMove == K.shoot3pt {
             let randomRating = Int.random(in: 0 ... (dIQ + positioning + reach + defCourtAwareness) / 4)
@@ -232,7 +231,6 @@ class Player {
 
 func makeRandomPlayer() -> Player {
     let type = [K.sharpshooter, K.insideScorer,K.lockdownDefender,K.rolePlayer].randomElement()
-    
     return Player(playerType: type!)
 }
 

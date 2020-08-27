@@ -83,12 +83,10 @@ struct OnlineDataManager {
 
             let updatedData = PlayerDataModel(player_id: id, first_name: first_name, last_name: last_name, position: position, team_id : team_id)
             return updatedData
-            
         } catch {
             self.delegate?.didFailWithError(error: error)
             return nil
         }
-        
     }
     
     
@@ -111,21 +109,12 @@ struct OnlineDataManager {
                 
                 teamList.append(newTeam)
             }
-
             return teamList
-            
         } catch {
             self.delegate?.didFailWithError(error: error)
             return nil
         }
         
     }
-    
-//    func saveTeamInfo(teamUpdatedData: TeamModel) -> [Team] {
-//        for team in teamUpdatedData {
-//
-//        }
-//
-//    }
     
 }

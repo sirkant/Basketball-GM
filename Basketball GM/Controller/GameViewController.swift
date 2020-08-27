@@ -25,6 +25,7 @@ class GameViewController: UIViewController {
 //    let viewPlayByPlay = UIButton(type: .roundedRect)
 //    let playGame = UIButton(type: .roundedRect)
     var dataManager = OnlineDataManager()
+    var league = Association()
 
     
 
@@ -32,7 +33,8 @@ class GameViewController: UIViewController {
         super.viewDidLoad()
         
         dataManager.delegate = self
-        getTeamInfo()
+        //getTeamInfo()
+        
     }
 
     //MARK: - Actions
@@ -56,11 +58,17 @@ class GameViewController: UIViewController {
     }
     
     @IBAction func updateRostersButton(_ sender: UIButton) {
-        dataManager.fetchPlayers()
+        dataManager.fetchTeams()
+        print("Players and teams updated")
+        for n in 0...29 {
+            print(league.leagueTeams[n].full_name)
+        }
+        
     }
     
     func getTeamInfo() {
         dataManager.fetchTeams()
+//        league.setUpLeagueTeams(teamList: teamData)
     }
     
     //MARK: - Play by play - Segue related methods
@@ -92,8 +100,9 @@ extension GameViewController: OnlineDataManagerDelegate {
     }
     
     func didUpdateTeamData(dataManager: OnlineDataManager, teamData: [Team]) {
+        league.leagueTeams = teamData
         DispatchQueue.main.async {
-            //
+            
         }
     }
     

@@ -36,6 +36,7 @@ func makeRandomTeam() -> Team {
     var roster = [Player]()
     for _ in 1...5 {
         let player = makeRandomPlayer()
+        print(player.name)
         roster.append(player)
     }
     
