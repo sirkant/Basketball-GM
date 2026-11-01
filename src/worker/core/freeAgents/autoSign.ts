@@ -9,9 +9,11 @@ import {
 	apronsEnabled,
 	checkApronSigning,
 	saveApronState,
+	isRepeater,
 	currentApronState,
+	ownerExpectations,
 } from "../finances/nbaAprons.ts";
-import { getApronLevels } from "../../../common/nbaAprons.ts";
+import { getApronLevels, nbaLuxuryTax } from "../../../common/nbaAprons.ts";
 
 /**
  * AI teams sign free agents.
@@ -81,6 +83,7 @@ const autoSign = async () => {
 		const payroll = await team.getPayroll(t.tid);
 		const legalPlayers = [];
 		if (apronsEnabled()) {
+			const repeater = await isRepeater(t.tid);
 			const levels = getApronLevels(g.get("salaryCap"), g.get("luxuryPayroll"));
 			for (const candidate of playersSorted) {
 				const rule = await checkApronSigning(
@@ -102,6 +105,23 @@ const autoSign = async () => {
 					hardCap &&
 					payroll + candidate.contract.amount + reserve >
 						(hardCap === 1 ? levels.first : levels.second)
+				) {
+					continue;
+				}
+				const cost =
+					payroll +
+					candidate.contract.amount +
+					nbaLuxuryTax(
+						payroll + candidate.contract.amount,
+						g.get("luxuryPayroll"),
+						g.get("salaryCap"),
+						repeater,
+					);
+				if (
+					g.get("budget") &&
+					playersOnRoster.length >= g.get("minRosterSize") &&
+					cost > ownerExpectations(t).maxCost &&
+					candidate.value < 65
 				) {
 					continue;
 				}

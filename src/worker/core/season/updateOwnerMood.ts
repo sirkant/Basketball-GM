@@ -4,6 +4,12 @@ import type { OwnerMood } from "../../../common/types.ts";
 import { bySport } from "../../../common/sportFunctions.ts";
 import { assertDefined } from "../../../common/utils.ts";
 import { team } from "../index.ts";
+import {
+	apronsEnabled,
+	ownerExpectations,
+	projectedTax,
+} from "../finances/nbaAprons.ts";
+import { getApronLevels } from "../../../common/nbaAprons.ts";
 
 /**
  * Update teamSeason.ownerMood based on performance this season, only for user's team.
@@ -90,6 +96,7 @@ const updateOwnerMood = async (): Promise<
 	}
 
 	if (!teamSeason.ownerMood) {
+		// Initialized below, including older imported leagues.
 		teamSeason.ownerMood = (g as any).ownerMood
 			? (g as any).ownerMood
 			: {
@@ -102,6 +109,41 @@ const updateOwnerMood = async (): Promise<
 	// This is just for TypeScript
 	const ownerMood = teamSeason.ownerMood;
 	assertDefined(ownerMood);
+	if (apronsEnabled()) {
+		const rawTeam = await idb.cache.teams.get(g.get("userTid"));
+		if (rawTeam) {
+			const expectations = ownerExpectations(rawTeam);
+			deltas.wins =
+				(t.seasonAttrs.won / g.get("numGames") - expectations.winPct) *
+				expectations.winsWeight;
+			deltas.playoffs *= expectations.winsWeight;
+			if (g.get("budget")) {
+				const payroll =
+					teamSeason.payrollEndOfSeason >= 0
+						? teamSeason.payrollEndOfSeason
+						: await team.getPayroll(rawTeam.tid);
+				const tax =
+					teamSeason.payrollEndOfSeason >= 0
+						? teamSeason.expenses.luxuryTax
+						: await projectedTax(rawTeam.tid, payroll);
+				const overspend = Math.max(
+					0,
+					(payroll + tax - expectations.maxCost) / g.get("salaryCap"),
+				);
+				deltas.money =
+					((t.seasonAttrs.profit * 1000 - expectations.minProfit) /
+						g.get("salaryCap") -
+						overspend) *
+					expectations.moneyWeight;
+				if (
+					payroll >
+					getApronLevels(g.get("salaryCap"), g.get("luxuryPayroll")).second
+				) {
+					deltas.money -= 0.15;
+				}
+			}
+		}
+	}
 
 	// Bound only the top - can't win the game by doing only one thing, but you can lose it by neglecting one thing
 	const cappedDeltas = { ...deltas };

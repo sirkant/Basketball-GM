@@ -1999,6 +1999,7 @@ export type SortType =
 	| "pos";
 
 export type Team = {
+	ownerPriority?: import("./nbaAprons.ts").OwnerPriority;
 	apronState?: import("./nbaAprons.ts").ApronState;
 	apronPickPenalties?: import("./nbaAprons.ts").ApronPickPenalty[];
 	tid: number;

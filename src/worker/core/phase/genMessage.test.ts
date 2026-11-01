@@ -77,3 +77,50 @@ test("when at max for one component, message falls in between what you'd expect 
 	assert(message.text.includes("This year: Good."));
 	assert(message.text.includes("Overall: Bad."));
 });
+
+test("500M second-apron roster means dismissal even after a championship and perfect owner mood", async () => {
+	const ts = (await idb.cache.teamSeasons.getAll())[0]!;
+	ts.ownerMood = { wins: 1, playoffs: 1, money: 1 };
+	ts.won = 82;
+	ts.playoffRoundsWon = 4;
+	ts.payrollEndOfSeason = 260000;
+	ts.expenses.salary = 260000;
+	ts.expenses.luxuryTax = 240000;
+	await idb.cache.teamSeasons.put(ts);
+	await genMessage(
+		{ wins: 1, playoffs: 1, money: 1 },
+		{ wins: 0, playoffs: 0, money: 0 },
+	);
+	assert.strictEqual(g.get("gameOver"), true);
+	assert(
+		(await idb.cache.messages.getAll())[0]!.text.includes(
+			"regardless of results",
+		),
+	);
+});
+
+test("reckless second-apron spending is not protected by the grace period", async () => {
+	g.setWithoutSavingToDB("gracePeriodEnd", g.get("season") + 3);
+	const ts = (await idb.cache.teamSeasons.getAll())[0]!;
+	ts.payrollEndOfSeason = 260000;
+	ts.expenses.luxuryTax = 240000;
+	await idb.cache.teamSeasons.put(ts);
+	await genMessage(
+		{ wins: 0, playoffs: 0, money: 0 },
+		{ wins: 0, playoffs: 0, money: 0 },
+	);
+	assert.strictEqual(g.get("gameOver"), true);
+});
+
+test("apron dismissal respects God Mode", async () => {
+	g.setWithoutSavingToDB("godMode", true);
+	const ts = (await idb.cache.teamSeasons.getAll())[0]!;
+	ts.payrollEndOfSeason = 260000;
+	ts.expenses.luxuryTax = 240000;
+	await idb.cache.teamSeasons.put(ts);
+	await genMessage(
+		{ wins: 0, playoffs: 0, money: 0 },
+		{ wins: 0, playoffs: 0, money: 0 },
+	);
+	assert.strictEqual(g.get("gameOver"), false);
+});

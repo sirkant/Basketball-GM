@@ -2248,6 +2248,10 @@ export const generateJsonSchema = (sport: Sport | "test") => {
 				items: {
 					type: "object",
 					properties: {
+						ownerPriority: {
+							type: "string",
+							enum: ["winning", "profit", "lowPayroll", "balanced"],
+						},
 						apronState: {
 							type: "object",
 							properties: {

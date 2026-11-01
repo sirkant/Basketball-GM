@@ -138,3 +138,56 @@ export const getApronTradeRule = ({
 	}
 	return aggregated ? { hardCap: 2 } : {};
 };
+
+export type OwnerPriority = "winning" | "profit" | "lowPayroll" | "balanced";
+
+export const getOwnerExpectations = (
+	priority: OwnerPriority,
+	salaryCap: number,
+) => {
+	const profiles = {
+		winning: {
+			label: "Championship contender",
+			winPct: 0.61,
+			profit: 0,
+			cost: 1.65,
+			winsWeight: 1.6,
+			moneyWeight: 0.8,
+			text: "Build a contender and win playoff series. I will fund a competitive roster, but overspending and losing flexibility still count against you.",
+		},
+		profit: {
+			label: "Profitable franchise",
+			winPct: 0.5,
+			profit: 0.18,
+			cost: 1.3,
+			winsWeight: 0.9,
+			moneyWeight: 1.8,
+			text: "Make a profit while keeping the team competitive. Salaries and luxury tax must be justified by revenue.",
+		},
+		lowPayroll: {
+			label: "Efficient, affordable roster",
+			winPct: 0.5,
+			profit: 0.1,
+			cost: 1.05,
+			winsWeight: 1,
+			moneyWeight: 1.5,
+			text: "Build an affordable team that can compete. Stay within the roster budget and find value in the draft and the market.",
+		},
+		balanced: {
+			label: "Sustainable contender",
+			winPct: 0.55,
+			profit: 0.09,
+			cost: 1.45,
+			winsWeight: 1.2,
+			moneyWeight: 1.2,
+			text: "Win games, earn a profit, and keep room to improve the roster. I expect a sustainable competitive team.",
+		},
+	};
+	const p = profiles[priority];
+	return {
+		...p,
+		priority,
+		minProfit: p.profit * salaryCap,
+		maxCost: p.cost * salaryCap,
+	};
+};

@@ -5,6 +5,8 @@ import helpers from "../../util/helpers.ts";
 import local from "../../util/local.ts";
 import type { OwnerMood } from "../../../common/types.ts";
 import { COURT } from "../../../common/constants.ts";
+import { apronsEnabled, ownerExpectations } from "../finances/nbaAprons.ts";
+import { getApronLevels } from "../../../common/nbaAprons.ts";
 
 const moodTexts = ["Horrible!", "Bad.", "Pretty good.", "Good.", "Excellent!"];
 
@@ -62,6 +64,31 @@ export const genMessage = async (
 
 	let m = "";
 	let fired = false;
+	if (apronsEnabled()) {
+		const t = await idb.cache.teams.get(g.get("userTid"));
+		const ts = teamSeasons.at(-1);
+		if (t) {
+			const owner = ownerExpectations(t);
+			m += `<p><b>Ownership priority: ${owner.label}.</b> ${owner.text}</p><p>Targets: ${Math.round(owner.winPct * 100)}% wins; profit ${helpers.formatCurrency(owner.minProfit / 1000, "M")}; salaries plus luxury tax at most ${helpers.formatCurrency(owner.maxCost / 1000, "M")}.</p>`;
+		}
+		if (ts) {
+			m += `<p>Season results: ${ts.won} wins in ${g.get("numGames")} games; ${ts.playoffRoundsWon < 0 ? "missed the playoffs" : `${ts.playoffRoundsWon} playoff series won`}.</p>`;
+			const cost =
+				Math.max(ts.expenses.salary, ts.payrollEndOfSeason) +
+				ts.expenses.luxuryTax;
+			const second =
+				ts.nbaFinancials?.secondApron ??
+				ts.payrollEndOfSeason >
+					getApronLevels(g.get("salaryCap"), g.get("luxuryPayroll")).second;
+			m += `<p>Roster cost: ${helpers.formatCurrency(cost / 1000, "M")} including ${helpers.formatCurrency(ts.expenses.luxuryTax / 1000, "M")} in luxury tax.${second ? " You left the team above the second apron, restricting our ability to improve the roster." : ""}</p>`;
+			// A championship or accumulated goodwill cannot offset this red line.
+			if (g.get("budget") && !g.get("godMode") && second && cost >= 500000) {
+				m +=
+					"<p>You spent at least $500M on salaries and luxury tax and left the team above the second apron. This is an unacceptable use of our resources and roster flexibility. You're fired, regardless of results.</p>";
+				fired = true;
+			}
+		}
+	}
 
 	// Check for some challenge modes that can result in being fired
 	if (g.get("challengeFiredLuxuryTax")) {

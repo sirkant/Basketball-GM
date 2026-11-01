@@ -1,6 +1,8 @@
 import type { getFinancialStatus } from "../../worker/core/finances/nbaAprons.ts";
 import { helpers } from "../util/helpers.ts";
+
 export type FinancialStatus = Awaited<ReturnType<typeof getFinancialStatus>>;
+
 export const ApronNotice = ({
 	status,
 	compact = false,
@@ -11,13 +13,14 @@ export const ApronNotice = ({
 	if (!status) {
 		return null;
 	}
-	const { payroll, tax, total, levels, state } = status;
+	const { payroll, tax, total, levels, state, owner, budget } = status;
 	const second = payroll > levels.second;
 	const first = payroll > levels.first;
-	const currency = (v: number) => helpers.formatCurrency(v / 1000, "M");
+	const danger = budget && status.ownerEvaluation && second && total >= 500000;
+	const currency = (value: number) => helpers.formatCurrency(value / 1000, "M");
 	return (
 		<div
-			className={`alert ${first ? "alert-warning" : "alert-info"} mt-2 mb-3`}
+			className={`alert ${danger ? "alert-danger" : first || (budget && total > owner.maxCost) ? "alert-warning" : "alert-info"} mt-2 mb-3`}
 			role="status"
 		>
 			<div className="fw-bold">
@@ -51,8 +54,19 @@ export const ApronNotice = ({
 					. All signings, including renewals and minimum contracts, must fit.
 				</div>
 			) : null}
-			{!compact
-				? status.penalties.map((p) => (
+			{!compact ? (
+				<>
+					<div className="mt-2">
+						<b>Owner: {owner.label}.</b> {owner.text}
+					</div>
+					<div>
+						Target: {Math.round(owner.winPct * 100)}% wins
+						{budget
+							? ` · Profit ${currency(owner.minProfit)} · Salaries + tax budget ${currency(owner.maxCost)}`
+							: ""}
+						.
+					</div>
+					{status.penalties.map((p) => (
 						<div key={p.season}>
 							{p.season} first-round pick:{" "}
 							{p.penalized
@@ -60,8 +74,30 @@ export const ApronNotice = ({
 								: "frozen; two further second-apron seasons within four years move it to the end of the first round"}
 							.
 						</div>
-					))
-				: null}
+					))}
+				</>
+			) : null}
+			{budget && status.ownerEvaluation && total > owner.maxCost ? (
+				<div className="fw-bold mt-1">
+					You are {currency(total - owner.maxCost)} over the owner's roster
+					budget. This counts against your performance evaluation.
+				</div>
+			) : null}
+			{budget && status.ownerEvaluation ? (
+				<div className={danger ? "fw-bold mt-1" : "small mt-1"}>
+					{danger
+						? "Dismissal guaranteed at the annual evaluation: "
+						: "Owner's red line: "}
+					a roster above the second apron costing $500M or more in salaries and
+					luxury tax means dismissal, regardless of results.
+				</div>
+			) : null}
+			{budget && status.userTeam && !status.ownerEvaluation ? (
+				<div className="small mt-1">
+					Ownership dismissals are disabled in this mode; apron transaction
+					restrictions still apply.
+				</div>
+			) : null}
 		</div>
 	);
 };

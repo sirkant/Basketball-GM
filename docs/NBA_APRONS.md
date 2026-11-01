@@ -33,9 +33,24 @@ The regular-season snapshot is taken at the transition into the playoffs, before
 any further roster management. This is the game's transaction boundary following
 the last regular-season game.
 
-## UI
+## Ownership and UI
 
-Warnings and financial projections appear on the dashboard, roster, finances, free-agent, renewal and trade screens. Owner expectations and POBO dismissal rules are a separate dependent PR.
+Owners have a persistent winning, profit, low-payroll or balanced priority. The
+dashboard and finances screen show the resulting win, profit and roster-cost
+targets. Preseason messages state expectations; annual evaluations assess wins,
+playoffs, profits, salaries plus tax, and lost apron flexibility. AI transaction
+valuation includes the marginal roster cost and recovering flexibility.
+
+The owner's $500M red line is a game rule, not an NBA regulation: spending at
+least $500M in salaries plus tax while finishing above the second apron causes
+automatic dismissal at the annual evaluation, even after a championship or
+during the introductory grace period. God Mode and the existing spectator,
+multi-team and automatic-play evaluation exemptions retain their usual behavior.
+Disabling budgets also disables ownership's financial penalties.
+
+Warnings appear on the dashboard, roster, finances, free-agent and renewal
+screens. Trade previews show resulting payroll, tax and activated hard caps.
+Negotiations show offer-specific financial projections and legal restrictions.
 
 ## Boundaries of the existing game
 
