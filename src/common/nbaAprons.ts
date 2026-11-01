@@ -45,6 +45,10 @@ export type ApronPickPenalty = {
 	unfrozen?: boolean;
 };
 
+// Gameplay allowance, not an NBA CBA rule. One shared allowance per team/trade,
+// never an allowance per player, and never extra room under an active hard cap.
+export const TRADE_SALARY_TOLERANCE = 1000;
+
 export const getApronTradeRule = ({
 	payrollAfter,
 	outgoing,
@@ -65,6 +69,9 @@ export const getApronTradeRule = ({
 	hardCap?: 1 | 2;
 }): { error?: string; hardCap?: 1 | 2 } => {
 	const levels = getApronLevels(salaryCap, taxLevel);
+	// Summaries pass through millions. Compare whole dollars to avoid rejecting
+	// trades exactly on the boundary due to binary floating-point noise.
+	const salaryIncrease = Math.round((incoming - outgoing) * 1000) / 1000;
 	if (
 		hardCap &&
 		payrollAfter > (hardCap === 1 ? levels.first : levels.second)
@@ -73,10 +80,9 @@ export const getApronTradeRule = ({
 			error: `This trade exceeds your hard cap at the ${hardCap === 1 ? "first" : "second"} apron. Reduce incoming salary.`,
 		};
 	}
-	if (payrollAfter > levels.first && incoming > outgoing) {
+	if (payrollAfter > levels.first && salaryIncrease > TRADE_SALARY_TOLERANCE) {
 		return {
-			error:
-				"Above the first apron, you cannot receive more salary than you send out. Reduce incoming salary to complete this trade.",
+			error: `Above the first apron, incoming salary exceeds the game's $1M matching tolerance. Send at least $${Math.round((salaryIncrease - TRADE_SALARY_TOLERANCE) * 1000).toLocaleString("en-US")} more salary or reduce incoming salary.`,
 		};
 	}
 	const payrollBefore = payrollAfter - incoming + outgoing;
@@ -92,33 +98,38 @@ export const getApronTradeRule = ({
 	const incomingSorted = [...incomingSalaries]
 		.filter((x) => x > 0)
 		.sort((a, b) => b - a);
-	const match = (index: number): boolean => {
+	const match = (index: number, remainingTolerance: number): boolean => {
 		if (index === incomingSorted.length) {
 			return true;
 		}
 		const seen = new Set<number>();
 		for (let i = 0; i < slots.length; i++) {
 			const slot = slots[i]!;
-			if (seen.has(slot) || slot < incomingSorted[index]!) {
+			const shortage = Math.max(
+				0,
+				Math.round((incomingSorted[index]! - slot) * 1000) / 1000,
+			);
+			if (seen.has(slot) || shortage > remainingTolerance) {
 				continue;
 			}
 			seen.add(slot);
-			slots[i] = slot - incomingSorted[index]!;
-			if (match(index + 1)) {
+			slots[i] = Math.max(0, slot - incomingSorted[index]!);
+			if (match(index + 1, remainingTolerance - shortage)) {
 				return true;
 			}
 			slots[i] = slot;
 		}
 		return false;
 	};
-	const aggregated = outgoingSalaries.length > 1 && !match(0);
+	const aggregated =
+		outgoingSalaries.length > 1 && !match(0, TRADE_SALARY_TOLERANCE);
 	if (payrollAfter > levels.second && aggregated) {
 		return {
 			error:
 				"This trade combines outgoing salaries while leaving you above the second apron. Get below the second apron or match the incoming salary with one outgoing contract.",
 		};
 	}
-	if (payrollAfter > salaryCap && incoming > outgoing) {
+	if (payrollAfter > salaryCap && salaryIncrease > TRADE_SALARY_TOLERANCE) {
 		const scale = salaryCap / 136021;
 		const matching =
 			payrollAfter > taxLevel

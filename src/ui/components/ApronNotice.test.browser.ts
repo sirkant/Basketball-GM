@@ -65,7 +65,7 @@ test("distinguishes apron room from spending power and explains threshold bounda
 		),
 	);
 	expect(view.innerText).toContain(
-		"You cannot receive more salary than you send",
+		"Trade matching allows up to $1M more incoming salary",
 	);
 	expect(view.innerText).toContain("below the second apron");
 });

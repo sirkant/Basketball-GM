@@ -126,7 +126,8 @@ export const ApronNotice = ({
 			)}
 			{first ? (
 				<div className="small">
-					You cannot receive more salary than you send in a trade.
+					Trade matching allows up to $1M more incoming salary per team and
+					trade (gameplay tolerance).
 					{second
 						? " You also lose the mid-level exception and cannot combine salaries to acquire a larger contract. Finishing above this line freezes a future first-round pick."
 						: " Receiving a sign-and-trade player or using the full mid-level exception requires staying below the first apron."}
@@ -137,8 +138,8 @@ export const ApronNotice = ({
 			) : (
 				<div className="small">
 					{currency(levels.first - payroll)} below the first apron. Crossing it
-					limits trades to the salary you send out. Apron room is not salary-cap
-					space.
+					limits trade matching to outgoing salary plus the game's $1M
+					tolerance. Apron room is not salary-cap space.
 				</div>
 			)}
 			{state?.hardCap ? (
