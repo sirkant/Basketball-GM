@@ -39,8 +39,65 @@ describe("progressive luxury tax", () => {
 });
 
 describe("trade restrictions", () => {
-	test("first apron forbids taking additional salary", () => {
-		expect(trade({ incoming: 20001 }).error).toContain("first apron");
+	test("first apron accepts up to $1M additional salary without activating a hard cap", () => {
+		expect(trade({ incoming: 20500 })).toEqual({});
+		expect(trade({ incoming: 21000 })).toEqual({});
+	});
+	test("first apron rejects one dollar beyond tolerance and reports the adjustment", () => {
+		expect(trade({ incoming: 21000.001 }).error).toContain("$1 more salary");
+		expect(trade({ incoming: 22000 }).error).toContain(
+			"$1,000,000 more salary",
+		);
+	});
+	test("floating-point noise cannot reject the inclusive boundary", () => {
+		expect(trade({ incoming: 21000.00000000001 })).toEqual({});
+	});
+	test("both above-apron teams can complete a trade with a $1M salary difference", () => {
+		expect(trade({ outgoing: 20000, incoming: 21000 })).toEqual({});
+		expect(
+			trade({ outgoing: 21000, incoming: 20000, outgoingSalaries: [21000] }),
+		).toEqual({});
+	});
+	test("tolerance also works above the second apron", () => {
+		expect(trade({ payrollAfter: 230000, incoming: 21000 })).toEqual({});
+	});
+	test("second-apron matching shares one tolerance across independent slots", () => {
+		expect(
+			trade({
+				payrollAfter: 230000,
+				incoming: 21000,
+				outgoingSalaries: [10000, 10000],
+				incomingSalaries: [10500, 10500],
+			}),
+		).toEqual({});
+		expect(
+			trade({
+				payrollAfter: 230000,
+				incoming: 20000,
+				outgoingSalaries: [15000, 5000],
+				incomingSalaries: [14000, 6000],
+			}),
+		).toEqual({});
+		// Net salary is neutral, but one slot requires $1,001,000 of tolerance.
+		expect(
+			trade({
+				payrollAfter: 230000,
+				incoming: 20000,
+				outgoingSalaries: [15000, 5000],
+				incomingSalaries: [13999, 6001],
+			}).error,
+		).toContain("combines outgoing salaries");
+	});
+	test("tolerance does not bypass an active first or second apron hard cap", () => {
+		for (const hardCap of [1, 2] as const) {
+			const limit = hardCap === 1 ? 209015 : 221686;
+			expect(
+				trade({ hardCap, payrollAfter: limit + 1, incoming: 20001 }).error,
+			).toContain("hard cap");
+		}
+	});
+	test("small differences below the apron do not activate expanded-matching hard caps", () => {
+		expect(trade({ payrollAfter: 190000, incoming: 21000 })).toEqual({});
 	});
 	test("matching salary remains legal above second apron", () => {
 		expect(trade({ payrollAfter: 230000 })).toEqual({});
