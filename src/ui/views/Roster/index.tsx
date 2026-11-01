@@ -32,6 +32,8 @@ import { SafeHtml } from "../../components/SafeHtml.tsx";
 import { HelpPopover } from "../../components/HelpPopover.tsx";
 import { confirm } from "../../util/confirm.tsx";
 import { bySport } from "../../../common/sportFunctions.ts";
+import useLocalStorageState from "use-local-storage-state";
+import Overview from "./Overview.tsx";
 
 const handleRelease = async (
 	p: View<"roster">["players"][number],
@@ -108,6 +110,9 @@ const Roster = ({
 	tid,
 	usePts,
 }: View<"roster">) => {
+	const [rosterView, setRosterView] = useLocalStorageState<
+		"overview" | "table"
+	>("roster-view", { defaultValue: "overview" });
 	const [sortedPids, setSortedPids] = useState<number[] | undefined>(undefined);
 	const [prevPlayers, setPrevPlayers] = useState(players);
 	const {
@@ -158,6 +163,8 @@ const Roster = ({
 	const profit = t.seasonAttrs !== undefined ? t.seasonAttrs.profit : 0;
 
 	const showMood = season === currentSeason;
+	const hasOverview = __SPORT === "basketball" && season === currentSeason;
+	const showOverview = hasOverview && rosterView !== "table";
 
 	const cols = getCols(
 		[
@@ -407,6 +414,7 @@ const Roster = ({
 				t={t}
 				tid={tid}
 				usePts={usePts}
+				showTableControls={!showOverview}
 			/>
 
 			{showSpectatorWarning ? (
@@ -415,129 +423,169 @@ const Roster = ({
 				</p>
 			) : null}
 
-			<DataTable
-				cols={cols}
-				defaultSort={bySport<SortBy | "disableSort">({
-					basketball: "disableSort",
-					default: [defaultSortCol, "asc"],
-				})}
-				defaultStickyCols={window.mobile ? 0 : __SPORT === "basketball" ? 2 : 1}
-				extraBulkActions={[
-					...(showRelease
-						? ([
-								{
-									onClick: async (selectedRows) => {
-										const proceed = await confirm(
-											`Are you sure you want to release ${helpers.numberWithCommas(selectedRows.map.size)} ${helpers.plural("player", selectedRows.map.size)}?`,
-											{
-												okText: helpers.plural(
-													"Release player",
-													selectedRows.map.size,
-												),
-											},
-										);
-										if (proceed) {
-											const pids = Array.from(selectedRows.map.values()).map(
-												(metadata) => {
-													return metadata.pid;
+			{hasOverview ? (
+				<div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+					<h2 className="h4 mb-0 me-auto">Roster at a glance</h2>
+					<div className="btn-group" role="group" aria-label="Roster display">
+						<button
+							type="button"
+							className={`btn btn-sm ${showOverview ? "btn-primary" : "btn-light-bordered"}`}
+							aria-pressed={showOverview}
+							onClick={() => setRosterView("overview")}
+						>
+							Player overview
+						</button>
+						<button
+							type="button"
+							className={`btn btn-sm ${!showOverview ? "btn-primary" : "btn-light-bordered"}`}
+							aria-pressed={!showOverview}
+							onClick={() => setRosterView("table")}
+						>
+							Lineup & full table
+						</button>
+					</div>
+				</div>
+			) : null}
+			{showOverview ? (
+				<Overview
+					key={tid}
+					players={playersSorted}
+					numPlayersOnCourt={numPlayersOnCourt}
+					season={season}
+					showTradeFor={showTradeFor}
+					showTradingBlock={showTradingBlock}
+				/>
+			) : (
+				<DataTable
+					cols={cols}
+					defaultSort={bySport<SortBy | "disableSort">({
+						basketball: "disableSort",
+						default: [defaultSortCol, "asc"],
+					})}
+					defaultStickyCols={
+						window.mobile ? 0 : __SPORT === "basketball" ? 2 : 1
+					}
+					extraBulkActions={[
+						...(showRelease
+							? ([
+									{
+										onClick: async (selectedRows) => {
+											const proceed = await confirm(
+												`Are you sure you want to release ${helpers.numberWithCommas(selectedRows.map.size)} ${helpers.plural("player", selectedRows.map.size)}?`,
+												{
+													okText: helpers.plural(
+														"Release player",
+														selectedRows.map.size,
+													),
 												},
 											);
-											const errorMsg = await toWorker("main", "releasePlayer", {
-												pids,
-											});
-											if (errorMsg) {
+											if (proceed) {
+												const pids = Array.from(selectedRows.map.values()).map(
+													(metadata) => {
+														return metadata.pid;
+													},
+												);
+												const errorMsg = await toWorker(
+													"main",
+													"releasePlayer",
+													{
+														pids,
+													},
+												);
+												if (errorMsg) {
+													showNotification({
+														type: "error",
+														text: errorMsg,
+													});
+												} else {
+													// Clear because the selected players are no longer on this team!
+													selectedRows.clear();
+												}
+											}
+										},
+										text: "Release",
+										textLong: "Release players",
+									},
+								] as BulkAction<"player">[])
+							: []),
+						...(showTradeFor || showTradingBlock
+							? ([
+									{
+										onClick: (selectedRows) => {
+											let numUntradeable = 0;
+
+											const playersByPid = groupByUnique(players, "pid");
+											const pids = Array.from(selectedRows.map.values())
+												.map((metadata) => {
+													return metadata.pid;
+												})
+												.filter((pid) => {
+													if (playersByPid[pid].untradable) {
+														numUntradeable += 1;
+														return false;
+													}
+
+													return true;
+												});
+
+											if (numUntradeable > 0) {
 												showNotification({
 													type: "error",
-													text: errorMsg,
+													text: `${numUntradeable} selected ${helpers.plural("player", numUntradeable)} ${helpers.plural("is", numUntradeable, "are")} currently untradeable!`,
+												});
+											}
+
+											if (showTradeFor) {
+												toWorker("actions", "tradeFor", {
+													otherDpids: [],
+													otherPids: pids,
+													tid,
+													userDpids: [],
+													userPids: [],
 												});
 											} else {
-												// Clear because the selected players are no longer on this team!
-												selectedRows.clear();
+												toWorker("actions", "addToTradingBlock", {
+													pids,
+												});
 											}
-										}
+										},
+										text: showTradeFor ? "Trade for" : "Trade away",
+										textLong: showTradeFor
+											? "Trade for players"
+											: "Trade away players",
 									},
-									text: "Release",
-									textLong: "Release players",
-								},
-							] as BulkAction<"player">[])
-						: []),
-					...(showTradeFor || showTradingBlock
-						? ([
-								{
-									onClick: (selectedRows) => {
-										let numUntradeable = 0;
-
-										const playersByPid = groupByUnique(players, "pid");
-										const pids = Array.from(selectedRows.map.values())
-											.map((metadata) => {
-												return metadata.pid;
-											})
-											.filter((pid) => {
-												if (playersByPid[pid].untradable) {
-													numUntradeable += 1;
-													return false;
-												}
-
-												return true;
-											});
-
-										if (numUntradeable > 0) {
-											showNotification({
-												type: "error",
-												text: `${numUntradeable} selected ${helpers.plural("player", numUntradeable)} ${helpers.plural("is", numUntradeable, "are")} currently untradeable!`,
-											});
+								] as BulkAction<"player">[])
+							: []),
+					]}
+					name="Roster"
+					rows={rows}
+					hideAllControls={editable}
+					nonfluid
+					sortableRows={
+						editable
+							? {
+									highlightHandle: ({ index }) => index < numPlayersOnCourt,
+									onChange: async ({ oldIndex, newIndex }) => {
+										if (oldIndex === newIndex) {
+											return;
 										}
-
-										if (showTradeFor) {
-											toWorker("actions", "tradeFor", {
-												otherDpids: [],
-												otherPids: pids,
-												tid,
-												userDpids: [],
-												userPids: [],
-											});
-										} else {
-											toWorker("actions", "addToTradingBlock", {
-												pids,
-											});
-										}
+										const pids = players.map((p) => p.pid);
+										const newSortedPids = arrayMove(pids, oldIndex, newIndex);
+										setSortedPids(newSortedPids);
+										await toWorker("main", "reorderRosterDrag", newSortedPids);
 									},
-									text: showTradeFor ? "Trade for" : "Trade away",
-									textLong: showTradeFor
-										? "Trade for players"
-										: "Trade away players",
-								},
-							] as BulkAction<"player">[])
-						: []),
-				]}
-				name="Roster"
-				rows={rows}
-				hideAllControls={editable}
-				nonfluid
-				sortableRows={
-					editable
-						? {
-								highlightHandle: ({ index }) => index < numPlayersOnCourt,
-								onChange: async ({ oldIndex, newIndex }) => {
-									if (oldIndex === newIndex) {
-										return;
-									}
-									const pids = players.map((p) => p.pid);
-									const newSortedPids = arrayMove(pids, oldIndex, newIndex);
-									setSortedPids(newSortedPids);
-									await toWorker("main", "reorderRosterDrag", newSortedPids);
-								},
-								onSwap: async (index1, index2) => {
-									const newSortedPids = players.map((p) => p.pid);
-									newSortedPids[index1] = players[index2].pid;
-									newSortedPids[index2] = players[index1].pid;
-									setSortedPids(newSortedPids);
-									await toWorker("main", "reorderRosterDrag", newSortedPids);
-								},
-							}
-						: undefined
-				}
-			/>
+									onSwap: async (index1, index2) => {
+										const newSortedPids = players.map((p) => p.pid);
+										newSortedPids[index1] = players[index2].pid;
+										newSortedPids[index2] = players[index1].pid;
+										setSortedPids(newSortedPids);
+										await toWorker("main", "reorderRosterDrag", newSortedPids);
+									},
+								}
+							: undefined
+					}
+				/>
+			)}
 		</>
 	);
 };
