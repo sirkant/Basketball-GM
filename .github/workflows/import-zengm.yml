@@ -1,0 +1,25 @@
+name: Import pinned ZenGM baseline
+on:
+  push:
+    branches: [chore/import-zengm-baseline]
+    paths: [.github/workflows/import-zengm.yml]
+permissions:
+  contents: write
+jobs:
+  import:
+    if: github.ref == 'refs/heads/chore/import-zengm-baseline'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import original source without replacing the iOS project
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init "$RUNNER_TEMP/zengm-source"
+          git -C "$RUNNER_TEMP/zengm-source" fetch --depth=1 https://github.com/zengm-games/zengm.git bda1fa504a944522a72c14d442aa8f23e49298be
+          git -C "$RUNNER_TEMP/zengm-source" archive FETCH_HEAD | tar --exclude='.github/workflows/*' -xf -
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git diff --cached --quiet || git commit -m "chore: import ZenGM baseline bda1fa5 preserving the original iOS project"
+          git push origin HEAD:chore/import-zengm-baseline
