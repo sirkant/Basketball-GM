@@ -1,0 +1,218 @@
+import type teamStats from "../worker/core/team/stats.football.ts";
+import type playerStats from "../worker/core/player/stats.football.ts";
+import type { statFunctions as playerStatFunctions } from "./processPlayerStats.football.ts";
+
+// Should all the extra ones be in teamStats["derived"]?
+export type TeamStatAttr =
+	| (typeof teamStats)["raw"][number]
+	| "mov"
+	| "oppMov"
+	| "ptsPerGame"
+	| "oppPtsPerGame"
+	| "pssYdsPerGame"
+	| "rusYdsPerGame"
+	| "yds"
+	| "ydsPerPlay"
+	| "tov"
+	| "pssNetYdsPerAtt"
+	| "rusYdsPerAtt"
+	| "ply"
+	| "drivesScoringPct"
+	| "drivesTurnoverPct"
+	| "avgFieldPosition"
+	| "timePerDrive"
+	| "playsPerDrive"
+	| "ydsPerDrive"
+	| "ptsPerDrive"
+	| "cmpPct"
+	| "qbRat"
+	| "pssTDPct"
+	| "pssIntPct"
+	| "pssYdsPerAtt"
+	| "pssAdjYdsPerAtt"
+	| "pssYdsPerCmp"
+	| "pssAdjNetYdsPerAtt"
+	| "pssSkPct"
+	| "rusPerGame"
+	| "defTck"
+	| "fgPct"
+	| "xpPct"
+	| "kickingPts"
+	| "pntYdsPerAtt"
+	| "prYdsPerAtt"
+	| "krYdsPerAtt"
+	| "allPurposeYds"
+	| "allTD"
+	| "koTBPct"
+	| "koYdsPerAtt"
+	| "okRecPct"
+	| "recYdsPerRec"
+	| "recPerGame"
+	| "recYdsPerGame"
+	| "recCatchPct"
+	| "touches"
+	| "ydsPerTouch"
+	| "ydsFromScrimmage"
+	| "rusRecTD"
+	| "pbwr"
+	| "rbwr"
+	| "skAlwPct"
+	| "pntTBPct"
+	| "pntIn20Pct"
+	| "oppYds"
+	| "oppYdsPerPlay"
+	| "oppTov"
+	| "oppPssNetYdsPerAtt"
+	| "oppRusYdsPerAtt"
+	| "oppPly"
+	| "oppDrivesScoringPct"
+	| "oppDrivesTurnoverPct"
+	| "oppAvgFieldPosition"
+	| "oppTimePerDrive"
+	| "oppPlaysPerDrive"
+	| "oppYdsPerDrive"
+	| "oppPtsPerDrive"
+	| "oppPssTDPct"
+	| "oppPssIntPct"
+	| "oppPssYdsPerAtt"
+	| "oppPssAdjYdsPerAtt"
+	| "oppPssYdsPerCmp"
+	| "oppPssAdjNetYdsPerAtt"
+	| "oppPssSkPct"
+	| "oppPssYdsPerGame"
+	| "oppRusPerGame"
+	| "oppRusYdsPerGame"
+	| "oppDefTck"
+	| "oppFg"
+	| "oppFga"
+	| "oppFgPct"
+	| "oppXpPct"
+	| "oppKickingPts"
+	| "oppPntYdsPerAtt"
+	| "oppPrYdsPerAtt"
+	| "oppKrYdsPerAtt"
+	| "oppAllPurposeYds"
+	| "oppAllTD"
+	| "oppQbRat"
+	| "oppCmpPct"
+	| "oppKoTBPct"
+	| "oppKoYdsPerAtt"
+	| "oppOkRecPct"
+	| "oppRecYdsPerRec"
+	| "oppRecPerGame"
+	| "oppRecYdsPerGame"
+	| "oppRecCatchPct"
+	| "oppTouches"
+	| "oppYdsPerTouch"
+	| "oppYdsFromScrimmage"
+	| "oppRusRecTD"
+	| "oppPbwr"
+	| "oppRbwr"
+	| "oppSkAlwPct"
+	| "oppPntTBPct"
+	| "oppPntIn20Pct";
+
+type PlayerStatAttrString = "keyStats" | "qbRec";
+
+// Stats row as stored in the database, in p.stats
+export type PlayerStats = Record<
+	(typeof playerStats)["raw"][number] | (typeof playerStats)["derived"][number],
+	number | undefined
+>;
+
+// Numeric stats can be undefined in historical data from before a stat was tracked (even gp and min)
+export type PlayerStatsPlus = Record<
+	Exclude<
+		| (typeof playerStats)["raw"][number]
+		| (typeof playerStats)["derived"][number]
+		| keyof typeof playerStatFunctions,
+		PlayerStatAttrString
+	>,
+	number | undefined
+> &
+	Record<PlayerStatAttrString, string>;
+
+export type PrimaryPosition =
+	| "QB"
+	| "RB"
+	| "WR"
+	| "TE"
+	| "OL"
+	| "DL"
+	| "LB"
+	| "CB"
+	| "S"
+	| "K"
+	| "P";
+
+export type Position =
+	| "QB"
+	| "RB"
+	| "WR"
+	| "TE"
+	| "OL"
+	| "DL"
+	| "LB"
+	| "CB"
+	| "S"
+	| "K"
+	| "P"
+	| "KR"
+	| "PR";
+
+export type PlayerRatings = {
+	hgt: number;
+	stre: number;
+	spd: number;
+	endu: number;
+	thv: number;
+	thp: number;
+	tha: number;
+	bsc: number;
+	elu: number;
+	rtr: number;
+	hnd: number;
+	rbk: number;
+	pbk: number;
+	pcv: number;
+	tck: number;
+	prs: number;
+	rns: number;
+	kpw: number;
+	kac: number;
+	ppw: number;
+	pac: number;
+	fuzz: number;
+	ovr: number;
+	pot: number;
+	ovrs: Record<Position, number>;
+	pots: Record<Position, number>;
+	pos: string;
+	season: number;
+	skills: string[];
+	injuryIndex?: number;
+	locked?: boolean;
+};
+
+export type RatingKey =
+	| "hgt"
+	| "stre"
+	| "spd"
+	| "endu"
+	| "thv"
+	| "thp"
+	| "tha"
+	| "bsc"
+	| "elu"
+	| "rtr"
+	| "hnd"
+	| "rbk"
+	| "pbk"
+	| "pcv"
+	| "tck"
+	| "prs"
+	| "rns"
+	| "kpw"
+	| "kac"
+	| "ppw"
+	| "pac";

@@ -1,0 +1,177 @@
+import { PHASE } from "../../../common/constants.ts";
+import { idb } from "../../db/index.ts";
+import { actualPhase } from "../../util/actualPhase.ts";
+import g from "../../util/g.ts";
+
+export const RESTRICTED_1_PICK = 1;
+export const RESTRICTED_5_PICK = 5;
+
+// number[] rather than tuple in case there are fewer than 5 teams
+export const updateNba2027AfterLottery = async (tidsTop5: number[]) => {
+	const firstTid = tidsTop5[0];
+
+	const teams = (await idb.cache.teams.getAll()).filter((t) => !t.disabled);
+	for (const t of teams) {
+		let restricted1: boolean | undefined;
+		let restricted5: boolean | undefined;
+		if (t.tid === firstTid) {
+			restricted1 = true;
+		}
+		if (tidsTop5.includes(t.tid)) {
+			restricted5 = true;
+		}
+
+		if (restricted1 || restricted5) {
+			const prevRestricted5 =
+				t.draftLottery?.type === "nba2027"
+					? t.draftLottery.restricted5
+					: undefined;
+			t.draftLottery = {
+				type: "nba2027",
+			};
+			if (restricted1) {
+				t.draftLottery.restricted1 = restricted1;
+			}
+			if (restricted5) {
+				if (prevRestricted5 === 1 || prevRestricted5 === 2) {
+					t.draftLottery.restricted5 = 2;
+				} else {
+					t.draftLottery.restricted5 = 1;
+				}
+			}
+		} else {
+			delete t.draftLottery;
+		}
+	}
+
+	await idb.cache.teams.putAll(teams);
+};
+
+export const initializeNba2027 = async () => {
+	// Look back to the past 2 completed draft lotteries
+	let lastDraftLotterySeason = g.get("season");
+	const phase = actualPhase();
+
+	// Check existence of draftLotteryResults first, to handle any edge case where that is prespecified like in real player leagues during the playoffs
+	let lastDraftLotteryResults = await idb.merged.draftLotteryResults.get(
+		lastDraftLotterySeason,
+	);
+	if (!lastDraftLotteryResults) {
+		// Lottery must not have happened yet
+		if (phase <= PHASE.DRAFT_LOTTERY) {
+			lastDraftLotterySeason -= 1;
+
+			lastDraftLotteryResults = await idb.merged.draftLotteryResults.get(
+				lastDraftLotterySeason,
+			);
+		}
+	}
+
+	const restricted1ByTid: Record<number, boolean> = {};
+	const restricted5ByTid: Record<number, 1 | 2> = {};
+
+	if (
+		lastDraftLotteryResults &&
+		lastDraftLotteryResults.result.length > RESTRICTED_5_PICK
+	) {
+		// We can check last season from draftLotteryResults!
+		for (const row of lastDraftLotteryResults.result) {
+			if (row.pick === RESTRICTED_1_PICK) {
+				restricted1ByTid[row.originalTid] = true;
+			}
+			if (row.pick <= RESTRICTED_5_PICK) {
+				restricted5ByTid[row.originalTid] = 1;
+			}
+		}
+	} else {
+		// We need to check players, since draft lottery results are missing
+		const players = await idb.merged.players.getAll({
+			draftYear: lastDraftLotterySeason,
+		});
+		for (const p of players) {
+			if (p.draft.round !== 1) {
+				continue;
+			}
+			if (p.draft.pick === RESTRICTED_1_PICK) {
+				restricted1ByTid[p.draft.originalTid] = true;
+			}
+			if (p.draft.pick <= RESTRICTED_5_PICK) {
+				restricted5ByTid[p.draft.originalTid] = 1;
+			}
+		}
+	}
+
+	// Check one season further back for restricted5
+	const olderDraftLotterySeason = lastDraftLotterySeason - 1;
+	const olderDraftLotteryResults = await idb.merged.draftLotteryResults.get(
+		olderDraftLotterySeason,
+	);
+	if (
+		olderDraftLotteryResults &&
+		olderDraftLotteryResults.result.length > RESTRICTED_5_PICK
+	) {
+		// We can check last season from draftLotteryResults!
+		for (const row of olderDraftLotteryResults.result) {
+			if (
+				restricted5ByTid[row.originalTid] === 1 &&
+				row.pick <= RESTRICTED_5_PICK
+			) {
+				restricted5ByTid[row.originalTid] = 2;
+			}
+		}
+	} else {
+		// We need to check players, since draft lottery results are missing
+		const players = await idb.merged.players.getAll({
+			draftYear: olderDraftLotterySeason,
+		});
+		for (const p of players) {
+			if (p.draft.round !== 1) {
+				continue;
+			}
+			if (
+				restricted5ByTid[p.draft.originalTid] === 1 &&
+				p.draft.pick <= RESTRICTED_5_PICK
+			) {
+				restricted5ByTid[p.draft.originalTid] = 2;
+			}
+		}
+	}
+
+	const teams = (await idb.cache.teams.getAll()).filter((t) => {
+		// type check is for importing leagues, cause this gets run but might already have a value
+		if (t.disabled || t.draftLottery?.type === "nba2027") {
+			return false;
+		}
+
+		return true;
+	});
+
+	for (const t of teams) {
+		const restricted1 = restricted1ByTid[t.tid];
+		const restricted5 = restricted5ByTid[t.tid];
+		if (restricted1 || restricted5) {
+			t.draftLottery = {
+				type: "nba2027",
+			};
+			if (restricted1) {
+				t.draftLottery.restricted1 = restricted1;
+			}
+			if (restricted5) {
+				t.draftLottery.restricted5 = restricted5;
+			}
+		} else {
+			delete t.draftLottery;
+		}
+	}
+	await idb.cache.teams.putAll(teams);
+};
+
+export const disableNba2027 = async () => {
+	const teams = (await idb.cache.teams.getAll()).filter(
+		(t) => t.draftLottery?.type === "nba2027",
+	);
+	for (const t of teams) {
+		delete t.draftLottery;
+	}
+	await idb.cache.teams.putAll(teams);
+};

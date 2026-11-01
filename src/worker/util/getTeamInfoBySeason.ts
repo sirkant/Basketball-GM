@@ -1,0 +1,71 @@
+import { DEFAULT_JERSEY, DEFAULT_TEAM_COLORS } from "../../common/constants.ts";
+import { idb } from "../db/index.ts";
+
+export const getTeamInfoBySeason = async (tid: number, season: number) => {
+	if (tid === -1 || tid === -2) {
+		return {
+			abbrev: "ASG",
+			colors: DEFAULT_TEAM_COLORS,
+			jersey: DEFAULT_JERSEY,
+			name: tid === -1 ? "1" : "2",
+			region: "All-Stars",
+		};
+	}
+
+	let ts:
+		| {
+				abbrev: string;
+				colors: [string, string, string];
+				jersey?: string;
+				name: string;
+				region: string;
+		  }
+		| undefined = await idb.merged.teamSeasons.getByTidSeason(tid, season);
+	if (!ts) {
+		// No team season entry for the requested season... is there an older one, somehow? If so, use the latest one before the requested season. If not, use the first we find (it is the oldest existing one, so assume that applies).
+		for await (const cursor of idb.league
+			.transaction("teamSeasons")
+			.store.index("tid, season")
+			.iterate(IDBKeyRange.bound([tid, -Infinity], [tid, Infinity]))) {
+			if (cursor.value.season > season && ts) {
+				break;
+			}
+			ts = cursor.value;
+		}
+	}
+	if (!ts) {
+		ts = await idb.cache.teams.get(tid);
+	}
+
+	if (ts) {
+		return {
+			abbrev: ts.abbrev,
+			colors: ts.colors ?? DEFAULT_TEAM_COLORS,
+			jersey: ts.jersey,
+			name: ts.name,
+			region: ts.region,
+		};
+	}
+
+	// Could be an invalid tid, like PLAYER.TOT or PLAYER.DOES_NOT_EXIST
+};
+
+// Make one instance of this per season
+export class CacheTeamInfoSeason {
+	cache = new Map<number, Awaited<ReturnType<typeof getTeamInfoBySeason>>>();
+	season: number;
+
+	constructor(season: number) {
+		this.season = season;
+	}
+
+	async get(tid: number) {
+		if (this.cache.has(tid)) {
+			return this.cache.get(tid);
+		}
+
+		const info = await getTeamInfoBySeason(tid, this.season);
+		this.cache.set(tid, info);
+		return info;
+	}
+}

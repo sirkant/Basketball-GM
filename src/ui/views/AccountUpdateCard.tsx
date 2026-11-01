@@ -1,0 +1,212 @@
+import { useEffect, useState, type ChangeEvent, type SubmitEvent } from "react";
+import {
+	ACCOUNT_API_URL,
+	STRIPE_PUBLISHABLE_KEY,
+} from "../../common/constants.ts";
+import useTitleBar from "../hooks/useTitleBar.tsx";
+import { realtimeUpdate } from "../util/realtimeUpdate.ts";
+import type { View } from "../../common/types.ts";
+import { ajaxErrorMsg } from "./LoginOrRegister/index.tsx";
+import { getScript } from "../util/getScript.ts";
+import { fetchWrapper } from "../../common/fetchWrapper.ts";
+import { ActionButton } from "../components/ActionButton.tsx";
+
+const AccountUpdateCard = (props: View<"accountUpdateCard">) => {
+	const [state, setState] = useState({
+		scriptLoaded: false,
+		submitting: false,
+		formError: undefined as string | undefined,
+		number: "",
+		cvc: "",
+		exp_month: "",
+		exp_year: "",
+	});
+
+	useEffect(() => {
+		(async () => {
+			if (!window.Stripe) {
+				await getScript("https://js.stripe.com/v2/");
+				(window.Stripe as stripe.StripeStatic).setPublishableKey(
+					STRIPE_PUBLISHABLE_KEY,
+				);
+			}
+
+			setState((prevState) => ({
+				...prevState,
+				scriptLoaded: true,
+			}));
+		})();
+	}, []);
+
+	const handleChange =
+		(name: string) => (event: ChangeEvent<HTMLInputElement>) => {
+			const value = event.target.value;
+			setState((prevState) => ({
+				...prevState,
+				[name]: value,
+			}));
+		};
+
+	const handleSubmit = (event: SubmitEvent) => {
+		event.preventDefault();
+
+		setState((prevState) => ({
+			...prevState,
+			submitting: true,
+			formError: undefined,
+		}));
+
+		window.Stripe.card.createToken(
+			{
+				number: state.number,
+				cvc: state.cvc,
+				// @ts-expect-error
+				exp_month: state.exp_month,
+				// @ts-expect-error
+				exp_year: state.exp_year,
+			},
+			async (status: number, response: stripe.StripeCardTokenResponse) => {
+				const error = response.error;
+				if (error) {
+					setState((prevState) => ({
+						...prevState,
+						submitting: false,
+						formError: error.message,
+					}));
+				} else {
+					const token = response.id;
+
+					try {
+						const data = await fetchWrapper({
+							url: `${ACCOUNT_API_URL}/gold_card_update.php`,
+							method: "POST",
+							data: {
+								sport: __SPORT,
+								token,
+							},
+							credentials: "include",
+						});
+						await realtimeUpdate(["account"], "/account", {
+							goldResult: data,
+						});
+					} catch (error) {
+						console.error(error);
+						setState((prevState) => ({
+							...prevState,
+							submitting: false,
+							formError: ajaxErrorMsg,
+						}));
+					}
+				}
+			},
+		);
+	};
+
+	const { goldCancelled, expMonth, expYear, last4, username } = props;
+
+	useTitleBar({ title: "Update Card", hideNewWindow: true });
+
+	let errorMessage;
+	if (username === undefined || username === null || username === "") {
+		errorMessage = "Log in to view this page.";
+	}
+	if (goldCancelled) {
+		errorMessage =
+			"Cannot update card because your ZenGM Gold account is cancelled.";
+	}
+	if (errorMessage) {
+		return (
+			<>
+				<h2>Error</h2>
+				<p>{errorMessage}</p>
+			</>
+		);
+	}
+
+	return (
+		<>
+			<h2>Saved Card Info</h2>
+			<p>
+				Last 4 Digits: {last4}
+				<br />
+				Expiration: {expMonth}/{expYear}
+			</p>
+
+			<hr className="my-hr" />
+
+			<p>To replace your saved card with a new one, fill out this form:</p>
+
+			<form onSubmit={handleSubmit}>
+				<div style={{ maxWidth: "300px" }}>
+					<div className="mb-3">
+						<label className="form-label" htmlFor="card-number">
+							Card Number
+						</label>
+						<input
+							type="text"
+							onChange={handleChange("number")}
+							value={state.number}
+							id="card-number"
+							className="form-control"
+						/>
+					</div>
+
+					<div className="mb-3" style={{ maxWidth: "100px" }}>
+						<label className="form-label" htmlFor="cvc">
+							CVC
+						</label>
+						<input
+							type="text"
+							onChange={handleChange("cvc")}
+							value={state.cvc}
+							id="cvc"
+							className="form-control"
+						/>
+					</div>
+
+					<div className="mb-3">
+						<label className="form-label" htmlFor="exp-month">
+							Expiration (MM/YYYY)
+						</label>
+						<div className="row">
+							<div className="col-5">
+								<input
+									type="text"
+									onChange={handleChange("exp_month")}
+									value={state.exp_month}
+									placeholder="MM"
+									id="exp-month"
+									className="form-control"
+								/>
+							</div>
+							<div className="col-7">
+								<input
+									type="text"
+									onChange={handleChange("exp_year")}
+									value={state.exp_year}
+									placeholder="YYYY"
+									className="form-control"
+								/>
+							</div>
+						</div>
+					</div>
+
+					<ActionButton
+						type="submit"
+						disabled={!state.scriptLoaded}
+						processing={state.submitting}
+						processingText="Updating"
+					>
+						Update Card
+					</ActionButton>
+				</div>
+			</form>
+
+			{state.formError ? (
+				<p className="mt-3 text text-danger">{state.formError}</p>
+			) : null}
+		</>
+	);
+};
+
+export default AccountUpdateCard;

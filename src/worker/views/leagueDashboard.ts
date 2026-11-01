@@ -1,0 +1,651 @@
+import { PHASE, PLAYER } from "../../common/constants.ts";
+import { player, season, team } from "../core/index.ts";
+import { idb } from "../db/index.ts";
+import { g, helpers } from "../util/index.ts";
+import type { Player } from "../../common/types.ts";
+import { defineView, type ViewArgs } from "../util/defineView.ts";
+import { processEvents } from "./news.ts";
+import { getMaxPlayoffSeed } from "./standings.ts";
+import addFirstNameShort from "../util/addFirstNameShort.ts";
+import { bySport } from "../../common/sportFunctions.ts";
+import { orderTeams } from "../util/orderTeams.ts";
+import { getNumericStat } from "../../common/statValue.ts";
+
+const updateInbox = async ({ updateEvents }: ViewArgs) => {
+	if (updateEvents.has("firstRun") || updateEvents.has("newPhase")) {
+		const messages = await idb.merged.messages.getAll({ limit: 2 });
+		messages.reverse();
+		return {
+			messages: messages.map((message) => ({
+				mid: message.mid,
+				read: message.read,
+				year: message.year,
+				from: message.from,
+			})),
+		};
+	}
+};
+
+const updateTeam = async ({ updateEvents }: ViewArgs) => {
+	if (
+		updateEvents.has("firstRun") ||
+		updateEvents.has("gameSim") ||
+		updateEvents.has("playerMovement") ||
+		updateEvents.has("newPhase")
+	) {
+		const t = await idb.cache.teams.get(g.get("userTid"));
+		const latestSeason = await idb.cache.teamSeasons.indexGet(
+			"teamSeasonsBySeasonTid",
+			[g.get("season"), g.get("userTid")],
+		);
+
+		const playoffRoundsWon = latestSeason?.playoffRoundsWon ?? -1;
+		const playoffsByConf = await season.getPlayoffsByConf(g.get("season"));
+		const numPlayoffRounds = g.get("numGamesPlayoffSeries", "current").length;
+		const roundsWonText = helpers.upperCaseFirstLetter(
+			helpers.roundsWonText({
+				playoffRoundsWon,
+				numPlayoffRounds,
+				playoffsByConf,
+			}),
+		);
+
+		return {
+			region: t?.region ?? "",
+			name: t?.name ?? "",
+			won: latestSeason?.won ?? 0,
+			lost: latestSeason?.lost ?? 0,
+			tied: latestSeason?.tied ?? 0,
+			otl: latestSeason?.otl ?? 0,
+			cash: latestSeason ? latestSeason.cash : 0,
+			playoffRoundsWon,
+			roundsWonText,
+		};
+	}
+};
+
+const updatePayroll = async ({ updateEvents }: ViewArgs) => {
+	if (updateEvents.has("firstRun") || updateEvents.has("playerMovement")) {
+		const payroll = await team.getPayroll(g.get("userTid"));
+		return {
+			payroll, // [millions of dollars]
+		};
+	}
+};
+
+const updateTeams = async ({ updateEvents }: ViewArgs) => {
+	if (
+		updateEvents.has("firstRun") ||
+		updateEvents.has("gameSim") ||
+		updateEvents.has("playerMovement") ||
+		updateEvents.has("newPhase")
+	) {
+		const stats = bySport({
+			baseball: ["pts", "oppPts", "ops", "era"] as const,
+			basketball: ["pts", "oppPts", "trb", "ast"] as const,
+			football: [
+				"ptsPerGame",
+				"oppPtsPerGame",
+				"pssYdsPerGame",
+				"rusYdsPerGame",
+			] as const,
+			hockey: ["g", "oppG"] as const,
+		});
+		const statNames = bySport({
+			baseball: ["Runs", "Allowed", "OPS", "ERA"],
+			basketball: ["Points", "Allowed", "Rebounds", "Assists"],
+			football: ["Points", "Allowed", "PssYds", "RusYds"],
+			hockey: ["Goals", "Allowed"],
+		});
+		const teams = await team.getFormattedAll({
+			attrs: ["tid"],
+			seasonAttrs: [
+				"won",
+				"lost",
+				"otl",
+				"tied",
+				"winp",
+				"pts",
+				"att",
+				"revenue",
+				"profit",
+				"cid",
+				"did",
+				"wonDiv",
+				"lostDiv",
+				"tiedDiv",
+				"otlDiv",
+				"wonConf",
+				"lostConf",
+				"tiedConf",
+				"otlConf",
+			],
+			stats: ["pts", "oppPts", "gp", ...stats] as const,
+			season: g.get("season"),
+			showNoStats: true,
+		});
+		const t = teams.find((t2) => t2.tid === g.get("userTid"));
+		const cid = t !== undefined ? t.seasonAttrs.cid : undefined;
+		let att = 0;
+		let rank = 1;
+		let revenue = 0;
+		let profit = 0;
+		let teamStats: {
+			name: string;
+			rank: number;
+			stat: string;
+			value: number;
+		}[] = [];
+
+		const playoffsByConf = await season.getPlayoffsByConf(g.get("season"));
+		const teamsRank = await orderTeams(
+			teams.filter(
+				(t) => playoffsByConf === false || t.seasonAttrs.cid === cid,
+			),
+			teams,
+		);
+
+		for (const t2 of teamsRank) {
+			if (playoffsByConf === false || t2.seasonAttrs.cid === cid) {
+				if (t2.tid === g.get("userTid")) {
+					teamStats = stats.map((stat, i) => {
+						return {
+							name: statNames[i]!,
+							rank: 0,
+							stat,
+							value: (t2.stats as any)[stat],
+						};
+					});
+					att = t2.seasonAttrs.att;
+					revenue = t2.seasonAttrs.revenue;
+					profit = t2.seasonAttrs.profit;
+					break;
+				} else {
+					rank += 1;
+				}
+			}
+		}
+
+		for (const stat of stats) {
+			teams.sort((a, b) => (b.stats as any)[stat] - (a.stats as any)[stat]);
+
+			for (const [j, t] of teams.entries()) {
+				if (t.tid === g.get("userTid")) {
+					const entry = teamStats.find((teamStat) => teamStat.stat === stat);
+
+					if (entry) {
+						entry.rank = j + 1;
+
+						if (
+							stat.startsWith("opp") ||
+							(__SPORT === "baseball" && stat === "era")
+						) {
+							entry.rank = teams.length + 1 - entry.rank;
+						}
+					}
+
+					break;
+				}
+			}
+		}
+
+		return {
+			att,
+			rank,
+			revenue,
+			profit,
+			teamStats,
+		};
+	}
+};
+
+const updatePlayers = async ({ updateEvents }: ViewArgs) => {
+	if (
+		updateEvents.has("firstRun") ||
+		updateEvents.has("gameSim") ||
+		updateEvents.has("playerMovement") ||
+		updateEvents.has("newPhase")
+	) {
+		const startersStats = bySport({
+			baseball: ["war", "hr", "ba", "ops", "era", "ip"],
+			basketball: ["gp", "min", "pts", "trb", "ast", "per"],
+			football: ["gp", "keyStats", "av"],
+			hockey: ["gp", "keyStats", "ops", "dps", "ps"],
+		} as const);
+		const leaderStats = bySport({
+			baseball: ["hr", "h", "w"],
+			basketball: ["pts", "trb", "ast"],
+			football: ["pssYds", "rusYds", "recYds"],
+			hockey: ["g", "a", "pts"],
+		} as const);
+		const playersAll = await idb.cache.players.indexGetAll("playersByTid", [
+			PLAYER.FREE_AGENT,
+			Infinity,
+		]);
+
+		// League leaders
+		const leaderPlayers = await player.formatAll(playersAll, {
+			attrs: ["pid", "firstName", "lastName", "abbrev", "tid"],
+			stats: leaderStats,
+			season: g.get("season"),
+			showNoStats: true,
+			showRookies: true,
+			mergeStats: "totOnly",
+		});
+
+		const leagueLeaders: {
+			abbrev: string;
+			firstName: string;
+			lastName: string;
+			pid: number;
+			stat: string;
+			tid: number;
+			value: number;
+		}[] = [];
+
+		for (const stat of leaderStats) {
+			if (leaderPlayers[0]) {
+				leaderPlayers.sort(
+					(a, b) =>
+						(getNumericStat(b.stats[stat]) ?? 0) -
+						(getNumericStat(a.stats[stat]) ?? 0),
+				);
+				leagueLeaders.push({
+					abbrev: leaderPlayers[0].abbrev,
+					firstName: leaderPlayers[0].firstName,
+					lastName: leaderPlayers[0].lastName,
+					pid: leaderPlayers[0].pid,
+					stat,
+					tid: leaderPlayers[0].tid,
+					value: getNumericStat(leaderPlayers[0].stats[stat]) ?? 0,
+				});
+			} else {
+				leagueLeaders.push({
+					abbrev: g.get("teamInfoCache")[g.get("userTid")]!.abbrev,
+					firstName: "",
+					lastName: "",
+					pid: 0,
+					stat,
+					tid: g.get("userTid"),
+					value: 0,
+				});
+			}
+		}
+
+		const userPlayers = addFirstNameShort(
+			await player.formatAll(
+				playersAll.filter((p) => p.tid === g.get("userTid")),
+				{
+					attrs: [
+						"pid",
+						"firstName",
+						"lastName",
+						"abbrev",
+						"tid",
+						"age",
+						"contract",
+						"draft",
+						"rosterOrder",
+						"injury",
+						"watch",
+						"jerseyNumber",
+						"awards",
+					],
+					ratings: ["ovr", "pot", "dovr", "dpot", "skills", "pos"],
+					stats: [...startersStats, ...leaderStats, "yearsWithTeam"],
+					season: g.get("season"),
+					showNoStats: true,
+					showRookies: true,
+					fuzz: true,
+					tid: g.get("userTid"),
+				},
+			),
+		);
+		for (const p of userPlayers) {
+			p.awards = p.awards.filter(
+				(award: Player["awards"][number]) => award.season === g.get("season"),
+			);
+		}
+
+		// Team leaders
+		const teamLeaders: {
+			firstName: string;
+			firstNameShort: string;
+			lastName: string;
+			pid: number;
+			stat: string;
+			value: number;
+		}[] = [];
+
+		for (const stat of leaderStats) {
+			if (userPlayers[0]) {
+				userPlayers.sort(
+					(a, b) =>
+						(getNumericStat(b.stats[stat]) ?? 0) -
+						(getNumericStat(a.stats[stat]) ?? 0),
+				);
+				teamLeaders.push({
+					firstName: userPlayers[0].firstName,
+					firstNameShort: userPlayers[0].firstNameShort,
+					lastName: userPlayers[0].lastName,
+					pid: userPlayers[0].pid,
+					stat,
+					value: getNumericStat(userPlayers[0].stats[stat]) ?? 0,
+				});
+			} else {
+				teamLeaders.push({
+					firstName: "",
+					firstNameShort: "",
+					lastName: "",
+					pid: 0,
+					stat,
+					value: 0,
+				});
+			}
+		}
+
+		// Roster
+		// Find starters or top 5 players
+		let starters;
+		const numPlayersOnCourt = g.get("numPlayersOnCourt");
+		if (__SPORT === "basketball") {
+			userPlayers.sort((a, b) => a.rosterOrder - b.rosterOrder);
+			starters = userPlayers.slice(0, Math.max(5, numPlayersOnCourt));
+		} else if (__SPORT === "hockey") {
+			const t = await idb.cache.teams.get(g.get("userTid"));
+			if (t) {
+				const depth = t.depth as any;
+				const pids = [
+					depth.F[0],
+					depth.F[1],
+					depth.F[2],
+					depth.D[0],
+					depth.D[1],
+					depth.G[0],
+				];
+				starters = pids
+					.map((pid) => userPlayers.find((p) => p.pid === pid))
+					.filter((pid) => pid !== undefined);
+			}
+		}
+
+		if (!starters) {
+			// Football - too many starters, just show top 5. Also fallback for hockey depth chart missing
+			userPlayers.sort((a, b) => b.ratings.ovr - a.ratings.ovr);
+			starters = userPlayers.slice(0, 5);
+		}
+
+		return {
+			leagueLeaders: addFirstNameShort(leagueLeaders),
+			numPlayersOnCourt,
+			teamLeaders,
+			starters,
+			startersStats,
+		};
+	}
+};
+
+const updatePlayoffs = async ({ updateEvents }: ViewArgs) => {
+	if (
+		updateEvents.has("firstRun") ||
+		(g.get("phase") >= PHASE.PLAYOFFS && updateEvents.has("gameSim")) ||
+		(updateEvents.has("newPhase") &&
+			(g.get("phase") === PHASE.PLAYOFFS || g.get("phase") === PHASE.PRESEASON))
+	) {
+		const playoffSeries = await idb.merged.playoffSeries.get(g.get("season"));
+		let foundSeries;
+		let seriesTitle = "";
+		let showPlayoffSeries = false;
+		let numGamesToWinSeries = 4;
+
+		if (playoffSeries !== undefined && playoffSeries.series.length > 0) {
+			const series = await helpers.augmentSeries(playoffSeries.series);
+
+			// Find the latest playoff series with the user's team in it
+
+			let found = false;
+
+			const playoffsByConf = await season.getPlayoffsByConf(g.get("season"));
+			const numPlayoffRounds = g.get("numGamesPlayoffSeries", "current").length;
+
+			// This is needed since currentRound is -1 for a play-in
+			const lastRound =
+				playoffSeries.currentRound >= 0 ? playoffSeries.currentRound : 0;
+
+			for (let rnd = lastRound; rnd >= 0; rnd--) {
+				const roundSeries = series[rnd];
+				if (roundSeries) {
+					for (const [i, { away, home }] of roundSeries.entries()) {
+						if (
+							home.tid === g.get("userTid") ||
+							(away && away.tid === g.get("userTid") && !away.pendingPlayIn)
+						) {
+							foundSeries = roundSeries[i];
+							found = true;
+							showPlayoffSeries = true;
+
+							seriesTitle = helpers.upperCaseFirstLetter(
+								helpers.playoffRoundName(rnd, numPlayoffRounds, playoffsByConf),
+							);
+							numGamesToWinSeries = helpers.numGamesToWinRound(rnd);
+							break;
+						}
+					}
+
+					if (found) {
+						break;
+					}
+				}
+			}
+
+			if (!found && playoffSeries.playIns) {
+				const playIns = await helpers.augmentPlayIns(playoffSeries.playIns);
+				for (const playIn of playIns) {
+					for (let i = playIn.length - 1; i >= 0; i--) {
+						const { away, home } = playIn[i]!;
+						if (
+							home.tid === g.get("userTid") ||
+							away.tid === g.get("userTid")
+						) {
+							foundSeries = playIn[i];
+							found = true;
+							showPlayoffSeries = true;
+
+							seriesTitle = "Play-in tournament";
+
+							numGamesToWinSeries = helpers.numGamesToWinRound(-1);
+							break;
+						}
+					}
+
+					if (found) {
+						break;
+					}
+				}
+			}
+		}
+
+		return {
+			numGamesToWinSeries,
+			series: foundSeries,
+			seriesTitle,
+			showPlayoffSeries,
+		};
+	}
+};
+
+const updateStandings = async ({ updateEvents }: ViewArgs) => {
+	if (updateEvents.has("firstRun") || updateEvents.has("gameSim")) {
+		const teams = await team.getFormattedAll({
+			attrs: ["tid"],
+			seasonAttrs: [
+				"won",
+				"lost",
+				"tied",
+				"otl",
+				"wonDiv",
+				"lostDiv",
+				"tiedDiv",
+				"otlDiv",
+				"wonConf",
+				"lostConf",
+				"tiedConf",
+				"otlConf",
+				"winp",
+				"pts",
+				"cid",
+				"did",
+				"abbrev",
+				"region",
+				"clinchedPlayoffs",
+				"imgURL",
+				"imgURLSmall",
+			],
+			stats: ["pts", "oppPts", "gp"],
+			season: g.get("season"),
+			showNoStats: true,
+		});
+
+		// Find user's conference
+		const userTid = g.get("userTid");
+		const cid = teams.find((t) => t.tid === userTid)?.seasonAttrs.cid;
+
+		const playoffsByConf = await season.getPlayoffsByConf(g.get("season"));
+
+		let confOrAllTeams = (
+			await orderTeams(
+				teams.filter((t) => !playoffsByConf || t.seasonAttrs.cid === cid),
+				teams,
+			)
+		).map((t) => ({
+			...t,
+			rank: 0,
+			gb: 0,
+		}));
+
+		const pointsFormula = g.get("pointsFormula", "current");
+		const usePts = pointsFormula !== "";
+
+		let rank = 1;
+		for (const t of confOrAllTeams) {
+			if (!playoffsByConf || t.seasonAttrs.cid === cid) {
+				t.rank = rank;
+				if (!usePts) {
+					t.gb =
+						rank === 1
+							? 0
+							: helpers.gb(confOrAllTeams[0]!.seasonAttrs, t.seasonAttrs);
+				}
+
+				rank += 1;
+			}
+		}
+
+		// Keep only up to 16 teams or else it looks ugly, and always keep userTid
+		const NUM_TEAMS_TO_SHOW = 16;
+		let seenUserTid = false;
+		confOrAllTeams = confOrAllTeams.filter((t) => {
+			if (t.tid === userTid) {
+				seenUserTid = true;
+				return true;
+			}
+
+			if (seenUserTid) {
+				return t.rank <= NUM_TEAMS_TO_SHOW;
+			} else {
+				return t.rank < NUM_TEAMS_TO_SHOW;
+			}
+		});
+
+		const { maxPlayoffSeed, maxPlayoffSeedNoPlayIn } = await getMaxPlayoffSeed(
+			g.get("season"),
+			playoffsByConf,
+		);
+
+		return {
+			confOrAllTeams,
+			maxPlayoffSeed,
+			maxPlayoffSeedNoPlayIn,
+			playoffsByConf,
+			pointsFormula,
+			usePts,
+		};
+	}
+};
+
+const updateNewsFeed = async ({ updateEvents }: ViewArgs) => {
+	if (
+		updateEvents.has("firstRun") ||
+		updateEvents.has("playerMovement") ||
+		updateEvents.has("gameSim") ||
+		updateEvents.has("newPhase")
+	) {
+		const NUM_EVENTS = 8;
+
+		// Load all events from this season, and last season too if more are needed
+		const eventsAll = await idb.merged.events.getAll({
+			season: g.get("season"),
+		});
+		eventsAll.reverse();
+
+		const events = await processEvents(eventsAll, {
+			limit: NUM_EVENTS,
+		});
+		if (events.length < NUM_EVENTS) {
+			const eventsAll2 = await idb.merged.events.getAll({
+				season: g.get("season") - 1,
+			});
+			eventsAll2.reverse();
+			const events2 = await processEvents(eventsAll2, {
+				limit: NUM_EVENTS - events.length,
+			});
+			events.push(...events2);
+		}
+
+		const teams = (
+			await team.getFormattedAll({
+				seasonAttrs: [
+					"abbrev",
+					"colors",
+					"jersey",
+					"imgURL",
+					"imgURLSmall",
+					"region",
+				],
+				season: g.get("season"),
+				addDummySeason: true,
+			})
+		).map((t) => t.seasonAttrs);
+
+		return {
+			events,
+			teams,
+		};
+	}
+};
+
+export default defineView({
+	id: "leagueDashboard",
+	load: async (args) => {
+		// Woo TypeScript, gotta break this up into 3 parts or it just says fuck it and calls it any
+		const part1 = Object.assign(
+			{},
+			await updateInbox(args),
+			await updateTeam(args),
+			await updatePayroll(args),
+		);
+		const part2 = Object.assign(
+			{},
+			await updateTeams(args),
+			await updateNewsFeed(args),
+		);
+		const part3 = Object.assign(
+			{},
+			await updatePlayers(args),
+			await updatePlayoffs(args),
+			await updateStandings(args),
+		);
+
+		return Object.assign({}, part1, part2, part3);
+	},
+});

@@ -1,0 +1,176 @@
+import { idb } from "../db/index.ts";
+import { g } from "../util/index.ts";
+import type { Player } from "../../common/types.ts";
+import { PHASE } from "../../common/constants.ts";
+import addFirstNameShort from "../util/addFirstNameShort.ts";
+import { groupByUnique, orderBy } from "../../common/utils.ts";
+import { extraStats } from "./hallOfFame.ts";
+import { bySport } from "../../common/sportFunctions.ts";
+import { processPlayersHallOfFame } from "../util/processPlayersHallOfFame.ts";
+import { defineView } from "../util/defineView.ts";
+import { player } from "../core/index.ts";
+
+const playerValue = (p: Player) => {
+	let sum = 0;
+	for (const ps of p.stats) {
+		sum +=
+			bySport({
+				baseball: ps.war,
+				basketball: (ps.ows ?? 0) + (ps.dws ?? 0),
+				football: ps.av,
+				hockey: (ps.dps ?? 0) + (ps.ops ?? 0) + (ps.gps ?? 0),
+			}) ?? 0;
+	}
+
+	return sum;
+};
+
+export default defineView({
+	id: "frivolitiesDraftClasses",
+	load: async ({ updateEvents }) => {
+		if (
+			updateEvents.has("firstRun") ||
+			(updateEvents.has("newPhase") && g.get("phase") === PHASE.PRESEASON)
+		) {
+			type DraftClass = {
+				season: number;
+				value: number;
+				numHOF: number;
+				numMVP: number;
+				numAS: number;
+				numActive: number;
+				bestPlayer: {
+					p: Player;
+					value: number;
+				};
+			};
+			let draftClass: DraftClass | undefined;
+			const draftClasses: DraftClass[] = [];
+
+			const mostRecentDraftYear =
+				g.get("phase") >= PHASE.DRAFT ? g.get("season") : g.get("season") - 1;
+
+			for await (const { value: p } of idb.league
+				.transaction("players")
+				.store.index("draft.year, retiredYear")
+				.iterate(
+					IDBKeyRange.bound(
+						[Math.min(mostRecentDraftYear, g.get("startingSeason"))],
+						[mostRecentDraftYear, Infinity],
+					),
+				)) {
+				const value = playerValue(p);
+
+				if (draftClass === undefined || p.draft.year !== draftClass.season) {
+					draftClass = {
+						season: p.draft.year,
+						value: 0,
+						numHOF: 0,
+						numMVP: 0,
+						numAS: 0,
+						numActive: 0,
+						bestPlayer: {
+							p,
+							value,
+						},
+					};
+					draftClasses.push(draftClass);
+				} else {
+					if (value > draftClass.bestPlayer.value) {
+						draftClass.bestPlayer = {
+							p,
+							value,
+						};
+					}
+				}
+
+				draftClass.value += value;
+				if (p.hof) {
+					draftClass.numHOF += 1;
+				}
+				if (
+					p.awards.some(
+						(award) =>
+							award.type === undefined &&
+							award.numTeams === undefined &&
+							award.actAs === "mvp" &&
+							award.rank === 1,
+					)
+				) {
+					draftClass.numMVP += 1;
+				}
+				if (p.awards.some((award) => award.type === "All-Star")) {
+					draftClass.numAS += 1;
+				}
+				if (p.retiredYear === Infinity) {
+					draftClass.numActive += 1;
+				}
+			}
+
+			const stats = bySport({
+				baseball: ["gp", "keyStats", "war"],
+				basketball: [
+					"gp",
+					"min",
+					"pts",
+					"trb",
+					"ast",
+					"per",
+					"ewa",
+					"ws",
+					"ws48",
+				],
+				football: ["gp", "keyStats", "av"],
+				hockey: ["gp", "keyStats", "ops", "dps", "ps"],
+			} as const);
+
+			const bestPlayersAll = draftClasses.map(
+				(draftClass) => draftClass.bestPlayer.p,
+			);
+			const bestPlayers = addFirstNameShort(
+				processPlayersHallOfFame(
+					await player.formatAll(bestPlayersAll, {
+						attrs: [
+							"pid",
+							"firstName",
+							"lastName",
+							"draft",
+							"retiredYear",
+							"statsTids",
+							"born",
+							"diedYear",
+							"jerseyNumber",
+						],
+						ratings: ["season", "ovr", "pos"],
+						stats: ["season", "abbrev", "tid", ...stats, ...extraStats],
+						fuzz: true,
+					}),
+				),
+			);
+
+			const bestPlayersByPid = groupByUnique(bestPlayers, "pid");
+
+			const draftClasses2 = orderBy(
+				draftClasses.flatMap((draftClass) => {
+					const bestPlayer = bestPlayersByPid[draftClass.bestPlayer.p.pid];
+					if (!bestPlayer) {
+						return [];
+					}
+					return [
+						{
+							...draftClass,
+							bestPlayer,
+						},
+					];
+				}),
+				"value",
+				"desc",
+			);
+
+			return {
+				draftClasses: draftClasses2,
+				stats,
+			};
+		}
+	},
+});

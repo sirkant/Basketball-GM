@@ -1,0 +1,296 @@
+import { PHASE, PLAYER, RATINGS } from "../../../common/constants.ts";
+import type {
+	SeasonLeaders,
+	PlayerStatType,
+	Phase,
+} from "../../../common/types.ts";
+import { idb } from "../../db/index.ts";
+import { g, local } from "../../util/index.ts";
+import {
+	GamesPlayedCache,
+	playerMeetsCategoryRequirements,
+} from "../../views/leaders.ts";
+import { getPlayerProfileStats } from "../../views/player.ts";
+import { player } from "../index.ts";
+import getLeaderRequirements, {
+	getLeaderRequirementsStats,
+} from "../season/getLeaderRequirements.ts";
+import { NUM_SEASON_LEADERS_CACHE } from "../../db/Cache.ts";
+import { bySport } from "../../../common/sportFunctions.ts";
+import { actualPhase } from "../../util/actualPhase.ts";
+
+// Organize stats rows from player.formatAll with multiple seasonTypes (and mergeStats totOnly) by season type
+export const splitRegularSeasonPlayoffsCombined = <
+	Row extends {
+		playoffs?: boolean | "combined";
+	},
+>(
+	stats: readonly Row[],
+) => {
+	const statsByType: Partial<
+		Record<"regularSeason" | "playoffs" | "combined", Row>
+	> = {};
+	for (const row of stats) {
+		if (row.playoffs === "combined") {
+			statsByType.combined = row;
+		} else if (row.playoffs === true) {
+			statsByType.playoffs = row;
+		} else {
+			statsByType.regularSeason = row;
+		}
+	}
+	return statsByType;
+};
+
+const max = (
+	rows: unknown[],
+	getValue: (row: any) => number,
+	statInfo?: ReturnType<typeof getLeaderRequirements>["string"],
+) => {
+	let current:
+		| {
+				sortValue: number;
+				value: any;
+		  }
+		| undefined;
+	for (const row of rows) {
+		const value = getValue(row);
+		const sortValue = statInfo?.sortValue ? statInfo.sortValue(value) : value;
+		if (
+			current === undefined ||
+			(statInfo?.sortAscending
+				? sortValue < current.sortValue
+				: sortValue > current.sortValue)
+		) {
+			current = {
+				sortValue,
+				value,
+			};
+		}
+	}
+	return current?.value;
+};
+
+const calculateSeasonLeaders = async (
+	season: number,
+	seasonInProgress: boolean,
+	currentPhase: Phase,
+) => {
+	// If seasonInProgress, do it the fast way (ignore player deaths or whatever), because this is just transient
+	let playersRaw;
+	if (seasonInProgress) {
+		playersRaw = await idb.cache.players.indexGetAll("playersByTid", [
+			PLAYER.FREE_AGENT,
+			Infinity,
+		]);
+	} else {
+		playersRaw = await idb.merged.players.getAll({ activeSeason: season });
+	}
+
+	const requirements = getLeaderRequirements();
+
+	const playerProfileStats = getPlayerProfileStats();
+	const requirementsStats = getLeaderRequirementsStats(
+		requirements,
+		playerProfileStats,
+	);
+	const stats = Array.from(
+		new Set([...getPlayerProfileStats(), ...requirementsStats]),
+	);
+	const ratings = ["ovr", "pot", ...RATINGS] as const;
+
+	// Can skip playoffs if it hasn't happened yet, and combined would be redundant with regularSeason too
+	const regularSeasonOnly = seasonInProgress && currentPhase < PHASE.PLAYOFFS;
+
+	const playersWithoutStatsByType = await player.formatAll(playersRaw, {
+		attrs: ["age"],
+		// pos is for getLeaderRequirements
+		ratings: ["fuzz", "pos", ...ratings],
+		// tid is for GamesPlayedCache lookup
+		stats: ["tid", ...stats],
+		season,
+		mergeStats: "totOnly",
+		seasonType: regularSeasonOnly
+			? ["regularSeason"]
+			: ["regularSeason", "playoffs", "combined"],
+	});
+	const players = playersWithoutStatsByType.map((p) => ({
+		...p,
+		statsByType: splitRegularSeasonPlayoffsCombined(p.stats),
+	}));
+
+	const leadersCache: SeasonLeaders & {
+		combined: Record<string, unknown>;
+		ratingsFuzz: Record<string, unknown>;
+	} = {
+		season,
+		age: max(players, (p) => p.age),
+		regularSeason: {},
+		playoffs: {},
+		combined: {},
+		ratings: {},
+		ratingsFuzz: {},
+	};
+
+	for (const rating of ["ovr", "pot", ...RATINGS]) {
+		leadersCache.ratings[rating] = max(players, (p) => p.ratings[rating]);
+		leadersCache.ratingsFuzz[rating] = max(players, (p) =>
+			player.fuzzRating(p.ratings[rating], p.ratings.fuzz, true),
+		);
+	}
+
+	const statType: PlayerStatType = bySport({
+		baseball: "totals",
+		basketball: "perGame",
+		football: "totals",
+		hockey: "totals",
+	});
+
+	const gamesPlayedCache = new GamesPlayedCache();
+
+	// "combined" comes last so loadSeasons can run for regularSeason and playoffs first, otherwise it won't work
+	for (const type of ["regularSeason", "playoffs", "combined"] as const) {
+		if (type !== "combined") {
+			await gamesPlayedCache.loadSeasons([season], type === "playoffs");
+		}
+
+		if (regularSeasonOnly && type !== "regularSeason") {
+			continue;
+		}
+
+		for (const stat of playerProfileStats) {
+			if (type === "regularSeason" && !requirements[stat]) {
+				throw new Error(`Missing leader requirements for ${stat}`);
+			}
+
+			const statInfo = {
+				stat,
+				...requirements[stat],
+			};
+
+			leadersCache[type][stat] = max(
+				players.filter((p) => {
+					const playerStats = p.statsByType[type];
+					if (!playerStats) {
+						// Maybe no playoff stats
+						return false;
+					}
+
+					// Ignore byPos fielding stats, too annoying to compute
+					if (
+						Array.isArray(playerStats[stat]) &&
+						!player.stats.max.includes(stat)
+					) {
+						return false;
+					}
+
+					const pass = playerMeetsCategoryRequirements({
+						career: false,
+						cat: statInfo,
+						gamesPlayedCache,
+						p,
+						playerStats,
+						seasonType: type,
+						season,
+						statType,
+					});
+
+					return pass;
+				}),
+				(p) => {
+					const value = p.statsByType[type]?.[stat];
+					if (player.stats.max.includes(stat) && Array.isArray(value)) {
+						return value[0];
+					}
+
+					return value;
+				},
+				statInfo,
+			);
+		}
+	}
+
+	if (seasonInProgress) {
+		// Cache until next game sim
+		local.seasonLeaders = leadersCache;
+	} else {
+		// put rather than add in case two players are opened at once
+		if (g.get("season") - NUM_SEASON_LEADERS_CACHE <= leadersCache.season) {
+			// Add to cache when appropriate
+			await idb.cache.seasonLeaders.put(leadersCache);
+		} else {
+			await idb.league.put("seasonLeaders", leadersCache);
+		}
+	}
+
+	return leadersCache;
+};
+
+const pastSeasonsInProgress = new Map<
+	number,
+	Promise<Awaited<ReturnType<typeof calculateSeasonLeaders>>>
+>();
+
+const getSeasonLeaders = async (season: number) => {
+	const currentSeason = g.get("season");
+	const currentPhase = actualPhase();
+	const seasonInProgress =
+		season > currentSeason ||
+		(season === currentSeason && currentPhase <= PHASE.PLAYOFFS);
+	if (seasonInProgress) {
+		if (local.seasonLeaders) {
+			return local.seasonLeaders;
+		}
+	} else {
+		const leadersCache =
+			(await idb.cache.seasonLeaders.get(season)) ??
+			(await idb.league.get("seasonLeaders", season));
+		if (leadersCache) {
+			return leadersCache;
+		}
+
+		if (season < g.get("startingSeason")) {
+			// Ignore any partial data from historical seasons before this league existed, unless it's already cached (like from initializing real players league)
+			return;
+		}
+	}
+
+	// Wait for calculation for current season (not just seasonInProgress, because we want any final one after the season too).
+	// Otherwise, don't wait, because it can be slow to calculate for many seasons at once.
+	if (seasonInProgress) {
+		// This is fast, so just await and don't worry about pastSeasonsInProgress
+		const leadersCache = await calculateSeasonLeaders(
+			season,
+			seasonInProgress,
+			currentPhase,
+		);
+		return leadersCache;
+	} else {
+		// waitForResult is for a bit of an edge case - after the season, we calculate the final values, so if this is triggered at the same time in multiple tabs then we only need to run it once
+		const waitForResult = season === currentSeason;
+
+		const existingPromise = pastSeasonsInProgress.get(season);
+
+		if (existingPromise) {
+			// If already calculating, just let that one finish. We only want to wait if waitForResult
+			if (waitForResult) {
+				return existingPromise;
+			}
+		} else {
+			const promise = calculateSeasonLeaders(
+				season,
+				seasonInProgress,
+				currentPhase,
+			).finally(() => {
+				pastSeasonsInProgress.delete(season);
+			});
+			pastSeasonsInProgress.set(season, promise);
+
+			if (waitForResult) {
+				return promise;
+			}
+		}
+	}
+};
+
+export default getSeasonLeaders;

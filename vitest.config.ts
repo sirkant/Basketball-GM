@@ -1,0 +1,115 @@
+import {
+	configDefaults,
+	defineConfig,
+	type TestProjectInlineConfiguration,
+} from "vitest/config";
+import type { Sport } from "./tools/lib/getSport.ts";
+import type { ProjectConfig } from "vitest/node";
+import { playwright } from "@vitest/browser-playwright";
+import { jsonUrlsDefine } from "./tools/lib/jsonUrls.ts";
+import { sportFunctions } from "./tools/lib/rolldownPlugins/sportFunctions.ts";
+
+const footballTests = ["**/*.football/*.test.ts", "**/*.football.test.ts"];
+const baseballTests = ["**/*.baseball/*.test.ts", "**/*.baseball.test.ts"];
+
+const makeProject = (
+	sport: Sport,
+	environment: "node" | "browser",
+	projectConfig: ProjectConfig,
+): TestProjectInlineConfiguration => {
+	return {
+		define: {
+			__NODE_ENV: JSON.stringify("test"),
+			__SPORT: JSON.stringify(sport),
+			...jsonUrlsDefine(),
+		},
+		plugins: [
+			{
+				...sportFunctions("production", sport),
+
+				configureVitest({ defineCacheKeyGenerator }) {
+					defineCacheKeyGenerator(() => {
+						return sport;
+					});
+				},
+
+				// Need this or Vite runs TypeScript conversion before this plugin runs, resulting in moduleType in the plugin filter being js rather than ts/tsx
+				enforce: "pre",
+			},
+		],
+
+		test: {
+			...projectConfig,
+			...(environment === "node"
+				? {
+						setupFiles: ["./src/test/setup.ts", "./src/worker/index.ts"],
+					}
+				: {
+						setupFiles: ["./src/test/setup-e2e.ts"],
+						browser: {
+							enabled: true,
+							headless: true,
+							provider: playwright(),
+							instances: [
+								{ browser: "chromium" },
+								// firefox and webkit have been flaky lately...
+								// { browser: "firefox" },
+								// { browser: "webkit" },
+							],
+							screenshotFailures: false,
+						},
+					}),
+		},
+	};
+};
+
+const benchmark = {
+	include: ["**/*.bench.browser.?(c|m)[jt]s?(x)"],
+};
+
+export default defineConfig({
+	test: {
+		fsModuleCache: true,
+		isolate: false,
+		maxWorkers: 3,
+		projects: [
+			makeProject("basketball", "node", {
+				name: "basketball",
+				include: ["**/*.test.ts"],
+				exclude: [
+					...configDefaults.exclude,
+					...footballTests,
+					...baseballTests,
+				],
+			}),
+			makeProject("football", "node", {
+				name: "football",
+				include: footballTests,
+			}),
+			makeProject("baseball", "node", {
+				name: "baseball",
+				include: baseballTests,
+			}),
+			makeProject("basketball", "browser", {
+				name: "browser-basketball",
+				include: ["**/*.test.browser.ts"],
+				benchmark,
+			}),
+			makeProject("football", "browser", {
+				name: "browser-football",
+				include: [],
+				benchmark,
+			}),
+			makeProject("baseball", "browser", {
+				name: "browser-baseball",
+				include: [],
+				benchmark,
+			}),
+			makeProject("hockey", "browser", {
+				name: "browser-hockey",
+				include: [],
+				benchmark,
+			}),
+		],
+	},
+});

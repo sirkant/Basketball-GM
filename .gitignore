@@ -1,0 +1,14 @@
+*~
+*.pyc
+*.sublime-project
+*.sublime-workspace
+*.tsbuildinfo
+/node_modules
+/npm-debug.log
+/build
+/local.log
+/stats-*.html
+/.idea/
+/foo
+/.vscode
+/tools/names-groups-html

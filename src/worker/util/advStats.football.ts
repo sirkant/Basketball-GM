@@ -1,0 +1,406 @@
+import { PHASE } from "../../common/constants.ts";
+import g from "./g.ts";
+import type { TeamFiltered } from "../../common/types.ts";
+import { advStatsSave, getPlayers } from "./advStatsCommon.ts";
+import { groupByUnique, last, assertDefined } from "../../common/utils.ts";
+import {
+	defaultAwards,
+	defaultGameAttributes,
+} from "../../common/defaultGameAttributes.ts";
+import helpers from "./helpers.ts";
+import { processAwards } from "../core/awards/processAwards.ts";
+import { team } from "../core/index.ts";
+
+type Team = TeamFiltered<
+	["tid"],
+	undefined,
+	[
+		"gp",
+		"ptsPerDrive",
+		"oppPtsPerDrive",
+		"pts",
+		"oppPts",
+		"drives",
+		"pss",
+		"pssYds",
+		"pssTD",
+		"pssInt",
+		"rus",
+		"rusYds",
+		"rec",
+		"recYds",
+		"fga0",
+		"fga20",
+		"fga30",
+		"fga40",
+		"fga50",
+		"xpa",
+		"pnt",
+		"pntYds",
+		"pntBlk",
+		"pbw",
+		"pba",
+		"rbw",
+		"rba",
+	],
+	number
+>;
+
+const TCK_CONSTANT = {
+	DL: 0.6,
+	LB: 0.3,
+	CB: 0,
+	S: 0,
+};
+const DEFENSIVE_POSITIONS = new Set(["DL", "LB", "CB", "S"] as const);
+
+const olScore = (
+	stats: Record<"pbw" | "pba" | "pbwr" | "rbw" | "rba" | "rbwr", number>,
+	league: Record<"pbwr" | "rbwr", number>,
+	pos: string,
+) => {
+	const posMultiplier = pos === "OL" ? 1 : 0.5;
+
+	// Bonus for PBW/RBW above league average rate
+	return (
+		(stats.pbw +
+			stats.rbw +
+			helpers.bound(
+				stats.pbw -
+					stats.pba * league.pbwr +
+					(stats.rbw - stats.rba * league.rbwr),
+				0,
+				Infinity,
+			)) *
+		posMultiplier
+	);
+};
+
+// Approximate Value: https://www.sports-reference.com/blog/approximate-value-methodology/
+const calculateAV = (players: any[], teamsInput: Team[], league: any) => {
+	const teams = teamsInput.map((t) => {
+		// Modification - use PBWR and RBWR to determine the credit OL gets for offense, kind of arbitrary
+		const olFraction =
+			helpers.bound(
+				(5 *
+					(helpers.ratio(t.stats.pbw, t.stats.pba) +
+						helpers.ratio(t.stats.rbw, t.stats.rba))) /
+					(league.pbwr + league.rbwr),
+				4,
+				6,
+			) / 11;
+
+		const offPts =
+			league.ptsPerDrive === 0
+				? 0
+				: (100 * t.stats.ptsPerDrive) / league.ptsPerDrive;
+		const ptsOL = olFraction * offPts;
+		const ptsSkill = offPts - ptsOL;
+		const ptsRus =
+			t.stats.rusYds + t.stats.recYds === 0
+				? 0
+				: (ptsSkill *
+						0.22 *
+						(t.stats.rusYds / (t.stats.rusYds + t.stats.recYds))) /
+					0.37;
+		const ptsPss = (ptsSkill - ptsRus) * 0.26;
+		const ptsRec = (ptsSkill - ptsRus) * 0.74;
+
+		let defPts = 0;
+		if (league.ptsPerDrive !== 0) {
+			const M = t.stats.oppPtsPerDrive / league.ptsPerDrive;
+			defPts = (100 * (1 + 2 * M - M ** 2)) / (2 * M);
+		}
+		const ptsFront7 = (2 / 3) * defPts;
+		const ptsSecondary = (1 / 3) * defPts;
+
+		const kPlayingTime =
+			t.stats.xpa +
+			3 *
+				(t.stats.fga0 +
+					t.stats.fga20 +
+					t.stats.fga30 +
+					t.stats.fga40 +
+					t.stats.fga50);
+
+		return {
+			...t,
+			stats: {
+				...t.stats,
+				ptsOL,
+				ptsRus,
+				ptsPss,
+				ptsRec,
+				ptsFront7,
+				ptsSecondary,
+				individualPtsFront7: 0,
+				individualPtsSecondary: 0,
+				kPlayingTime,
+				olScore: 0,
+			},
+		};
+	});
+	const teamsByTid = groupByUnique(teams, "tid");
+
+	const individualPts = players.map((p) => {
+		let score = 0;
+
+		const t = teamsByTid[p.tid];
+
+		assertDefined(t);
+
+		// Need to add this up, otherwise it doesn't get computed right at the team level
+		t.stats.olScore += olScore(p.stats, league, p.ratings.pos);
+
+		if (DEFENSIVE_POSITIONS.has(p.ratings.pos)) {
+			let allProLevel = 0;
+			if (p.allLeagueTeam === 0) {
+				allProLevel = 1.9;
+			} else if (p.allLeagueTeam === 1) {
+				allProLevel = 1.6;
+			}
+
+			// Tweaked formula a bit to include defFmbFrc and defPssDef
+			score =
+				p.stats.gp +
+				5 * p.stats.gs +
+				p.stats.defSk +
+				2 * p.stats.defFmbRec +
+				2 * p.stats.defFmbFrc +
+				4 * p.stats.defInt +
+				2 * p.stats.defPssDef +
+				5 * (p.stats.defIntTD + p.stats.defFmbTD) +
+				// https://github.com/microsoft/TypeScript/issues/21732
+				// @ts-expect-error
+				TCK_CONSTANT[p.ratings.pos] * p.stats.defTck +
+				(allProLevel * 80 * t.stats.gp) / g.get("numGames");
+
+			if (p.ratings.pos === "DL" || p.ratings.pos === "LB") {
+				t.stats.individualPtsFront7 += score;
+			} else {
+				t.stats.individualPtsSecondary += score;
+			}
+		}
+
+		return score;
+	});
+
+	const av = players.map((p, i) => {
+		let score = 0;
+
+		const t = teamsByTid[p.tid];
+
+		assertDefined(t);
+
+		const pInidivudalPoints = individualPts[i]!;
+
+		// OL
+		// Modification - use PBWR and RBWR to determine the credit OL gets for offense, kind of arbitrary
+		score +=
+			(olScore(p.stats, league, p.ratings.pos) / t.stats.olScore) *
+			t.stats.ptsOL;
+
+		// Rushing
+		score += (p.stats.rusYds / t.stats.rusYds) * t.stats.ptsRus;
+
+		if (p.stats.rus / p.stats.gp >= 200 / 16) {
+			if (p.stats.rusYdsPerAtt > league.rusYdsPerAtt) {
+				score += 0.75 * (p.stats.rusYdsPerAtt - league.rusYdsPerAtt);
+			} else {
+				score += 2 * (p.stats.rusYdsPerAtt - league.rusYdsPerAtt);
+			}
+		}
+
+		// Receiving
+		score += (p.stats.recYds / t.stats.recYds) * t.stats.ptsRec;
+
+		// Passing
+		score += (p.stats.pssYds / t.stats.pssYds) * t.stats.ptsPss;
+
+		if (p.stats.pss / p.stats.gp >= 400 / 16) {
+			if (p.stats.pssAdjYdsPerAtt > league.pssAdjYdsPerAtt) {
+				score += 0.5 * (p.stats.pssAdjYdsPerAtt - league.pssAdjYdsPerAtt);
+			} else {
+				score += 2 * (p.stats.pssAdjYdsPerAtt - league.pssAdjYdsPerAtt);
+			}
+		}
+
+		// Defense
+		if (p.ratings.pos === "DL" || p.ratings.pos === "LB") {
+			score +=
+				(pInidivudalPoints / t.stats.individualPtsFront7) * t.stats.ptsFront7;
+		}
+
+		if (p.ratings.pos === "S" || p.ratings.pos === "CB") {
+			score +=
+				(pInidivudalPoints / t.stats.individualPtsSecondary) *
+				t.stats.ptsSecondary;
+		}
+
+		// Returns
+		score += p.stats.prTD + p.stats.krTD;
+
+		// Kicking
+		{
+			const kPlayingTime =
+				p.stats.xpa +
+				3 *
+					(p.stats.fga0 +
+						p.stats.fga20 +
+						p.stats.fga30 +
+						p.stats.fga40 +
+						p.stats.fga50);
+			if (kPlayingTime > 0) {
+				let paaTotal = p.stats.xp - p.stats.xpa * league.xpp;
+				paaTotal += 3 * (p.stats.fg0 - p.stats.fga0 * league.fgp0);
+				paaTotal += 3 * (p.stats.fg20 - p.stats.fga20 * league.fgp20);
+				paaTotal += 3 * (p.stats.fg30 - p.stats.fga30 * league.fgp30);
+				paaTotal += 3 * (p.stats.fg40 - p.stats.fga40 * league.fgp40);
+				paaTotal += 3 * (p.stats.fg50 - p.stats.fga50 * league.fgp50);
+
+				const pctTeamPlayingTime = kPlayingTime / t.stats.kPlayingTime;
+				const avgAV = (3.125 / 16) * t.stats.gp * pctTeamPlayingTime;
+				const rawAV = avgAV + paaTotal / 5;
+				score += (16 * rawAV) / t.stats.gp;
+			}
+		}
+
+		// Punting
+		{
+			if (
+				p.stats.pnt + p.stats.pntBlk > 0 &&
+				t.stats.pnt + t.stats.pntBlk > 0
+			) {
+				const adjPntYPA =
+					(p.stats.pntYds - 13 * p.stats.pntBlk) /
+					(p.stats.pnt + p.stats.pntBlk);
+				const adjPuntYdsAboveAvg =
+					(p.stats.pnt + p.stats.pntBlk) * (adjPntYPA - league.adjPntYPA);
+				const pctTeamPlayingTime =
+					(p.stats.pnt + p.stats.pntBlk) / (t.stats.pnt + t.stats.pntBlk);
+				const avgAV = (2.1875 / 16) * t.stats.gp * pctTeamPlayingTime;
+				const rawAV = avgAV + adjPuntYdsAboveAvg / 200;
+				score += (16 * rawAV) / t.stats.gp;
+			}
+		}
+
+		// Adjust for GP... docs don't say to do this, but it feels right
+		score *= t.stats.gp / last(defaultGameAttributes.numGames).value;
+
+		return score === Infinity ? 0 : score;
+	});
+	return {
+		av,
+	};
+};
+
+const advStats = async () => {
+	const playoffs = PHASE.PLAYOFFS === g.get("phase");
+
+	const { players, playersRaw } = await getPlayers(playoffs);
+
+	const teamStats = [
+		"gp",
+		"ptsPerDrive",
+		"oppPtsPerDrive",
+		"pts",
+		"oppPts",
+		"drives",
+		"pss",
+		"pssYds",
+		"pssTD",
+		"pssInt",
+		"rus",
+		"rusYds",
+		"rec",
+		"recYds",
+		"fg0",
+		"fg20",
+		"fg30",
+		"fg40",
+		"fg50",
+		"fga0",
+		"fga20",
+		"fga30",
+		"fga40",
+		"fga50",
+		"xp",
+		"xpa",
+		"pnt",
+		"pntYds",
+		"pntBlk",
+		"pbw",
+		"pba",
+		"rbw",
+		"rba",
+	] as const;
+	const teams = await team.getFormattedAll({
+		attrs: ["tid"],
+		stats: teamStats,
+		season: g.get("season"),
+		playoffs,
+		regularSeason: !playoffs,
+		addDummySeason: true,
+		active: true,
+	});
+	const league: any = teams.reduce((memo: any, t) => {
+		for (const key of teamStats) {
+			if (Object.hasOwn(memo, key)) {
+				memo[key] += t.stats[key];
+			} else {
+				memo[key] = t.stats[key];
+			}
+		}
+
+		return memo;
+	}, {});
+	league.ptsPerDrive = league.pts / league.drives;
+	league.pssAdjYdsPerAtt =
+		(league.pssYds + 20 * league.pssTD - 45 * league.pssInt) / league.pss;
+	league.rusYdsPerAtt = league.rusYds / league.rus;
+	league.fgp0 = league.fg0 / league.fga0;
+	league.fgp20 = league.fg20 / league.fga20;
+	league.fgp30 = league.fg30 / league.fga30;
+	league.fgp40 = league.fg40 / league.fga40;
+	league.fgp50 = league.fg50 / league.fga50;
+	league.xpp = league.xp / league.xpa;
+	league.adjPntYPA =
+		(league.pntYds - 13 * league.pntBlk) / (league.pnt + league.pntBlk);
+	league.pbwr = league.pbw / league.pba;
+	league.rbwr = league.rbw / league.rba;
+
+	// Hackily account for AV of award winners, for defense only - we can do this without saving first because the formula does not use AV
+	if (!playoffs) {
+		const { realizedAwards } = await processAwards({
+			awards: [defaultAwards.all],
+			extraStatRanges: [],
+			extraStats: [],
+			numPlayersPerIndividualAward: 1,
+			season: g.get("season"),
+			statOverridesByMatchup: undefined,
+		});
+		const allLeagueTeams = realizedAwards[0]?.[0];
+		if (allLeagueTeams?.numTeams !== undefined) {
+			const playersByPid = groupByUnique(players, "pid");
+
+			for (let i = 0; i < 2; i++) {
+				const team = allLeagueTeams.winner[i];
+				if (team) {
+					for (const p of team) {
+						if (p.pid !== undefined) {
+							const pid = p.pid;
+							if (playersByPid[pid]) {
+								playersByPid[pid].allLeagueTeam = i;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	const updatedStats = calculateAV(players, teams, league);
+	await advStatsSave(players, playersRaw, updatedStats);
+};
+
+export default advStats;

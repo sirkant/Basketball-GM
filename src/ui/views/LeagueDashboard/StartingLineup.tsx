@@ -1,0 +1,103 @@
+import { PlayerNameLabels } from "../../components/PlayerNameLabels.tsx";
+import { helpers } from "../../util/helpers.ts";
+import { getCols } from "../../../common/getCols.ts";
+import type { View } from "../../../common/types.ts";
+import { DEPTH_CHART_NAME } from "../../../common/constants.ts";
+import { Contract } from "../../components/contract.tsx";
+import { ResponsiveTableWrapper } from "../../components/ResponsiveTableWrapper.tsx";
+import { RatingWithChange } from "../../components/RatingWithChange.tsx";
+import { useLocal } from "../../util/local.ts";
+
+const StartingLineup = ({
+	numPlayersOnCourt,
+	starters,
+	startersStats,
+}: Pick<
+	View<"leagueDashboard">,
+	"numPlayersOnCourt" | "starters" | "startersStats"
+>) => {
+	const { challengeNoRatings } = useLocal(["challengeNoRatings"]);
+
+	const statCols = getCols(startersStats.map((stat) => `stat:${stat}`));
+
+	return (
+		<>
+			<h2>
+				{(__SPORT === "basketball" && numPlayersOnCourt >= starters.length) ||
+				(__SPORT === "hockey" && numPlayersOnCourt === starters.length)
+					? "Starting Lineup"
+					: "Top Players"}
+			</h2>
+			<ResponsiveTableWrapper nonfluid className="mb-0">
+				<table className="table table-striped table-borderless table-sm sticky-x">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th title="Position">Pos</th>
+							<th>Age</th>
+							<th title="Years With Team">YWT</th>
+							<th title="Overall Rating">Ovr</th>
+							<th title="Potential Rating">Pot</th>
+							<th>Contract</th>
+							{statCols.map(({ desc, title }) => (
+								<th key={title} title={desc}>
+									{title}
+								</th>
+							))}
+						</tr>
+					</thead>
+					<tbody>
+						{starters.map((p) => (
+							<tr key={p.pid}>
+								<td>
+									<PlayerNameLabels
+										injury={p.injury}
+										jerseyNumber={p.jerseyNumber}
+										pid={p.pid}
+										skills={p.ratings.skills}
+										defaultWatch={p.watch}
+										firstName={p.firstName}
+										firstNameShort={p.firstNameShort}
+										lastName={p.lastName}
+										awards={p.awards}
+									/>
+								</td>
+								<td>{p.ratings.pos}</td>
+								<td>{p.age}</td>
+								<td>{p.stats.yearsWithTeam}</td>
+								<td>
+									{!challengeNoRatings ? (
+										<RatingWithChange change={p.ratings.dovr}>
+											{p.ratings.ovr}
+										</RatingWithChange>
+									) : null}
+								</td>
+								<td>
+									{!challengeNoRatings ? (
+										<RatingWithChange change={p.ratings.dpot}>
+											{p.ratings.pot}
+										</RatingWithChange>
+									) : null}
+								</td>
+								<td>
+									<Contract p={p} />
+								</td>
+								{startersStats.map((stat) => (
+									<td key={stat}>{helpers.roundStat(p.stats[stat], stat)}</td>
+								))}
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</ResponsiveTableWrapper>
+			<div />
+			{DEPTH_CHART_NAME ? (
+				<a href={helpers.leagueUrl(["depth"])}>» {DEPTH_CHART_NAME}</a>
+			) : (
+				<a href={helpers.leagueUrl(["roster"])}>» Full Roster</a>
+			)}
+		</>
+	);
+};
+
+export default StartingLineup;
