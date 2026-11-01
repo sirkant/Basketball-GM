@@ -1,5 +1,6 @@
 import { PHASE } from "../../../common/constants.ts";
 import { g } from "../../util/index.ts";
+import { getContractSalary } from "../../../common/contractSalary.ts";
 import type {
 	PlayerContract,
 	PlayerWithoutKey,
@@ -38,7 +39,7 @@ const setContract = (
 		for (let i = start; i <= p.contract.exp; i++) {
 			p.salaries.push({
 				season: i,
-				amount: contract.amount,
+				amount: getContractSalary(contract, i),
 			});
 		}
 	}

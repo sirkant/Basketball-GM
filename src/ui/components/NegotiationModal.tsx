@@ -13,6 +13,7 @@ import { PlayerPicture } from "../components/PlayerPicture.tsx";
 import { useRef, useState } from "react";
 import type api from "../../worker/api/index.ts";
 import { showSignUndo } from "./NegotiateButtons.tsx";
+import type { ContractProfile } from "../../common/contractSalary.ts";
 
 type NegotaitionModalProps = Exclude<
 	Awaited<ReturnType<typeof api.main.getNegotiationProps>>,
@@ -23,12 +24,14 @@ const SignButton = ({
 	p,
 	amount,
 	exp,
+	profile,
 	disabledReason,
 	onSuccess,
 }: {
 	p: { name: string; pid: number };
 	amount: number;
 	exp: number;
+	profile: ContractProfile;
 	disabledReason: string | undefined;
 	onSuccess: () => void;
 }) => {
@@ -41,6 +44,7 @@ const SignButton = ({
 					pid: p.pid,
 					amount: Math.round(amount * 1000),
 					exp,
+					profile,
 				});
 				if (typeof response === "string") {
 					showNotification({
@@ -193,45 +197,121 @@ const Negotiation = ({
 }: Pick<NegotaitionModalProps, "contractOptions" | "p"> & {
 	close: () => void;
 }) => {
+	const [profile, setProfile] = useState<ContractProfile>("flat");
+	const profiles = [
+		["flat", "Flat"],
+		["increasing", "Increasing"],
+		["decreasing", "Decreasing"],
+	] as const;
 	return (
 		<>
+			{__SPORT === "basketball" ? (
+				<div className="mb-3" style={widthStyle}>
+					<div
+						className="d-flex flex-wrap gap-2"
+						role="group"
+						aria-label="Salary profile"
+					>
+						{profiles.map(([value, label]) => (
+							<button
+								type="button"
+								className={`btn btn-sm ${profile === value ? "btn-primary" : "btn-light-bordered"}`}
+								key={value}
+								aria-pressed={profile === value}
+								onClick={() => setProfile(value)}
+							>
+								{label}
+							</button>
+						))}
+					</div>
+					<div className="small text-body-secondary mt-2">
+						Same guaranteed total for each duration. Variable profiles use 5%
+						annual steps based on first-year salary and require at least two
+						seasons.
+					</div>
+				</div>
+			) : null}
 			<div className="list-group" style={widthStyle}>
-				{contractOptions.map((contract, i) => {
-					return (
-						<div
-							key={i}
-							className={clsx(
-								"d-flex flex-wrap align-items-center list-group-item",
-								{
-									"list-group-item-success": contract.smallestAmount,
-								},
-							)}
-						>
-							<div className="flex-grow-1">
-								<b>{helpers.formatCurrency(contract.amount, "M")}</b>/year for{" "}
-								{contract.years} {helpers.plural("year", contract.years)}{" "}
-								(through {contract.exp})
-							</div>
-
-							<SignButton
-								p={p}
-								amount={contract.amount}
-								exp={contract.exp}
-								disabledReason={contract.disabledReason}
-								onSuccess={close}
-							/>
-							{!contract.disabledReason && contract.financialStatus ? (
-								<div className="w-100 small">
-									<details>
-										<summary>Finances and apron impact of this offer</summary>
-										<ApronNotice status={contract.financialStatus} compact />
-									</details>
+				{contractOptions
+					.filter((contract) => contract.profile === profile)
+					.map((contract, i) => {
+						return (
+							<div
+								key={i}
+								className={clsx(
+									"d-flex flex-wrap align-items-center list-group-item",
+									{
+										"list-group-item-success": contract.smallestAmount,
+									},
+								)}
+							>
+								<div className="flex-grow-1">
+									<div>
+										<b>
+											{helpers.formatCurrency(
+												contract.schedule.reduce(
+													(sum, row) => sum + row.amount,
+													0,
+												),
+												"M",
+											)}{" "}
+											guaranteed
+										</b>{" "}
+										· {contract.years} {helpers.plural("year", contract.years)}
+									</div>
+									<div className="small text-body-secondary">
+										First year{" "}
+										{helpers.formatCurrency(contract.firstYearAmount, "M")} ·
+										Average {helpers.formatCurrency(contract.amount, "M")}/year
+									</div>
 								</div>
-							) : null}
-						</div>
-					);
-				})}
+
+								<SignButton
+									p={p}
+									amount={contract.amount}
+									exp={contract.exp}
+									profile={contract.profile}
+									disabledReason={contract.disabledReason}
+									onSuccess={close}
+								/>
+								<div
+									className="w-100 d-flex flex-wrap gap-2 mt-2"
+									aria-label="Annual salary schedule"
+								>
+									{contract.schedule.map((row) => (
+										<div
+											key={row.season}
+											className="bg-body-tertiary rounded px-2 py-1 small"
+										>
+											<div className="text-body-secondary">{row.season}</div>
+											<div className="fw-semibold">
+												{helpers.formatCurrency(row.amount, "M")}
+											</div>
+										</div>
+									))}
+								</div>
+								{contract.disabledReason ? (
+									<div className="w-100 small text-warning-emphasis mt-2">
+										{contract.disabledReason}
+									</div>
+								) : null}
+								{!contract.disabledReason && contract.financialStatus ? (
+									<div className="w-100 small">
+										<details>
+											<summary>First-season finances and apron impact</summary>
+											<ApronNotice status={contract.financialStatus} compact />
+										</details>
+									</div>
+								) : null}
+							</div>
+						);
+					})}
 			</div>
+			{contractOptions.every((contract) => contract.profile !== profile) ? (
+				<p className="small text-body-secondary">
+					No offers available for this profile. Try a flat contract.
+				</p>
+			) : null}
 		</>
 	);
 };
@@ -245,6 +325,12 @@ export const NegotiationModal = ({
 	negotiationProps: NegotaitionModalProps | undefined;
 	show: boolean;
 }) => {
+	const finances = negotiationProps?.financialStatus;
+	const dismissalRisk =
+		finances?.budget &&
+		finances.ownerEvaluation &&
+		finances.payroll > finances.levels.second &&
+		finances.total >= 500000;
 	return (
 		<Modal show={show} onHide={close}>
 			<Modal.Body>
@@ -262,8 +348,26 @@ export const NegotiationModal = ({
 				{negotiationProps ? (
 					<>
 						<NegotiationHeader {...negotiationProps} />
-						<ApronNotice status={negotiationProps.financialStatus} compact />
-						<Negotiation {...negotiationProps} close={close} />
+						{dismissalRisk ? (
+							<p className="text-danger small fw-bold">
+								Your current roster is beyond the owner's guaranteed-dismissal
+								red line.
+							</p>
+						) : null}
+						{finances ? (
+							<details className="small mb-3">
+								<summary>
+									Current roster finances · Payroll{" "}
+									{helpers.formatCurrency(finances.payroll / 1000, "M")}
+								</summary>
+								<ApronNotice status={finances} compact />
+							</details>
+						) : null}
+						<Negotiation
+							key={negotiationProps.p.pid}
+							{...negotiationProps}
+							close={close}
+						/>
 					</>
 				) : null}
 			</Modal.Body>

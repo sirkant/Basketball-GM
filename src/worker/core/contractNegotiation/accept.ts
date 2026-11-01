@@ -6,6 +6,10 @@ import type { Negotiation, PlayerContract } from "../../../common/types.ts";
 import { PHASE, PLAYER } from "../../../common/constants.ts";
 import { actualPhase } from "../../util/actualPhase.ts";
 import {
+	buildContractSchedule,
+	type ContractProfile,
+} from "../../../common/contractSalary.ts";
+import {
 	apronsEnabled,
 	checkApronSigning,
 	saveApronState,
@@ -27,21 +31,57 @@ const accept = async <
 	negotiation,
 	amount,
 	exp,
+	profile = "flat",
 	dryRun,
 }: {
 	negotiation: Negotiation;
 	amount: number;
 	exp: number;
+	profile?: ContractProfile;
 	dryRun: DryRun;
 }) => {
 	const salaryCapType = g.get("salaryCapType");
 	const tid = g.get("userTid");
+	let schedule: PlayerContract["schedule"];
+	if (!["flat", "increasing", "decreasing"].includes(profile)) {
+		return "Invalid contract salary profile.";
+	}
+	if (profile !== "flat") {
+		const start =
+			g.get("season") + (g.get("phase") > PHASE.AFTER_TRADE_DEADLINE ? 1 : 0);
+		const years = exp - start + 1;
+		if (
+			__SPORT !== "basketball" ||
+			years < Math.max(2, g.get("minContractLength")) ||
+			years > g.get("maxContractLength")
+		) {
+			return "Variable salaries require a basketball contract of at least two seasons within the league's duration limits.";
+		}
+		try {
+			schedule = buildContractSchedule(amount, start, exp, profile);
+		} catch {
+			return "Invalid contract amount or duration.";
+		}
+		if (
+			schedule.some(
+				(row) =>
+					row.amount < g.get("minContract") ||
+					row.amount > g.get("maxContract"),
+			)
+		) {
+			return "Every annual salary must fit the league's minimum and maximum contract limits. Choose another profile or duration.";
+		}
+	}
+	const firstYearAmount = schedule?.[0]?.amount ?? amount;
+	if (schedule && firstYearAmount <= g.get("minContract")) {
+		return "The minimum-salary exception requires a flat salary profile.";
+	}
 	const pForApron = await idb.cache.players.get(negotiation.pid);
 	const apronResult = pForApron
 		? await checkApronSigning(
 				tid,
 				pForApron,
-				amount,
+				firstYearAmount,
 				exp,
 				negotiation.resigning,
 				await team.getPayroll(tid),
@@ -60,8 +100,8 @@ const accept = async <
 		if (
 			!apronsEnabled() &&
 			!birdException &&
-			payroll + amount - 1 > g.get("salaryCap") &&
-			amount - 1 > g.get("minContract")
+			payroll + firstYearAmount - 1 > g.get("salaryCap") &&
+			firstYearAmount - 1 > g.get("minContract")
 		) {
 			return `You cannot go over the salary cap to sign ${
 				salaryCapType === "hard" ? "players" : "free agents"
@@ -95,8 +135,9 @@ const accept = async <
 	const phase = actualPhase();
 
 	const contract: PlayerContract = {
-		amount,
+		amount: firstYearAmount,
 		exp,
+		...(schedule ? { schedule } : {}),
 	};
 	if (p.contract.rookie && phase === PHASE.RESIGN_PLAYERS) {
 		// Not sure if the phase condition is necessary. The purpose of this is for hard cap rookies with rookie contract scale.

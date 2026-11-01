@@ -15,6 +15,8 @@ const addToFreeAgents = (
 	numPlayersTradedAwayNormalized: Record<number, number>,
 ) => {
 	p.tid = PLAYER.FREE_AGENT;
+	// release copies the former team's guarantee before clearing this schedule.
+	delete p.contract.schedule;
 	p.numDaysFreeAgent = 0;
 	p.ptModifier = 1;
 

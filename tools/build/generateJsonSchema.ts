@@ -390,6 +390,19 @@ export const generateJsonSchema = (sport: Sport | "test") => {
 			playerContract: {
 				type: "object",
 				properties: {
+					schedule: {
+						type: "array",
+						minItems: 1,
+						maxItems: 100,
+						items: {
+							type: "object",
+							properties: {
+								season: { type: "integer" },
+								amount: { type: "number", minimum: 0 },
+							},
+							required: ["season", "amount"],
+						},
+					},
 					amount: {
 						type: "number",
 						minimum: 0,
@@ -2164,6 +2177,9 @@ export const generateJsonSchema = (sport: Sport | "test") => {
 							// Don't use #/definitions/playerContract because that requires positive amount, but some people use a negative amount here for various purposes
 							type: "object",
 							properties: {
+								schedule: {
+									$ref: "#/definitions/playerContract/properties/schedule",
+								},
 								amount: {
 									type: "number",
 								},

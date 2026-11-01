@@ -16,6 +16,7 @@ import { idb } from "../../db/index.ts";
 import { bySport } from "../../../common/sportFunctions.ts";
 import { actualPhase } from "../../util/actualPhase.ts";
 import { last } from "../../../common/utils.ts";
+import { getRemainingContractCost } from "../../../common/contractSalary.ts";
 
 type PlayerFormatOptionsRequired = Required<
 	Omit<PlayerFormatOptions, "season" | "seasonRange" | "seasonType" | "tid">
@@ -247,6 +248,11 @@ const processAttrs = (
 			) {
 				output.contract = helpers.deepCopy(p.contract);
 				output.contract.amount /= 1000; // [millions of dollars]
+				if (output.contract.schedule) {
+					for (const row of output.contract.schedule) {
+						row.amount /= 1000;
+					}
+				}
 			} else {
 				output.contract = {
 					amount: getSalary(),
@@ -254,10 +260,11 @@ const processAttrs = (
 				};
 			}
 		} else if (attr === "cashOwed") {
+			const fraction =
+				player.contractSeasonsRemaining(p.contract.exp, numGamesRemaining) -
+				(p.contract.exp - g.get("season"));
 			output.cashOwed =
-				(player.contractSeasonsRemaining(p.contract.exp, numGamesRemaining) *
-					p.contract.amount) /
-				1000; // [millions of dollars]
+				getRemainingContractCost(p.contract, g.get("season"), fraction) / 1000;
 		} else if (attr === "abbrev") {
 			output.abbrev = helpers.getAbbrev(p.tid);
 		} else if (attr === "hof") {

@@ -1,5 +1,7 @@
 import { idb } from "../../db/index.ts";
 import type { ContractInfo } from "../../../common/types.ts";
+import { getContractSalary } from "../../../common/contractSalary.ts";
+import { salaryYear } from "../finances/nbaAprons.ts";
 
 /**
  * Get the total current payroll for a team.
@@ -26,7 +28,7 @@ const getPayroll = async (
 
 		for (const p of [...players, ...releasedPlayers]) {
 			if (season === undefined || p.contract.exp >= season) {
-				payroll += p.contract.amount;
+				payroll += getContractSalary(p.contract, season ?? salaryYear());
 			}
 		}
 	} else {

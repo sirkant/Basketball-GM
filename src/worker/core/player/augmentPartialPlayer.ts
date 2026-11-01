@@ -13,6 +13,7 @@ import { g, helpers } from "../../util/index.ts";
 import type { Player } from "../../../common/types.ts";
 import { bySport } from "../../../common/sportFunctions.ts";
 import { randInt } from "../../../common/random.ts";
+import { getContractSalary } from "../../../common/contractSalary.ts";
 
 /**
  * Take a partial player object, such as from an uploaded JSON file, and add everything it needs to be a real player object.
@@ -365,8 +366,30 @@ const augmentPartialPlayer = async (
 		);
 	} else {
 		p.contract.amount = helpers.roundContract(p.contract.amount);
+		if (p.contract.schedule) {
+			const rows = p.contract.schedule;
+			if (
+				!Array.isArray(rows) ||
+				rows.length === 0 ||
+				rows.length > 100 ||
+				rows.some(
+					(row, index) =>
+						!Number.isInteger(row.season) ||
+						!Number.isFinite(row.amount) ||
+						row.amount < 0 ||
+						(index > 0 && row.season !== rows[index - 1]!.season + 1),
+				) ||
+				rows.at(-1)!.season !== p.contract.exp
+			) {
+				throw new Error("Invalid annual contract salary schedule.");
+			}
+			p.contract.amount = getContractSalary(
+				p.contract,
+				currentSeason + (g.get("phase") > PHASE.PLAYOFFS ? 1 : 0),
+			);
+		}
 
-		if (p.contract.exp < g.get("startingSeason")) {
+		if (!p.contract.schedule && p.contract.exp < g.get("startingSeason")) {
 			p.contract.exp = g.get("startingSeason");
 		}
 

@@ -1,4 +1,5 @@
 import { PHASE } from "../../common/constants.ts";
+import { getContractSalary } from "../../common/contractSalary.ts";
 import { finances, team } from "../core/index.ts";
 import { idb } from "../db/index.ts";
 import { g, helpers } from "../util/index.ts";
@@ -70,9 +71,10 @@ export default defineView({
 					const amounts: number[] = [];
 
 					for (let i = season; i <= contract.exp; i++) {
-						amounts.push(contract.amount / 1000);
+						amounts.push(getContractSalary(contract, i) / 1000);
 						if (contractTotals[i - season] !== undefined) {
-							contractTotals[i - season] += contract.amount / 1000;
+							contractTotals[i - season] +=
+								getContractSalary(contract, i) / 1000;
 						}
 					}
 

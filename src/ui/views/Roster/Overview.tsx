@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { View } from "../../../common/types.ts";
-import { Contract } from "../../components/contract.tsx";
+import { Contract, ContractSchedule } from "../../components/contract.tsx";
 import { Mood } from "../../components/Mood.tsx";
 import { PlayerNameLabels } from "../../components/PlayerNameLabels.tsx";
 import { PlayerPicture } from "../../components/PlayerPicture.tsx";
@@ -174,6 +174,7 @@ const Overview = ({
 									<div className="fw-semibold">
 										<Contract p={p} />
 									</div>
+									<ContractSchedule p={p} />
 									{salaryCapType !== "none" && salaryCap > 0 ? (
 										<div className="small text-body-secondary">
 											{(((p.contract.amount * 1000) / salaryCap) * 100).toFixed(
