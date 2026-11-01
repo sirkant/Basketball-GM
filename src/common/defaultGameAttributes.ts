@@ -493,7 +493,7 @@ export const defaultGameAttributes: GameAttributesLeagueWithHistory = {
 	godModeInPast: false,
 	salaryCap: 150000, // [thousands of dollars]
 	minPayroll: 95000, // [thousands of dollars]
-	luxuryPayroll: 168000, // [thousands of dollars]
+	luxuryPayroll: 182246, // [thousands of dollars]
 	luxuryTax: 1.5,
 	minContract: 1200, // [thousands of dollars]
 	maxContract: 50000, // [thousands of dollars]

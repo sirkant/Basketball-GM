@@ -682,8 +682,15 @@ const PayrollInfo = ({
 					<p>
 						Teams with payrolls below the minimum payroll limit will be assessed
 						a fine equal to the difference at the end of the season. Teams with
-						payrolls above the luxury tax limit will be assessed a fine equal to{" "}
-						{luxuryTax} times the difference at the end of the season.
+						payrolls above the luxury tax limit{" "}
+						{__SPORT === "basketball" ? (
+							"pay progressive tax, with higher rates for repeat taxpayers. The projected tax above includes these rates."
+						) : (
+							<>
+								will be assessed a fine equal to {luxuryTax} times the
+								difference at the end of the season.
+							</>
+						)}
 					</p>
 				</HelpPopover>
 			) : (
