@@ -1,21 +1,34 @@
 import { useState } from "react";
+
 import type { View } from "../../../common/types.ts";
+
 import { Contract, ContractSchedule } from "../../components/contract.tsx";
+
 import { Mood } from "../../components/Mood.tsx";
+
 import { PlayerNameLabels } from "../../components/PlayerNameLabels.tsx";
+
 import { PlayerPicture } from "../../components/PlayerPicture.tsx";
+
 import { RatingWithChange } from "../../components/RatingWithChange.tsx";
+
 import { helpers } from "../../util/helpers.ts";
+
 import { useLocal } from "../../util/local.ts";
+
 import { toWorker } from "../../util/toWorker.ts";
 
 type Filter = "all" | "expiring" | "injured" | "locked";
 
 const Overview = ({
 	players,
+
 	numPlayersOnCourt,
+
 	season,
+
 	showTradeFor,
+
 	showTradingBlock,
 }: Pick<
 	View<"roster">,
@@ -26,39 +39,56 @@ const Overview = ({
 	| "showTradingBlock"
 >) => {
 	const [filter, setFilter] = useState<Filter>("all");
+
 	const [search, setSearch] = useState("");
+
 	const { challengeNoRatings, salaryCap, salaryCapType } = useLocal([
 		"challengeNoRatings",
+
 		"salaryCap",
+
 		"salaryCapType",
 	]);
+
 	const matches = {
 		all: () => true,
+
 		expiring: (p: (typeof players)[number]) => p.contract.exp <= season,
+
 		injured: (p: (typeof players)[number]) => p.injury.gamesRemaining > 0,
+
 		locked: (p: (typeof players)[number]) => Boolean(p.untradable),
 	};
+
 	const filters = [
 		["all", "Everyone"],
+
 		["expiring", "Expiring contracts"],
+
 		["injured", "Injured"],
+
 		["locked", "Trade restricted"],
 	] as const;
+
 	const visible = players
+
 		.map((p, index) => ({ p, index }))
+
 		.filter(
 			({ p }) =>
 				matches[filter](p) &&
 				`${p.firstName} ${p.lastName} ${p.ratings.pos}`
+
 					.toLowerCase()
+
 					.includes(search.trim().toLowerCase()),
 		);
 
 	return (
-		<section aria-label="Roster overview" className="mb-4">
-			<div className="d-flex flex-wrap gap-2 align-items-center mb-3">
+		<section aria-label="Roster overview" className="squad-view mb-4">
+			<div className="squad-toolbar">
 				<div
-					className="d-flex flex-wrap gap-2"
+					className="squad-filters"
 					role="group"
 					aria-label="Player situation"
 				>
@@ -66,162 +96,176 @@ const Overview = ({
 						<button
 							key={key}
 							type="button"
-							className={`btn btn-sm ${filter === key ? "btn-primary" : "btn-light-bordered"}`}
+							className={
+								filter === key ? "squad-filter active" : "squad-filter"
+							}
 							aria-pressed={filter === key}
 							onClick={() => setFilter(key)}
 						>
-							{label}{" "}
-							<span className="ms-1">
-								{players.filter(matches[key]).length}
-							</span>
+							{label} <span>{players.filter(matches[key]).length}</span>
 						</button>
 					))}
 				</div>
+
 				<input
 					type="search"
-					className="form-control form-control-sm ms-sm-auto"
-					style={{ width: "min(100%, 16rem)" }}
+					className="form-control squad-search"
 					aria-label="Find a player by name or position"
 					placeholder="Find a player or position…"
 					value={search}
 					onChange={(event) => setSearch(event.target.value)}
 				/>
 			</div>
-			<p className="small text-body-secondary">
-				Roles follow the lineup order. Open the full table to manage the lineup
-				and playing time for your team.
-			</p>
-			<div className="row g-3">
+
+			<div className="squad-column-head" aria-hidden="true">
+				<span>Player / lineup order</span>
+				<span>Ability & production</span>
+				<span>Contract & availability</span>
+			</div>
+
+			<div className="squad-list">
 				{visible.map(({ p, index }) => (
-					<div className="col-12 col-md-6 col-xl-4" key={p.pid}>
-						<article
-							className="card h-100"
-							aria-label={`${p.firstName} ${p.lastName}`}
-						>
-							<div className="card-body d-flex flex-column gap-3">
-								<div className="d-flex gap-3 align-items-start">
-									<div
-										className="rounded bg-body-tertiary flex-shrink-0"
-										style={{ width: 64, height: 96 }}
-										aria-hidden="true"
-									>
-										<PlayerPicture face={p.face} imgURL={p.imgURL} lazy />
-									</div>
-									<div style={{ minWidth: 0 }}>
-										<div className="small text-body-secondary mb-1">
-											{index < numPlayersOnCourt ? "Starting lineup" : "Bench"}{" "}
-											· Age {p.age}
-										</div>
-										<div className="small fw-semibold mb-1">
-											{p.ratings.pos}
-										</div>
-										<div
-											className="fw-bold"
-											style={{ overflowWrap: "anywhere" }}
-										>
-											<PlayerNameLabels
-												pid={p.pid}
-												firstName={p.firstName}
-												lastName={p.lastName}
-												fullNames
-												season={season}
-												injury={p.injury}
-												skills={
-													challengeNoRatings ? undefined : p.ratings.skills
-												}
-												defaultWatch={p.watch}
-												awards={p.awards}
-												neverShowCountry
-											/>
-										</div>
-									</div>
+					<article
+						key={p.pid}
+						className={`squad-player ${index < numPlayersOnCourt ? "squad-starter" : ""}`}
+						aria-label={`${p.firstName} ${p.lastName}`}
+					>
+						<div className="squad-player-main">
+							<div className="squad-identity">
+								<span className="squad-order" title="Lineup order">
+									{String(index + 1).padStart(2, "0")}
+								</span>
+
+								<div className="squad-portrait" aria-hidden="true">
+									<PlayerPicture face={p.face} imgURL={p.imgURL} lazy />
 								</div>
+
+								<div className="squad-name">
+									<div className="squad-role">
+										{index < numPlayersOnCourt ? "Starter" : "Bench"}{" "}
+										<span>
+											· {p.ratings.pos} · Age {p.age}
+										</span>
+									</div>
+
+									<PlayerNameLabels
+										pid={p.pid}
+										firstName={p.firstName}
+										lastName={p.lastName}
+										fullNames
+										season={season}
+										injury={p.injury}
+										skills={challengeNoRatings ? undefined : p.ratings.skills}
+										defaultWatch={p.watch}
+										awards={p.awards}
+										neverShowCountry
+									/>
+								</div>
+							</div>
+
+							<div className="squad-performance">
 								{!challengeNoRatings ? (
-									<div className="d-flex gap-4">
+									<div className="squad-ratings">
 										<div>
-											<div className="small text-body-secondary">Overall</div>
-											<span className="fs-4 fw-bold">
+											<span>OVR</span>
+											<strong>
 												<RatingWithChange change={p.ratings.dovr}>
 													{p.ratings.ovr}
 												</RatingWithChange>
-											</span>
+											</strong>
 										</div>
+
 										<div>
-											<div className="small text-body-secondary">Potential</div>
-											<span className="fs-4">
+											<span>POT</span>
+											<strong>
 												<RatingWithChange change={p.ratings.dpot}>
 													{p.ratings.pot}
 												</RatingWithChange>
-											</span>
+											</strong>
 										</div>
 									</div>
 								) : null}
-								<div className="small">
+
+								<div className="squad-production">
 									{p.stats.gp > 0 ? (
 										<>
-											{helpers.roundStat(p.stats.pts, "pts")} PTS ·{" "}
-											{helpers.roundStat(p.stats.trb, "trb")} REB ·{" "}
-											{helpers.roundStat(p.stats.ast, "ast")} AST{" "}
-											<span className="text-body-secondary">
-												/ game · {p.stats.gp} GP
-											</span>
+											<strong>{helpers.roundStat(p.stats.pts, "pts")}</strong>{" "}
+											PTS{" "}
+											<strong>{helpers.roundStat(p.stats.trb, "trb")}</strong>{" "}
+											REB{" "}
+											<strong>{helpers.roundStat(p.stats.ast, "ast")}</strong>{" "}
+											AST <span> / game · {p.stats.gp} GP</span>
 										</>
 									) : (
-										"No games played in this view yet."
+										<span>No games played yet</span>
 									)}
 								</div>
-								<div className="border-top pt-3">
-									<div className="fw-semibold">
-										<Contract p={p} />
-									</div>
+							</div>
+
+							<div className="squad-contract">
+								<div className="squad-salary">
+									<Contract p={p} />
+								</div>
+
+								<div className="squad-availability">
+									{p.injury.gamesRemaining > 0 ? (
+										<span className="text-danger">
+											{p.injury.type} · {p.injury.gamesRemaining} games
+										</span>
+									) : (
+										<span>Healthy</span>
+									)}
+									{p.contract.exp <= season ? (
+										<span className="text-warning-emphasis">
+											{" "}
+											·{" "}
+											{p.contract.exp < season ? "Renewal pending" : "Expiring"}
+										</span>
+									) : null}
+									{p.untradable ? (
+										<span className="text-warning-emphasis">
+											{" "}
+											· Trade restricted
+										</span>
+									) : null}
+								</div>
+							</div>
+						</div>
+
+						<details className="squad-player-details">
+							<summary>Player details & actions</summary>
+
+							<div className="squad-player-expanded">
+								<div>
 									<ContractSchedule p={p} />
 									{salaryCapType !== "none" && salaryCap > 0 ? (
-										<div className="small text-body-secondary">
+										<div>
 											{(((p.contract.amount * 1000) / salaryCap) * 100).toFixed(
 												1,
 											)}
 											% of salary cap
 										</div>
 									) : null}
-									{p.contract.exp <= season ? (
-										<div className="text-warning-emphasis small fw-semibold">
-											{p.contract.exp < season
-												? "Expired contract · renewal pending"
-												: "Expiring contract · plan the next offseason"}
-										</div>
-									) : null}
+									{p.untradableMsg ? <div>{p.untradableMsg}</div> : null}
 								</div>
-								<div className="small">
-									{p.injury.gamesRemaining > 0 ? (
-										<div className="text-danger">
-											{p.injury.type} · {p.injury.gamesRemaining} games
-											remaining
-										</div>
-									) : (
-										<div>Healthy</div>
-									)}
-									{p.untradable ? (
-										<div className="text-warning-emphasis">
-											Trade restricted
-											{p.untradableMsg ? ` · ${p.untradableMsg}` : ""}
-										</div>
-									) : null}
-									{p.mood ? (
-										<div className="mt-2">
-											<div className="text-body-secondary">
-												Renewal interest
-											</div>
-											<Mood p={p} defaultType="current" />
-										</div>
-									) : null}
-								</div>
-								<div className="mt-auto d-flex flex-wrap gap-2">
+
+								{p.mood ? (
+									<div>
+										<span className="text-body-secondary">
+											Renewal interest
+										</span>
+										<Mood p={p} defaultType="current" />
+									</div>
+								) : null}
+
+								<div className="d-flex flex-wrap gap-2 align-items-start">
 									<a
 										className="btn btn-sm btn-light-bordered"
 										href={helpers.leagueUrl(["player", p.pid])}
 									>
 										Player profile
 									</a>
+
 									{showTradeFor || showTradingBlock ? (
 										<button
 											type="button"
@@ -242,16 +286,22 @@ const Overview = ({
 									) : null}
 								</div>
 							</div>
-						</article>
-					</div>
+						</details>
+					</article>
 				))}
 			</div>
+
 			{visible.length === 0 ? (
-				<p className="border rounded p-4 mt-3" role="status">
+				<p className="squad-empty" role="status">
 					No players match these filters. Try another situation or clear your
 					search.
 				</p>
 			) : null}
+
+			<p className="squad-footnote">
+				Lineup order determines starters. Use Lineup & full table to change the
+				rotation, playing time and manage releases.
+			</p>
 		</section>
 	);
 };

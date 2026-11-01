@@ -34,6 +34,8 @@ import { confirm } from "../../util/confirm.tsx";
 import { bySport } from "../../../common/sportFunctions.ts";
 import useLocalStorageState from "use-local-storage-state";
 import Overview from "./Overview.tsx";
+import ClubHeader from "./ClubHeader.tsx";
+import { FinancialStrip } from "../../components/FinancialStrip.tsx";
 
 const handleRelease = async (
 	p: View<"roster">["players"][number],
@@ -386,6 +388,28 @@ const Roster = ({
 		};
 	});
 
+	const teamReport = (
+		<TopStuff
+			abbrev={abbrev}
+			currentSeason={currentSeason}
+			editable={editable}
+			luxuryTaxAmount={luxuryTaxAmount}
+			minPayrollAmount={minPayrollAmount}
+			openRosterSpots={maxRosterSize - players.length}
+			players={players}
+			playoffsByConf={playoffsByConf}
+			season={season}
+			payroll={payroll}
+			profit={profit}
+			showTradeFor={showTradeFor}
+			showTradingBlock={showTradingBlock}
+			t={t}
+			tid={tid}
+			usePts={usePts}
+			showTableControls={!showOverview}
+		/>
+	);
+
 	return (
 		<>
 			<MoreLinks
@@ -396,26 +420,27 @@ const Roster = ({
 				season={season}
 			/>
 
-			<ApronNotice status={financialStatus} />
-			<TopStuff
-				abbrev={abbrev}
-				currentSeason={currentSeason}
-				editable={editable}
-				luxuryTaxAmount={luxuryTaxAmount}
-				minPayrollAmount={minPayrollAmount}
-				openRosterSpots={maxRosterSize - players.length}
-				players={players}
-				playoffsByConf={playoffsByConf}
-				season={season}
-				payroll={payroll}
-				profit={profit}
-				showTradeFor={showTradeFor}
-				showTradingBlock={showTradingBlock}
-				t={t}
-				tid={tid}
-				usePts={usePts}
-				showTableControls={!showOverview}
-			/>
+			{hasOverview ? (
+				<>
+					<ClubHeader
+						t={t}
+						season={season}
+						players={players}
+						maxRosterSize={maxRosterSize}
+					/>
+					<FinancialStrip status={financialStatus} />
+				</>
+			) : (
+				<ApronNotice status={financialStatus} />
+			)}
+			{showOverview ? (
+				<details className="club-team-report">
+					<summary>Team report & coaching</summary>
+					{teamReport}
+				</details>
+			) : (
+				teamReport
+			)}
 
 			{showSpectatorWarning ? (
 				<p className="alert alert-danger d-inline-block">
@@ -424,8 +449,8 @@ const Roster = ({
 			) : null}
 
 			{hasOverview ? (
-				<div className="d-flex flex-wrap align-items-center gap-2 mb-3">
-					<h2 className="h4 mb-0 me-auto">Roster at a glance</h2>
+				<div className="roster-section-bar d-flex flex-wrap align-items-center gap-2 mb-3">
+					<h2 className="h4 mb-0 me-auto">The squad</h2>
 					<div className="btn-group" role="group" aria-label="Roster display">
 						<button
 							type="button"
@@ -433,7 +458,7 @@ const Roster = ({
 							aria-pressed={showOverview}
 							onClick={() => setRosterView("overview")}
 						>
-							Player overview
+							Squad view
 						</button>
 						<button
 							type="button"
