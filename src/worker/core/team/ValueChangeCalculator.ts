@@ -27,6 +27,7 @@ import {
 import type { TeamSeasonRecord } from "./getHypotheticalTeam.ts";
 import {
 	apronsEnabled,
+	ownerExpectations,
 	isRepeater,
 	salaryYear,
 	currentApronState,
@@ -1289,8 +1290,11 @@ export class ValueChangeCalculator {
 					g.get("salaryCap"),
 					taxHistory.repeater,
 				);
+			const owner = ownerExpectations(t);
 			financialValue =
-				((cost(payroll) - cost(after)) / g.get("salaryCap")) * 10;
+				((cost(payroll) - cost(after)) / g.get("salaryCap")) *
+				10 *
+				owner.moneyWeight;
 			const second = getApronLevels(
 				g.get("salaryCap"),
 				g.get("luxuryPayroll"),

@@ -6,7 +6,9 @@ import getPayroll from "../team/getPayroll.ts";
 import type { Player, Team } from "../../../common/types.ts";
 import {
 	getApronLevels,
+	getOwnerExpectations,
 	nbaLuxuryTax,
+	type OwnerPriority,
 	type ApronState,
 } from "../../../common/nbaAprons.ts";
 
@@ -18,6 +20,23 @@ export const salaryYear = () =>
 	g.get("season") + (g.get("phase") > PHASE.PLAYOFFS ? 1 : 0);
 export const currentApronState = (t: Team | undefined) =>
 	t?.apronState?.season === salaryYear() ? t.apronState : undefined;
+
+export const ownerExpectations = (t: Pick<Team, "tid" | "ownerPriority">) => {
+	const priorities: OwnerPriority[] = [
+		"balanced",
+		"winning",
+		"profit",
+		"lowPayroll",
+	];
+	return getOwnerExpectations(
+		t.ownerPriority ??
+			priorities[
+				(((t.tid * 7) % priorities.length) + priorities.length) %
+					priorities.length
+			]!,
+		g.get("salaryCap"),
+	);
+};
 
 export const isRepeater = async (tid: number) => {
 	const year = salaryYear();
@@ -63,6 +82,7 @@ export const getFinancialStatus = async (tid: number, payroll?: number) => {
 		total: payroll + tax,
 		levels,
 		state: currentApronState(t),
+		owner: ownerExpectations(t),
 		repeater,
 		penalties:
 			t.apronPickPenalties?.filter(
