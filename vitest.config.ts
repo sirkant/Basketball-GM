@@ -18,6 +18,20 @@ const makeProject = (
 	projectConfig: ProjectConfig,
 ): TestProjectInlineConfiguration => {
 	return {
+		...(environment === "browser"
+			? {
+					optimizeDeps: {
+						include: [
+							"react",
+							"react-dom",
+							"react-dom/client",
+							"react/jsx-dev-runtime",
+							"zustand/shallow",
+							"zustand/traditional",
+						],
+					},
+				}
+			: {}),
 		define: {
 			__NODE_ENV: JSON.stringify("test"),
 			__SPORT: JSON.stringify(sport),

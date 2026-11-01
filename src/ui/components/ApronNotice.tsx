@@ -3,6 +3,45 @@ import { helpers } from "../util/helpers.ts";
 
 export type FinancialStatus = Awaited<ReturnType<typeof getFinancialStatus>>;
 
+const currency = (value: number) => helpers.formatCurrency(value / 1000, "M");
+
+const ApronMargin = ({
+	label,
+	limit,
+	payroll,
+}: {
+	label: string;
+	limit: number;
+	payroll: number;
+}) => {
+	const over = payroll > limit;
+	const margin = `${currency(Math.abs(limit - payroll))} ${over ? "above" : "below"}`;
+	return (
+		<div className="col-12 col-sm-6">
+			<div className="d-flex flex-wrap justify-content-between gap-1 small mb-1">
+				<span className="fw-semibold">
+					{label} · {currency(limit)}
+				</span>
+				<span className={over ? "fw-bold" : undefined}>{margin}</span>
+			</div>
+			<div className="progress" style={{ height: 6 }}>
+				<div
+					className={`progress-bar ${over ? "bg-danger" : "bg-primary"}`}
+					role="progressbar"
+					aria-label={`${label} payroll`}
+					aria-valuemin={0}
+					aria-valuemax={limit}
+					aria-valuenow={Math.max(0, Math.min(payroll, limit))}
+					aria-valuetext={`${currency(payroll)} payroll; ${margin} the ${label.toLowerCase()}`}
+					style={{
+						width: `${Math.max(0, Math.min(100, (payroll / limit) * 100))}%`,
+					}}
+				/>
+			</div>
+		</div>
+	);
+};
+
 export const ApronNotice = ({
 	status,
 	compact = false,
@@ -17,36 +56,93 @@ export const ApronNotice = ({
 	const second = payroll > levels.second;
 	const first = payroll > levels.first;
 	const danger = budget && status.ownerEvaluation && second && total >= 500000;
-	const currency = (value: number) => helpers.formatCurrency(value / 1000, "M");
 	return (
 		<div
 			className={`alert ${danger ? "alert-danger" : first || (budget && total > owner.maxCost) ? "alert-warning" : "alert-info"} mt-2 mb-3`}
 			role="status"
+			aria-label="Roster finances"
 		>
-			<div className="fw-bold">
-				{second ? "Second apron" : first ? "First apron" : "Roster finances"}
-				{state?.hardCap
-					? ` · Hard cap at ${state.hardCap === 1 ? "first" : "second"} apron`
-					: ""}
+			<div className="d-flex flex-wrap justify-content-between gap-2 mb-2 fw-bold">
+				<span>Roster finances</span>
+				<span
+					className={`badge ${danger ? "bg-danger" : first ? "bg-warning text-dark" : "bg-primary"}`}
+				>
+					{second
+						? "Second apron"
+						: first
+							? "First apron"
+							: "Below first apron"}
+					{state?.hardCap
+						? ` · Hard cap at ${state.hardCap === 1 ? "first" : "second"} apron`
+						: ""}
+				</span>
 			</div>
-			<div>
-				Payroll {currency(payroll)} · Projected luxury tax {currency(tax)}
-				{status.repeater ? " (repeater)" : ""} · Total {currency(total)}
+			<div className={`row g-2 ${compact ? "mb-2" : "mb-3"}`}>
+				{(
+					[
+						["Payroll", payroll],
+						["Projected luxury tax", tax],
+						["Salaries + tax", total],
+					] as const
+				).map(([label, value]) => (
+					<div className="col-12 col-sm-4" key={label}>
+						<div className={compact ? "" : "border rounded p-2 h-100"}>
+							<div className="small">
+								{label}
+								{label === "Projected luxury tax" && status.repeater
+									? " · Repeater"
+									: ""}
+							</div>
+							<div className={compact ? "fw-semibold" : "fs-4 fw-semibold"}>
+								{currency(value)}
+							</div>
+							{label === "Salaries + tax" && budget ? (
+								<div className="small">
+									Owner budget {currency(owner.maxCost)}
+								</div>
+							) : null}
+						</div>
+					</div>
+				))}
 			</div>
-			<div>
-				First apron {currency(levels.first)} · Second apron{" "}
-				{currency(levels.second)}
-			</div>
+			{!compact ? (
+				<div className="row g-3 mb-3">
+					<ApronMargin
+						label="First apron"
+						limit={levels.first}
+						payroll={payroll}
+					/>
+					<ApronMargin
+						label="Second apron"
+						limit={levels.second}
+						payroll={payroll}
+					/>
+				</div>
+			) : (
+				<div className="small mb-2">
+					First apron {currency(levels.first)} · Second apron{" "}
+					{currency(levels.second)}
+				</div>
+			)}
 			{first ? (
-				<div>
+				<div className="small">
 					You cannot receive more salary than you send in a trade.
 					{second
 						? " You also lose the mid-level exception and cannot combine salaries to acquire a larger contract. Finishing above this line freezes a future first-round pick."
 						: " Receiving a sign-and-trade player or using the full mid-level exception requires staying below the first apron."}
+					{!second
+						? ` You are ${currency(levels.second - payroll)} below the second apron, where you also lose the mid-level exception and salary aggregation.`
+						: null}
 				</div>
-			) : null}
+			) : (
+				<div className="small">
+					{currency(levels.first - payroll)} below the first apron. Crossing it
+					limits trades to the salary you send out. Apron room is not salary-cap
+					space.
+				</div>
+			)}
 			{state?.hardCap ? (
-				<div>
+				<div className="border rounded p-2 mt-2 fw-semibold">
 					Remaining room under your hard cap:{" "}
 					{currency(
 						(state.hardCap === 1 ? levels.first : levels.second) - payroll,
@@ -55,16 +151,29 @@ export const ApronNotice = ({
 				</div>
 			) : null}
 			{!compact ? (
-				<>
-					<div className="mt-2">
-						<b>Owner: {owner.label}.</b> {owner.text}
-					</div>
+				<div className="border-top pt-2 mt-3">
+					<b>Owner: {owner.label}.</b> {owner.text}
+				</div>
+			) : null}
+			<details className="small mt-2">
+				<summary className="fw-semibold">
+					{compact ? "Apron rules & penalties" : "Owner targets & apron rules"}
+				</summary>
+				<div className="mt-2">
+					{!compact ? (
+						<div>
+							Target: {Math.round(owner.winPct * 100)}% wins
+							{budget
+								? ` · Profit ${currency(owner.minProfit)} · Salaries + tax budget ${currency(owner.maxCost)}`
+								: ""}
+							.
+						</div>
+					) : null}
 					<div>
-						Target: {Math.round(owner.winPct * 100)}% wins
-						{budget
-							? ` · Profit ${currency(owner.minProfit)} · Salaries + tax budget ${currency(owner.maxCost)}`
-							: ""}
-						.
+						Aprons compare payroll, excluding luxury tax. Receiving a
+						sign-and-trade player or using the full mid-level exception requires
+						staying below the first apron. Using the taxpayer mid-level
+						exception requires staying below the second apron.
 					</div>
 					{status.penalties.map((p) => (
 						<div key={p.season}>
@@ -75,7 +184,21 @@ export const ApronNotice = ({
 							.
 						</div>
 					))}
-				</>
+					{budget && status.ownerEvaluation && !danger ? (
+						<div className="mt-1">
+							Owner's red line: a roster above the second apron costing $500M or
+							more in salaries and luxury tax means dismissal, regardless of
+							results.
+						</div>
+					) : null}
+				</div>
+			</details>
+			{status.penalties.length > 0 ? (
+				<div className="small fw-semibold mt-2">
+					{status.penalties.length} future first-round{" "}
+					{status.penalties.length === 1 ? "pick has" : "picks have"} apron
+					restrictions. See apron rules for seasons and penalties.
+				</div>
 			) : null}
 			{budget && status.ownerEvaluation && total > owner.maxCost ? (
 				<div className="fw-bold mt-1">
@@ -83,13 +206,11 @@ export const ApronNotice = ({
 					budget. This counts against your performance evaluation.
 				</div>
 			) : null}
-			{budget && status.ownerEvaluation ? (
-				<div className={danger ? "fw-bold mt-1" : "small mt-1"}>
-					{danger
-						? "Dismissal guaranteed at the annual evaluation: "
-						: "Owner's red line: "}
-					a roster above the second apron costing $500M or more in salaries and
-					luxury tax means dismissal, regardless of results.
+			{danger ? (
+				<div className="fw-bold border-top pt-2 mt-2">
+					Dismissal guaranteed at the annual evaluation: a roster above the
+					second apron costing $500M or more in salaries and luxury tax means
+					dismissal, regardless of results.
 				</div>
 			) : null}
 			{budget && status.userTeam && !status.ownerEvaluation ? (
