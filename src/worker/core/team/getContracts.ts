@@ -1,6 +1,8 @@
 import { idb } from "../../db/index.ts";
 import type { ContractInfo } from "../../../common/types.ts";
 import { last } from "../../../common/utils.ts";
+import { getContractSalary } from "../../../common/contractSalary.ts";
+import { salaryYear } from "../finances/nbaAprons.ts";
 
 /**
  * Gets all the contracts a team owes.
@@ -25,7 +27,8 @@ const getContracts = async (tid: number): Promise<ContractInfo[]> => {
 			injury: p.injury,
 			jerseyNumber: p.stats.at(-1)?.jerseyNumber,
 			watch: p.watch ?? 0,
-			amount: p.contract.amount,
+			amount: getContractSalary(p.contract, salaryYear()),
+			schedule: p.contract.schedule,
 			exp: p.contract.exp,
 			released: false,
 		};
@@ -54,7 +57,8 @@ const getContracts = async (tid: number): Promise<ContractInfo[]> => {
 				jerseyNumber: undefined,
 				watch: p.watch ?? 0,
 				// undefined check is for old leagues, can delete eventually
-				amount: releasedPlayer.contract.amount,
+				amount: getContractSalary(releasedPlayer.contract, salaryYear()),
+				schedule: releasedPlayer.contract.schedule,
 				exp: releasedPlayer.contract.exp,
 				released: true,
 			});
@@ -71,7 +75,8 @@ const getContracts = async (tid: number): Promise<ContractInfo[]> => {
 				},
 				jerseyNumber: undefined,
 				watch: 0,
-				amount: releasedPlayer.contract.amount,
+				amount: getContractSalary(releasedPlayer.contract, salaryYear()),
+				schedule: releasedPlayer.contract.schedule,
 				exp: releasedPlayer.contract.exp,
 				released: true,
 			});

@@ -4,6 +4,10 @@ import { range } from "../../../common/utils.ts";
 import g from "../../util/g.ts";
 import helpers from "../../util/helpers.ts";
 import accept from "./accept.ts";
+import {
+	buildContractSchedule,
+	type ContractProfile,
+} from "../../../common/contractSalary.ts";
 
 export const generateContractOptions = async (
 	negotiation: Negotiation,
@@ -79,11 +83,36 @@ export const generateContractOptions = async (
 		return contractOption.amount * 1000 <= g.get("maxContract");
 	});
 
-	for (const row of possible) {
+	const profiled = possible.flatMap((row) => {
+		const profiles: ContractProfile[] =
+			__SPORT === "basketball" && row.years > 1
+				? [
+						"flat",
+						"increasing",
+						...(row.years <= 20 ? ["decreasing" as const] : []),
+					]
+				: ["flat"];
+		return profiles.map((profile) => {
+			const schedule = buildContractSchedule(
+				Math.round(row.amount * 1000),
+				row.exp - row.years + 1,
+				row.exp,
+				profile,
+			).map((year) => ({ ...year, amount: year.amount / 1000 }));
+			return {
+				...row,
+				profile,
+				schedule,
+				firstYearAmount: schedule[0]!.amount,
+			};
+		});
+	});
+	for (const row of profiled) {
 		const disabledReason = await accept({
 			negotiation,
 			amount: Math.round(row.amount * 1000),
 			exp: row.exp,
+			profile: row.profile,
 			dryRun: true,
 		});
 		if (typeof disabledReason === "string") {
@@ -91,5 +120,5 @@ export const generateContractOptions = async (
 		}
 	}
 
-	return possible;
+	return profiled;
 };

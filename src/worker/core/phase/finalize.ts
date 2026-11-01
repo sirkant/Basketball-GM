@@ -15,6 +15,8 @@ import type { Conditions, Phase, PhaseReturn } from "../../../common/types.ts";
 import { getGlobalSettings } from "../../util/getGlobalSettings.ts";
 import { processScheduledEvents } from "./processScheduledEvents.ts";
 import { autoPlayStopsAt, cleanupAutoPlay } from "../league/autoPlay.ts";
+import { updateAnnualSalaries } from "../finances/updateAnnualSalaries.ts";
+import { salaryYear } from "../finances/nbaAprons.ts";
 
 const save = async () => {
 	await updateStatus("Saving...");
@@ -41,6 +43,7 @@ const finalize = async (
 	await league.setGameAttributes({
 		phase,
 	});
+	await updateAnnualSalaries(salaryYear());
 
 	let saved = false;
 	if (phase === PHASE.PRESEASON) {

@@ -12,6 +12,7 @@ import {
 	team,
 } from "../index.ts";
 import { idb } from "../../db/index.ts";
+import { getContractSalary } from "../../../common/contractSalary.ts";
 import { g, helpers, local, logEvent, toUI } from "../../util/index.ts";
 import type {
 	Conditions,
@@ -351,9 +352,15 @@ const newPhasePreseason = async (
 					p.contract = helpers.deepCopy(info.contract);
 
 					p.contract.exp += newSeason - repeatSeason.startingSeason;
+					if (p.contract.schedule) {
+						p.contract.schedule = p.contract.schedule.map((row) => ({
+							...row,
+							season: row.season + newSeason - repeatSeason.startingSeason,
+						}));
+					}
 					p.salaries.push({
 						season: p.contract.exp,
-						amount: p.contract.amount,
+						amount: getContractSalary(p.contract, p.contract.exp),
 					});
 				} else {
 					p.tid = PLAYER.FREE_AGENT;

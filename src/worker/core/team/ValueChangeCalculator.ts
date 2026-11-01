@@ -1,4 +1,5 @@
 import { PHASE } from "../../../common/constants.ts";
+import { getRemainingContractCost } from "../../../common/contractSalary.ts";
 import { draft, player, team, trade } from "../index.ts";
 import { idb } from "../../db/index.ts";
 import { g, helpers, local } from "../../util/index.ts";
@@ -201,7 +202,12 @@ const getContractValue = (
 	}
 
 	const salaryCap = g.get("salaryCap");
-	const normalizedContractAmount = contract.amount / salaryCap;
+	const start = season + (phase > PHASE.PLAYOFFS ? 1 : 0);
+	const annualCost = contract.schedule
+		? getRemainingContractCost(contract, start) /
+			Math.max(1, contract.exp - start + 1)
+		: contract.amount;
+	const normalizedContractAmount = annualCost / salaryCap;
 
 	const slope =
 		(g.get("maxContract") / salaryCap - g.get("minContract") / salaryCap) /

@@ -8,7 +8,7 @@ type ContractAmountPlayer = {
 	draft: {
 		year: number;
 	};
-	contract: Pick<PlayerContract, "amount" | "rookie">;
+	contract: Pick<PlayerContract, "amount" | "rookie" | "schedule">;
 };
 
 type ContractPlayer = ContractAmountPlayer & {
@@ -36,7 +36,16 @@ export const ContractAmount = ({
 	return (
 		<span
 			className={justDrafted ? "fst-italic" : undefined}
-			title={justDrafted ? NON_GUARANTEED_CONTRACT_TEXT : undefined}
+			title={
+				justDrafted
+					? NON_GUARANTEED_CONTRACT_TEXT
+					: p.contract.schedule
+							?.map(
+								(row) =>
+									`${row.season}: ${helpers.formatCurrency(row.amount, "M")}`,
+							)
+							.join("\n")
+			}
 		>
 			{helpers.formatCurrency(override ?? p.contract.amount, "M")}
 		</span>
@@ -112,6 +121,29 @@ export const Contract = ({ p }: { p: ContractPlayer }) => {
 			</span>
 			<ContractExp p={p} />
 		</>
+	);
+};
+
+export const ContractSchedule = ({
+	p,
+}: {
+	p: { contract: Pick<PlayerContract, "schedule"> };
+}) => {
+	if (!p.contract.schedule) {
+		return null;
+	}
+	return (
+		<details className="small mt-2">
+			<summary>Annual salaries</summary>
+			<div className="d-flex flex-wrap gap-2 mt-1">
+				{p.contract.schedule.map((row) => (
+					<div key={row.season}>
+						<span className="text-body-secondary">{row.season}</span>{" "}
+						{helpers.formatCurrency(row.amount, "M")}
+					</div>
+				))}
+			</div>
+		</details>
 	);
 };
 

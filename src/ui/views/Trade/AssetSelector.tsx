@@ -2,7 +2,7 @@ import { useState, type ComponentProps } from "react";
 import AssetList from "./AssetList.tsx";
 import { PlayerPicture } from "../../components/PlayerPicture.tsx";
 import { PlayerNameLabels } from "../../components/PlayerNameLabels.tsx";
-import { Contract } from "../../components/contract.tsx";
+import { Contract, ContractSchedule } from "../../components/contract.tsx";
 import { SafeHtml } from "../../components/SafeHtml.tsx";
 import { helpers } from "../../util/helpers.ts";
 
@@ -106,6 +106,7 @@ const AssetSelector = (props: ComponentProps<typeof AssetList>) => {
 												<div className="small fw-semibold mt-1">
 													<Contract p={p} />
 												</div>
+												<ContractSchedule p={p} />
 												{(p.stats.gp ?? 0) > 0 ? (
 													<div className="small text-body-secondary">
 														{helpers.roundStat(p.stats.pts, "pts")} PTS ·{" "}

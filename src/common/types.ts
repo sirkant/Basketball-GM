@@ -1145,6 +1145,8 @@ export type PhaseReturn = {
 export type PlayerContract = {
 	amount: number;
 	exp: number;
+	// Optional guaranteed annual salaries, in thousands. amount is the active year's salary.
+	schedule?: { season: number; amount: number }[];
 	rookie?: true; // If present, this is a rookie contract. Could be either a rookie scale auto sign, or negotiated.
 	rookieResign?: true; // Should only be present during re-signing phase for guys re-signing after rookie contracts, otherwise can't identify if previous contract was a rookie contract cause it's overwritten!
 };
@@ -1955,6 +1957,7 @@ export type ContractInfo = {
 	jerseyNumber: string | undefined;
 	amount: number;
 	exp: number;
+	schedule?: PlayerContract["schedule"];
 	released: boolean;
 	watch: number;
 };
@@ -1963,10 +1966,7 @@ export type ReleasedPlayerWithoutKey = {
 	rid?: number;
 	pid: number;
 	tid: number;
-	contract: {
-		amount: number;
-		exp: number;
-	};
+	contract: PlayerContract;
 };
 
 export type ReleasedPlayer = ReleasedPlayerWithoutKey & {

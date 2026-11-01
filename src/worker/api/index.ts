@@ -192,15 +192,18 @@ import {
 	checkApronSigning,
 	salaryYear,
 } from "../core/finances/nbaAprons.ts";
+import type { ContractProfile } from "../../common/contractSalary.ts";
 
 const acceptContractNegotiation = async ({
 	pid,
 	amount,
 	exp,
+	profile,
 }: {
 	pid: number;
 	amount: number;
 	exp: number;
+	profile?: ContractProfile;
 }) => {
 	const negotiation = await contractNegotiation.get(pid);
 	if (typeof negotiation === "string") {
@@ -211,6 +214,7 @@ const acceptContractNegotiation = async ({
 		negotiation,
 		amount,
 		exp,
+		profile,
 		dryRun: false,
 	});
 
@@ -2016,6 +2020,14 @@ const getNegotiationProps = async (pid: number) => {
 				years: 1,
 				amount: p.mood.user.contractAmount / 1000,
 				smallestAmount: true,
+				profile: "flat",
+				firstYearAmount: p.mood.user.contractAmount / 1000,
+				schedule: [
+					{
+						season: g.get("season") + 1,
+						amount: p.mood.user.contractAmount / 1000,
+					},
+				],
 			});
 		}
 	}
@@ -2035,12 +2047,12 @@ const getNegotiationProps = async (pid: number) => {
 			contractOptions.map(async (option) => {
 				const status = await getFinancialStatus(
 					userTid,
-					payroll + option.amount * 1000,
+					payroll + option.firstYearAmount * 1000,
 				);
 				const rule = await checkApronSigning(
 					userTid,
 					p2,
-					option.amount * 1000,
+					option.firstYearAmount * 1000,
 					option.exp,
 					negotiation.resigning,
 					payroll,

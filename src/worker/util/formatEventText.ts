@@ -195,6 +195,13 @@ export const formatEventText = async (event: EventBBGM) => {
 				])}">${p.firstName} ${p.lastName}</a>`
 			: "???";
 
+		if (event.contract?.schedule) {
+			const total = event.contract.schedule.reduce(
+				(sum, row) => sum + row.amount,
+				0,
+			);
+			return `The ${teamName} ${signedOrReSigned} ${playerName} for ${helpers.formatCurrency(total / 1000, "M")} guaranteed through ${event.contract.exp}, with annual salaries that vary.`;
+		}
 		return `The ${teamName} ${signedOrReSigned} ${playerName} for ${helpers.formatCurrency(
 			event.contract!.amount / 1000,
 			"M",
