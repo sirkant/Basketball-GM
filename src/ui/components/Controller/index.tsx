@@ -95,37 +95,39 @@ export const Controller = () => {
 	}, [scrollToTopCount]);
 
 	return (
-		<LazyMotion strict features={loadFramerMotionFeatures}>
-			<NavBar updating={updating} />
-			<div className="h-100 d-flex">
-				<SideBar pageID={sidebarPageID} pathname={pathname} />
-				<div className="h-100 w-100 d-flex flex-column" style={minWidth0}>
-					{popup ? null : <LeagueTopBar />}
-					<TitleBar />
-					<div className="container-fluid position-relative mt-2 flex-grow-1 h-100">
-						<div className="d-flex" style={minHeight100}>
-							<div className="w-100 d-flex flex-column" style={minWidth0}>
-								<Header />
-								<main id="actual-actual-content" className="clearfix">
-									<ErrorBoundary key={idLoaded}>
-										{Component ? (
-											<KeepPreviousRenderWhileUpdating updating={updating}>
-												<Component {...data} />
-											</KeepPreviousRenderWhileUpdating>
-										) : null}
-										{inLeague ? <MultiTeamMenu /> : null}
-									</ErrorBoundary>
-								</main>
-								<Footer />
+		<div className={__SPORT === "basketball" ? "franchise-ui" : undefined}>
+			<LazyMotion strict features={loadFramerMotionFeatures}>
+				<NavBar updating={updating} />
+				<div className="h-100 d-flex">
+					<SideBar pageID={sidebarPageID} pathname={pathname} />
+					<div className="h-100 w-100 d-flex flex-column" style={minWidth0}>
+						{popup ? null : <LeagueTopBar />}
+						<TitleBar />
+						<div className="container-fluid position-relative mt-2 flex-grow-1 h-100">
+							<div className="d-flex" style={minHeight100}>
+								<div className="w-100 d-flex flex-column" style={minWidth0}>
+									<Header />
+									<main id="actual-actual-content" className="clearfix">
+										<ErrorBoundary key={idLoaded}>
+											{Component ? (
+												<KeepPreviousRenderWhileUpdating updating={updating}>
+													<Component {...data} />
+												</KeepPreviousRenderWhileUpdating>
+											) : null}
+											{inLeague ? <MultiTeamMenu /> : null}
+										</ErrorBoundary>
+									</main>
+									<Footer />
+								</div>
+								<Skyscraper />
 							</div>
-							<Skyscraper />
+							<CommandPalette />
+							<NagModal close={closeNagModal} show={showNagModal} />
 						</div>
-						<CommandPalette />
-						<NagModal close={closeNagModal} show={showNagModal} />
 					</div>
 				</div>
-			</div>
-			<Notifications />
-		</LazyMotion>
+				<Notifications />
+			</LazyMotion>
+		</div>
 	);
 };
