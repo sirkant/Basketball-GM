@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { ApronNotice } from "../../components/ApronNotice.tsx";
 import { PHASE } from "../../../common/constants.ts";
 import useTitleBar from "../../hooks/useTitleBar.tsx";
 import { helpers } from "../../util/helpers.ts";
@@ -491,6 +492,22 @@ const Trade = (props: View<"trade">) => {
 						/>
 
 						<div ref={summaryControls}>
+							{summary.financialStatus ? (
+								<>
+									<div className="small fw-bold">
+										Projected finances after this trade
+									</div>
+									<ApronNotice status={summary.financialStatus} compact />
+									{summary.apronHardCap ? (
+										<div className="alert alert-warning">
+											This trade activates a hard cap at the{" "}
+											{summary.apronHardCap === 1 ? "first" : "second"} apron
+											for the rest of the salary year. All subsequent contracts
+											must fit.
+										</div>
+									) : null}
+								</>
+							) : null}
 							{summary.warning ? (
 								<div className="alert alert-danger mb-0">
 									<strong>Warning!</strong> {summary.warning}

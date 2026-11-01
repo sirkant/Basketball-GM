@@ -5,6 +5,13 @@ import { idb } from "../../db/index.ts";
 import { g, local } from "../../util/index.ts";
 import { orderBy } from "../../../common/utils.ts";
 import { shuffle } from "../../../common/random.ts";
+import {
+	apronsEnabled,
+	checkApronSigning,
+	saveApronState,
+	currentApronState,
+} from "../finances/nbaAprons.ts";
+import { getApronLevels } from "../../../common/nbaAprons.ts";
 
 /**
  * AI teams sign free agents.
@@ -72,12 +79,56 @@ const autoSign = async () => {
 
 		// Ignore roster size, will drop bad player if necessary in checkRosterSizes, and getBest won't sign min contract player unless under the roster limit
 		const payroll = await team.getPayroll(t.tid);
-		const p = getBest(playersOnRoster, playersSorted, payroll);
+		const legalPlayers = [];
+		if (apronsEnabled()) {
+			const levels = getApronLevels(g.get("salaryCap"), g.get("luxuryPayroll"));
+			for (const candidate of playersSorted) {
+				const rule = await checkApronSigning(
+					t.tid,
+					candidate,
+					candidate.contract.amount,
+					candidate.contract.exp,
+					false,
+					payroll,
+				);
+				if (rule.error) {
+					continue;
+				}
+				const hardCap = currentApronState(t)?.hardCap ?? rule.state?.hardCap;
+				const reserve =
+					Math.max(0, g.get("minRosterSize") - playersOnRoster.length - 1) *
+					g.get("minContract");
+				if (
+					hardCap &&
+					payroll + candidate.contract.amount + reserve >
+						(hardCap === 1 ? levels.first : levels.second)
+				) {
+					continue;
+				}
+				legalPlayers.push(candidate);
+			}
+		}
+		const p = getBest(
+			playersOnRoster,
+			apronsEnabled() ? legalPlayers : playersSorted,
+			apronsEnabled() ? undefined : payroll,
+		);
 		if (p) {
 			// Remove from list of free agents
 			playersSorted = playersSorted.filter((p2) => p2 !== p);
 
 			await player.sign(p, t.tid, p.contract, g.get("phase"));
+			const rule = await checkApronSigning(
+				t.tid,
+				p,
+				p.contract.amount,
+				p.contract.exp,
+				false,
+				payroll,
+			);
+			if (rule.state) {
+				await saveApronState(t.tid, rule.state);
+			}
 			await idb.cache.players.put(p);
 			await team.rosterAutoSort(t.tid);
 		}

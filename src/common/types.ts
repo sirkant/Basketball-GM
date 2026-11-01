@@ -1230,6 +1230,7 @@ export type MinimalPlayerRatings = {
 };
 
 export type PlayerWithoutKey<PlayerRatings = MinimalPlayerRatings> = {
+	releasedSalary?: { amount: number; season: number };
 	awards: PlayerAward[];
 	born: {
 		year: number;
@@ -1998,6 +1999,8 @@ export type SortType =
 	| "pos";
 
 export type Team = {
+	apronState?: import("./nbaAprons.ts").ApronState;
+	apronPickPenalties?: import("./nbaAprons.ts").ApronPickPenalty[];
 	tid: number;
 	cid: number;
 	did: number;
@@ -2256,6 +2259,12 @@ export type TeamSeasonWithoutKey = {
 	};
 	payrollEndOfSeason: number;
 	ownerMood?: OwnerMood;
+	nbaFinancials?: {
+		salaryCap: number;
+		taxLevel: number;
+		apronSalary: number;
+		secondApron: boolean;
+	};
 	numPlayersTradedAway: number;
 	note?: string;
 	noteBool?: 1; // Keep in sync with note - for indexing

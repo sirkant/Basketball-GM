@@ -5,10 +5,13 @@ import { g, helpers } from "../util/index.ts";
 import type { TeamSeason } from "../../common/types.ts";
 import { defineView } from "../util/defineView.ts";
 import { getAutoTicketPriceByTid } from "../core/game/attendance.ts";
-import { projectedTax } from "../core/finances/nbaAprons.ts";
 import addFirstNameShort from "../util/addFirstNameShort.ts";
 import type { RouteParams } from "../../ui/router/types.ts";
 import { validateAbbrev } from "../util/processInputs.ts";
+import {
+	getFinancialStatus,
+	projectedTax,
+} from "../core/finances/nbaAprons.ts";
 
 const processInputs = (params: RouteParams<"teamFinances">) => {
 	const show = params.show ?? "10";
@@ -234,6 +237,7 @@ export default defineView({
 
 			return {
 				abbrev: inputs.abbrev,
+				financialStatus: await getFinancialStatus(inputs.tid, payroll * 1000),
 				autoTicketPrice,
 				tid: inputs.tid,
 				show: inputs.show,

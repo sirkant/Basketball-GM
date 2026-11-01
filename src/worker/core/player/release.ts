@@ -16,6 +16,13 @@ import { getNumPlayersTradedAwayNormalizedAll } from "./getNumPlayersTradedAwayN
  * @return {Promise}
  */
 const release = async (p: Player, justDrafted: boolean) => {
+	if (
+		!justDrafted &&
+		g.get("phase") >= PHASE.REGULAR_SEASON &&
+		g.get("phase") <= PHASE.AFTER_TRADE_DEADLINE
+	) {
+		p.releasedSalary = { amount: p.contract.amount, season: g.get("season") };
+	}
 	// Keep track of player salary even when he's off the team, but make an exception for players who were just drafted.
 	if (!justDrafted) {
 		// ...and of course for players whose contracts have already expired.

@@ -11,6 +11,7 @@ import { bySport } from "../../common/sportFunctions.ts";
 import type { RouteParams } from "../../ui/router/types.ts";
 import { helpers } from "../util/index.ts";
 import { validateSeason } from "../util/processInputs.ts";
+import { getFinancialStatus } from "../core/finances/nbaAprons.ts";
 
 const processInputs = (params: RouteParams<"freeAgents">) => {
 	if (g.get("phase") === PHASE.RESIGN_PLAYERS) {
@@ -288,6 +289,7 @@ export default defineView({
 
 			return {
 				capSpace,
+				financialStatus: await getFinancialStatus(g.get("userTid"), payroll),
 				challengeNoFreeAgents: g.get("challengeNoFreeAgents"),
 				freeAgencySeason,
 				numRosterSpots: g.get("maxRosterSize") - userPlayers.length,

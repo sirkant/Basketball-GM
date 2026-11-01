@@ -7,6 +7,7 @@ import type {
 	PlayoffSeries,
 } from "../../../common/types.ts";
 import { PHASE } from "../../../common/constants.ts";
+import { recordApronSeason } from "../finances/nbaAprons.ts";
 
 const newPhasePlayoffs = async (
 	conditions: Conditions,
@@ -105,6 +106,7 @@ const newPhasePlayoffs = async (
 	await idb.cache.teamSeasons.putAll(teamSeasons);
 
 	await finances.assessPayrollMinLuxury();
+	await recordApronSeason();
 	await season.newSchedulePlayoffsDay();
 
 	// Update clinchedPlayoffs with final values

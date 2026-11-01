@@ -25,6 +25,17 @@ import {
 	type ProjectedTeam,
 } from "./pickProbsCache.ts";
 import type { TeamSeasonRecord } from "./getHypotheticalTeam.ts";
+import {
+	apronsEnabled,
+	isRepeater,
+	salaryYear,
+	currentApronState,
+} from "../finances/nbaAprons.ts";
+import {
+	getApronLevels,
+	getApronTradeRule,
+	nbaLuxuryTax,
+} from "../../../common/nbaAprons.ts";
 
 type Asset =
 	| {
@@ -1052,6 +1063,7 @@ type ToUpdate = {
 
 // tradingPartnerTid is currently just used to determine if this is a trade with the user, so additional fuzz can be applied
 export class ValueChangeCalculator {
+	private taxHistory = new Map<number, { year: number; repeater: boolean }>();
 	private cache: ValueChangeCache | undefined;
 
 	// Less precise draft pick values, for when speed matters more
@@ -1217,7 +1229,83 @@ export class ValueChangeCalculator {
 		const valuesRemove = sumValues(remove, strategy, tid);
 		// console.log("Total", valuesRemove);
 
-		return valuesAdd - valuesRemove;
+		let financialValue = 0;
+		if (apronsEnabled() && (pidsAdd.length > 0 || pidsRemove.length > 0)) {
+			const players = await idb.cache.players.indexGetAll("playersByTid", tid);
+			const payroll = await team.getPayroll(tid);
+			let after = payroll;
+			const outgoingSalaries: number[] = [];
+			const incomingSalaries: number[] = [];
+			for (const p of players) {
+				if (pidsRemove.includes(p.pid)) {
+					outgoingSalaries.push(p.contract.amount);
+					after -= p.contract.amount;
+				}
+			}
+			for (const pid of pidsAdd) {
+				const p = await idb.cache.players.get(pid);
+				if (p) {
+					incomingSalaries.push(p.contract.amount);
+					after += p.contract.amount;
+				}
+			}
+			const rule = getApronTradeRule({
+				payrollAfter: after,
+				outgoing: outgoingSalaries.reduce((a, b) => a + b, 0),
+				incoming: incomingSalaries.reduce((a, b) => a + b, 0),
+				outgoingSalaries,
+				incomingSalaries,
+				salaryCap: g.get("salaryCap"),
+				taxLevel: g.get("luxuryPayroll"),
+				hardCap: currentApronState(t)?.hardCap,
+			});
+			const hardCap = currentApronState(t)?.hardCap ?? rule.hardCap;
+			const levels = getApronLevels(g.get("salaryCap"), g.get("luxuryPayroll"));
+			const reserve =
+				Math.max(
+					0,
+					g.get("minRosterSize") -
+						players.length +
+						pidsRemove.length -
+						pidsAdd.length,
+				) * g.get("minContract");
+			if (
+				rule.error ||
+				(hardCap &&
+					after + reserve > (hardCap === 1 ? levels.first : levels.second))
+			) {
+				return -100000;
+			}
+			let taxHistory = this.taxHistory.get(tid);
+			if (taxHistory?.year !== salaryYear()) {
+				taxHistory = { year: salaryYear(), repeater: await isRepeater(tid) };
+				this.taxHistory.set(tid, taxHistory);
+			}
+			const cost = (salary: number) =>
+				salary +
+				nbaLuxuryTax(
+					salary,
+					g.get("luxuryPayroll"),
+					g.get("salaryCap"),
+					taxHistory.repeater,
+				);
+			financialValue =
+				((cost(payroll) - cost(after)) / g.get("salaryCap")) * 10;
+			const second = getApronLevels(
+				g.get("salaryCap"),
+				g.get("luxuryPayroll"),
+			).second;
+			if (payroll > second && after <= second) {
+				financialValue += 3;
+			}
+			if (payroll <= second && after > second) {
+				financialValue -= 3;
+			}
+			if (!g.get("budget")) {
+				financialValue = 0;
+			}
+		}
+		return valuesAdd - valuesRemove + financialValue;
 	}
 }
 

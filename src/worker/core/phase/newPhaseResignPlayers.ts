@@ -15,6 +15,7 @@ import { getNumPlayersTradedAwayNormalizedAll } from "../player/getNumPlayersTra
 import { bySport } from "../../../common/sportFunctions.ts";
 import { ValueChangeCalculator } from "../team/ValueChangeCalculator.ts";
 import { autoPlayStopsAt } from "../league/autoPlay.ts";
+import { apronsEnabled, checkApronSigning } from "../finances/nbaAprons.ts";
 
 export const FREE_AGENCY_DAYS = 30;
 
@@ -247,6 +248,23 @@ const newPhaseResignPlayers = async (
 				}
 			}
 
+			if (reSignPlayer && apronsEnabled()) {
+				const committed = await team.getPayroll(p.tid, g.get("season") + 1);
+				if (
+					(
+						await checkApronSigning(
+							p.tid,
+							p,
+							contract.amount,
+							contract.exp,
+							true,
+							committed,
+						)
+					).error
+				) {
+					reSignPlayer = false;
+				}
+			}
 			if (reSignPlayer) {
 				const mood = await player.moodInfo(p, p.tid, {
 					contractAmount: p.contract.amount,

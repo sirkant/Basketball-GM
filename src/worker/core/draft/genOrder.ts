@@ -23,6 +23,7 @@ import { shuffle } from "../../../common/random.ts";
 import { simLottery } from "./draftLottery.ts";
 import { RESTRICTED_5_PICK, updateNba2027AfterLottery } from "./nba2027.ts";
 import { orderBy, range, assertDefined } from "../../../common/utils.ts";
+import { apronsEnabled } from "../finances/nbaAprons.ts";
 
 type MyDraftLotteryResult<Completed extends boolean> =
 	DraftLotteryResult<Completed> & {
@@ -411,6 +412,17 @@ const genOrder = async (
 		draftPicksIndexed,
 	);
 	const firstRoundTeams = teamsByRound[0] ?? [];
+	const penalized = new Set(
+		apronsEnabled()
+			? (await idb.cache.teams.getAll())
+					.filter((t) =>
+						t.apronPickPenalties?.some(
+							(p) => p.season === g.get("season") && p.penalized,
+						),
+					)
+					.map((t) => t.tid)
+			: [],
+	);
 
 	// Draft lottery
 	let firstN: number[];
@@ -423,7 +435,7 @@ const genOrder = async (
 			firstRoundTeams,
 			draftPicksIndexed,
 		});
-		const numToPick = lotteryChances.numToPick;
+		let numToPick = lotteryChances.numToPick;
 		numLotteryTeams = lotteryChances.numLotteryTeams;
 		chances = lotteryChances.chances;
 		nba2027Restrictions = lotteryChances.nba2027Restrictions;
@@ -436,8 +448,17 @@ const genOrder = async (
 			divideChancesOverTiedTeams(chances, firstRoundTeams, true);
 		}
 
+		chances = chances.map((chance, index) =>
+			penalized.has(firstRoundTeams[index]!.tid) ? 0 : chance,
+		);
+		numToPick = Math.min(
+			numToPick,
+			chances.filter((chance) => chance > 0).length,
+		);
 		const chanceTotal = Math.sumPrecise(chances);
-		const chancePct = chances.map((c) => (c / chanceTotal) * 100);
+		const chancePct = chances.map((c) =>
+			chanceTotal > 0 ? (c / chanceTotal) * 100 : 0,
+		);
 
 		// Idenfity chances indexes protected by riggedLottery
 		const riggedLotteryIndexes = riggedLottery
@@ -671,6 +692,33 @@ const genOrder = async (
 		}
 	}
 
+	if (apronsEnabled()) {
+		const first = draftPicks
+			.filter((dp) => dp.round === 1)
+			.sort((a, b) => a.pick - b.pick);
+		// Existing order already breaks ties by inverse record.
+		const ordered = [
+			...first.filter((dp) => !penalized.has(dp.originalTid)),
+			...first.filter((dp) => penalized.has(dp.originalTid)),
+		];
+		ordered.forEach((dp, index) => {
+			dp.pick = index + 1;
+		});
+		if (draftLotteryResult) {
+			draftLotteryResult.result = draftLotteryResult.result.filter(
+				(row) => !penalized.has(row.originalTid),
+			);
+			for (const row of draftLotteryResult.result) {
+				const dp = first.find((dp) => dp.originalTid === row.originalTid);
+				if (dp) {
+					row.pick = dp.pick;
+				}
+			}
+			if (!mock) {
+				await idb.cache.draftLotteryResults.put(draftLotteryResult);
+			}
+		}
+	}
 	if (!mock) {
 		for (const dp of draftPicks) {
 			await idb.cache.draftPicks.put(dp);

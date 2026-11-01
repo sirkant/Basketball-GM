@@ -2,6 +2,7 @@ import { afterAll, assert, beforeAll, test } from "vitest";
 import { getDraftTids, loadTeamSeasons } from "./testHelpers.ts";
 import { mockIDBLeague, resetG } from "../../../test/helpers.ts";
 import { idb } from "../../db/index.ts";
+import { g } from "../../util/index.ts";
 
 beforeAll(async () => {
 	resetG();
@@ -17,6 +18,29 @@ afterAll(() => {
 test("schedule 60 draft picks", async () => {
 	const draftTids = await getDraftTids();
 	assert.strictEqual(draftTids.length, 60);
+});
+
+test("a second-apron draft penalty puts even the worst team's pick last and excludes it from the lottery", async () => {
+	const t = (await idb.cache.teams.get(16))!;
+	t.apronPickPenalties = [
+		{
+			season: g.get("season"),
+			triggerSeason: g.get("season") - 7,
+			over: 2,
+			under: 0,
+			penalized: true,
+		},
+	];
+	await idb.cache.teams.put(t);
+	try {
+		const tids = await getDraftTids();
+		assert.strictEqual(tids[29], 16);
+		const lottery = await idb.cache.draftLotteryResults.get(g.get("season"));
+		assert(lottery?.result.every((row) => row.originalTid !== 16));
+	} finally {
+		delete t.apronPickPenalties;
+		await idb.cache.teams.put(t);
+	}
 });
 
 test("give the 3 teams with the lowest win percentage picks not lower than 6", async () => {

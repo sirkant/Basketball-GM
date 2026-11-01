@@ -187,6 +187,11 @@ import {
 import { registerGlobal } from "../../common/registerGlobal.ts";
 import { getTeamInfoCache } from "../core/team/getTeamInfoCache.ts";
 import { getMetaAttribute, putMetaAttribute } from "../db/metaAttributes.ts";
+import {
+	getFinancialStatus,
+	checkApronSigning,
+	salaryYear,
+} from "../core/finances/nbaAprons.ts";
 
 const acceptContractNegotiation = async ({
 	pid,
@@ -2026,7 +2031,34 @@ const getNegotiationProps = async (pid: number) => {
 	return {
 		capSpace: (g.get("salaryCap") - payroll) / 1000,
 		challengeNoRatings: g.get("challengeNoRatings"),
-		contractOptions,
+		contractOptions: await Promise.all(
+			contractOptions.map(async (option) => {
+				const status = await getFinancialStatus(
+					userTid,
+					payroll + option.amount * 1000,
+				);
+				const rule = await checkApronSigning(
+					userTid,
+					p2,
+					option.amount * 1000,
+					option.exp,
+					negotiation.resigning,
+					payroll,
+				);
+				return {
+					...option,
+					financialStatus: status
+						? {
+								...status,
+								state: rule.state
+									? { ...status.state, ...rule.state, season: salaryYear() }
+									: status.state,
+							}
+						: undefined,
+				};
+			}),
+		),
+		financialStatus: await getFinancialStatus(userTid, payroll),
 		salaryCapType: g.get("salaryCapType"),
 		payroll: payroll / 1000,
 		p,

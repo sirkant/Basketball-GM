@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ApronNotice } from "../components/ApronNotice.tsx";
 import { PHASE, PHASE_TEXT } from "../../common/constants.ts";
 import { DataTable } from "../components/DataTable/index.tsx";
 import { MoreLinks } from "../components/MoreLinks.tsx";
@@ -106,6 +107,7 @@ const signedFreeAgentWrapped = (
 };
 
 const FreeAgents = ({
+	financialStatus,
 	capSpace,
 	challengeNoFreeAgents,
 	freeAgencySeason,
@@ -313,6 +315,7 @@ const FreeAgents = ({
 				<RosterComposition className="float-end mb-3" players={userPlayers} />
 			) : null}
 			<MoreLinks type="freeAgents" page="free_agents" />
+			<ApronNotice status={financialStatus} />
 			{season === "current" ? (
 				<>
 					<RosterSalarySummary

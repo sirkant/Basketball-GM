@@ -7,6 +7,8 @@ import addFirstNameShort from "../util/addFirstNameShort.ts";
 import { orderBy } from "../../common/utils.ts";
 import { ValueChangeCalculator } from "../core/team/ValueChangeCalculator.ts";
 import { defineView } from "../util/defineView.ts";
+import { getFinancialStatus } from "../core/finances/nbaAprons.ts";
+import { getApronTradeRule } from "../../common/nbaAprons.ts";
 
 const getSummaryTeam = (summary: TradeSummary, i: 0 | 1) => {
 	return {
@@ -32,6 +34,23 @@ export const getSummary = async (teams: TradeTeams) => {
 				teams[1].pids.length > 0 ||
 				teams[1].dpids.length > 0),
 		warning: summary.warning,
+		financialStatus: await getFinancialStatus(
+			teams[0].tid,
+			summary.teams[0].payrollAfterTrade * 1000,
+		),
+		apronHardCap: getApronTradeRule({
+			payrollAfter: summary.teams[0].payrollAfterTrade * 1000,
+			outgoing: summary.teams[0].total * 1000,
+			incoming: summary.teams[1].total * 1000,
+			outgoingSalaries: summary.teams[0].trade.map(
+				(p) => p.contract.amount * 1000,
+			),
+			incomingSalaries: summary.teams[1].trade.map(
+				(p) => p.contract.amount * 1000,
+			),
+			salaryCap: g.get("salaryCap"),
+			taxLevel: g.get("luxuryPayroll"),
+		}).hardCap,
 		warningAmount: summary.warningAmount,
 		teams: [getSummaryTeam(summary, 0), getSummaryTeam(summary, 1)] as const,
 	};

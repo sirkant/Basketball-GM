@@ -7,6 +7,7 @@ import {
 	type ReactNode,
 } from "react";
 import { DataTable } from "../../components/DataTable/index.tsx";
+import { ApronNotice } from "../../components/ApronNotice.tsx";
 import { MoreLinks } from "../../components/MoreLinks.tsx";
 import useTitleBar from "../../hooks/useTitleBar.tsx";
 import { helpers } from "../../util/helpers.ts";
@@ -676,8 +677,10 @@ const PayrollInfo = ({
 						The salary cap is a soft cap, meaning that you can exceed it to
 						re-sign your own players, to sign free agents to minimum contracts (
 						{helpers.formatCurrency(minContract / 1000, "M")}/year), and when
-						making certain trades; however, you cannot exceed the salary cap to
-						sign a free agent for more than the minimum.
+						making certain trades.{" "}
+						{__SPORT === "basketball"
+							? "An available mid-level exception also permits signings above the cap, subject to apron limits."
+							: "You cannot exceed the salary cap to sign a free agent for more than the minimum."}
 					</p>
 					<p>
 						Teams with payrolls below the minimum payroll limit will be assessed
@@ -728,6 +731,7 @@ const TeamFinances = ({
 	abbrev,
 	autoTicketPrice,
 	barData,
+	financialStatus,
 	contractTotals,
 	contracts,
 	luxuryTaxAmount,
@@ -855,6 +859,7 @@ const TeamFinances = ({
 	return (
 		<>
 			<MoreLinks type="team" page="team_finances" abbrev={abbrev} tid={tid} />
+			<ApronNotice status={financialStatus} />
 
 			<PayrollInfo
 				luxuryTaxAmount={luxuryTaxAmount}

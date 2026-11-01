@@ -10,6 +10,7 @@ import addFirstNameShort from "../util/addFirstNameShort.ts";
 import { bySport } from "../../common/sportFunctions.ts";
 import { orderTeams } from "../util/orderTeams.ts";
 import { getNumericStat } from "../../common/statValue.ts";
+import { getFinancialStatus } from "../core/finances/nbaAprons.ts";
 
 const updateInbox = async ({ updateEvents }: ViewArgs) => {
 	if (updateEvents.has("firstRun") || updateEvents.has("newPhase")) {
@@ -65,10 +66,16 @@ const updateTeam = async ({ updateEvents }: ViewArgs) => {
 };
 
 const updatePayroll = async ({ updateEvents }: ViewArgs) => {
-	if (updateEvents.has("firstRun") || updateEvents.has("playerMovement")) {
+	if (
+		updateEvents.has("firstRun") ||
+		updateEvents.has("playerMovement") ||
+		updateEvents.has("newPhase") ||
+		updateEvents.has("teamFinances")
+	) {
 		const payroll = await team.getPayroll(g.get("userTid"));
 		return {
 			payroll, // [millions of dollars]
+			financialStatus: await getFinancialStatus(g.get("userTid"), payroll),
 		};
 	}
 };

@@ -1,4 +1,5 @@
 import { Modal } from "./Modal.tsx";
+import { ApronNotice } from "./ApronNotice.tsx";
 import clsx from "clsx";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import { helpers } from "../util/helpers.ts";
@@ -118,7 +119,9 @@ const NegotiationHeader = ({
 			);
 		} else {
 			message =
-				"You are not allowed to go over the salary cap to sign free agents, unless it's for a minimum contract.";
+				__SPORT === "basketball"
+					? "Above the salary cap, free agents must fit an available mid-level or minimum exception. The offers below show which contracts are legal and any apron restrictions."
+					: "You are not allowed to go over the salary cap to sign free agents, unless it's for a minimum contract.";
 		}
 	} else if (salaryCapType === "hard") {
 		message =
@@ -197,9 +200,12 @@ const Negotiation = ({
 					return (
 						<div
 							key={i}
-							className={clsx("d-flex align-items-center list-group-item", {
-								"list-group-item-success": contract.smallestAmount,
-							})}
+							className={clsx(
+								"d-flex flex-wrap align-items-center list-group-item",
+								{
+									"list-group-item-success": contract.smallestAmount,
+								},
+							)}
 						>
 							<div className="flex-grow-1">
 								<b>{helpers.formatCurrency(contract.amount, "M")}</b>/year for{" "}
@@ -214,6 +220,14 @@ const Negotiation = ({
 								disabledReason={contract.disabledReason}
 								onSuccess={close}
 							/>
+							{!contract.disabledReason && contract.financialStatus ? (
+								<div className="w-100 small">
+									<details>
+										<summary>Finances and apron impact of this offer</summary>
+										<ApronNotice status={contract.financialStatus} compact />
+									</details>
+								</div>
+							) : null}
 						</div>
 					);
 				})}
@@ -248,6 +262,7 @@ export const NegotiationModal = ({
 				{negotiationProps ? (
 					<>
 						<NegotiationHeader {...negotiationProps} />
+						<ApronNotice status={negotiationProps.financialStatus} compact />
 						<Negotiation {...negotiationProps} close={close} />
 					</>
 				) : null}
