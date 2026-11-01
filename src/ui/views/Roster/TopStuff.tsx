@@ -147,6 +147,7 @@ const TopStuff = ({
 	t,
 	tid,
 	usePts,
+	showTableControls,
 }: Pick<
 	View<"roster">,
 	| "abbrev"
@@ -166,6 +167,7 @@ const TopStuff = ({
 	currentSeason: number;
 	openRosterSpots: number;
 	profit: number;
+	showTableControls: boolean;
 }) => {
 	const {
 		budget,
@@ -363,11 +365,13 @@ const TopStuff = ({
 					) : null}
 				</div>
 			</div>
-			<InstructionsAndSortButtons
-				keepRosterSorted={t.keepRosterSorted}
-				editable={editable}
-				tid={tid}
-			/>
+			{showTableControls ? (
+				<InstructionsAndSortButtons
+					keepRosterSorted={t.keepRosterSorted}
+					editable={editable}
+					tid={tid}
+				/>
+			) : null}
 
 			<div className="mb-3">
 				<Note
@@ -381,7 +385,7 @@ const TopStuff = ({
 				/>
 			</div>
 
-			{editable ? (
+			{editable && showTableControls ? (
 				<div className="mb-3">
 					Click or drag row handles to move players between the starting lineup{" "}
 					<span className="table-info legend-square" /> and the bench{" "}

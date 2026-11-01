@@ -219,6 +219,8 @@ export default defineView({
 			// tid and draft are used for checking if a player can be released without paying his salary
 			const attrs = [
 				"pid",
+				"face",
+				"imgURL",
 				"name",
 				"tid",
 				"draft",
