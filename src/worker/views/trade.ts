@@ -16,6 +16,7 @@ const getSummaryTeam = (summary: TradeSummary, i: 0 | 1) => {
 		ovrAfter: summary.teams[i].ovrAfter,
 		ovrBefore: summary.teams[i].ovrBefore,
 		payrollAfterTrade: summary.teams[i].payrollAfterTrade,
+		payrollBeforeTrade: summary.teams[i].payrollBeforeTrade,
 		total: summary.teams[i].total,
 		trade: summary.teams[i].trade,
 		picks: summary.teams[i].picks,
@@ -119,6 +120,8 @@ export default defineView({
 		});
 		const attrs = [
 			"pid",
+			"face",
+			"imgURL",
 			"firstName",
 			"lastName",
 			"age",

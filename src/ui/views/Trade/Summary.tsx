@@ -5,7 +5,6 @@ import { PlayerNameLabels } from "../../components/PlayerNameLabels.tsx";
 import { ContractAmount, ContractExp } from "../../components/contract.tsx";
 import type { HandleToggle } from "./index.tsx";
 import type { MissingAsset } from "../../../worker/views/savedTrades.ts";
-import type { Ref } from "react";
 import { orderBy } from "../../../common/utils.ts";
 import { SafeHtml } from "../../components/SafeHtml.tsx";
 import { useLocal } from "../../util/local.ts";
@@ -303,35 +302,42 @@ export const SummaryTeam = ({
 const Summary = ({
 	handleToggle,
 	prevTeams,
-	ref,
 	summary,
 }: Pick<View<"trade">, "summary"> & {
 	handleToggle: HandleToggle;
-	ref?: Ref<HTMLDivElement>;
 
 	// Pass this if you want to show a diff compared to a prior version of this trade
 	prevTeams?: TradeTeams;
 }) => {
 	return (
-		<div className="row trade-items mb-3" ref={ref}>
+		<div className="row g-3 mb-3">
 			{summary.teams.map((t, i) => {
 				const userOrOther = i === 0 ? "other" : ("user" as const);
 
 				return (
-					<div
-						key={i}
-						className={clsx("col-md-12 col-6 d-flex flex-column", {
-							"mb-md-3": i === 0,
-						})}
-					>
-						<SummaryTeam
-							handleRemove={(type, id) => {
-								handleToggle(userOrOther, type, "include", id);
-							}}
-							summary={summary}
-							prevTeam={prevTeams?.[i === 0 ? 1 : 0]}
-							t={t}
-						/>
+					<div key={i} className="col-12 col-md-6">
+						<div className="border rounded p-3 h-100">
+							<SummaryTeam
+								hideFinanceInfo
+								handleRemove={(type, id) => {
+									handleToggle(userOrOther, type, "include", id);
+								}}
+								summary={summary}
+								prevTeam={prevTeams?.[i === 0 ? 1 : 0]}
+								t={t}
+							/>
+							<div className="border-top pt-2 mt-2 small">
+								<div>
+									Incoming{" "}
+									{helpers.formatCurrency(summary.teams[t.other].total, "M")} ·
+									Outgoing {helpers.formatCurrency(t.total, "M")}
+								</div>
+								<div>
+									Payroll {helpers.formatCurrency(t.payrollBeforeTrade, "M")} →{" "}
+									{helpers.formatCurrency(t.payrollAfterTrade, "M")}
+								</div>
+							</div>
+						</div>
 					</div>
 				);
 			})}

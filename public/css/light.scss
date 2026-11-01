@@ -722,17 +722,6 @@ tr.table-warning:hover > td {
 	z-index: 1;
 }
 
-// Keep in sync with trade/index.tsx
-@include media-breakpoint-up(md) {
-	.trade-affix {
-		position: sticky;
-		top: 60px;
-	}
-	.trade-items {
-		overflow: auto;
-	}
-}
-
 .multi-team-menu {
 	background-color: $white;
 	opacity: 0.9;

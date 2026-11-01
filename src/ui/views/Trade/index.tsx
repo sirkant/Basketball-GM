@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { ApronNotice } from "../../components/ApronNotice.tsx";
+import { useState } from "react";
+import FinancialDetails from "./FinancialDetails.tsx";
 import { PHASE } from "../../../common/constants.ts";
 import useTitleBar from "../../hooks/useTitleBar.tsx";
 import { helpers } from "../../util/helpers.ts";
 import { toWorker } from "../../util/toWorker.ts";
 import { useLocal } from "../../util/local.ts";
-import AssetList from "./AssetList.tsx";
+import AssetSelector from "./AssetSelector.tsx";
 import Buttons from "./Buttons.tsx";
 import type { TradeClearType } from "./Buttons.tsx";
 import Summary from "./Summary.tsx";
@@ -330,7 +330,6 @@ const Trade = (props: View<"trade">) => {
 		phase,
 		spectator,
 		userTid,
-		userTids,
 	} = useLocal([
 		"challengeNoRatings",
 		"challengeNoTrades",
@@ -338,42 +337,7 @@ const Trade = (props: View<"trade">) => {
 		"phase",
 		"spectator",
 		"userTid",
-		"userTids",
 	]);
-
-	const summaryText = useRef<HTMLDivElement>(null);
-	const summaryControls = useRef<HTMLDivElement>(null);
-
-	const updateSummaryHeight = useCallback(() => {
-		if (summaryControls.current && summaryText.current) {
-			// Keep in sync with .trade-affix
-			if (window.matchMedia("(min-width:768px)").matches) {
-				// 60 for top navbar, 24 for spacing between asset list and trade controls
-				let newHeight =
-					window.innerHeight - 60 - 24 - summaryControls.current.clientHeight;
-
-				// Multi team menu
-				if (userTids.length > 1) {
-					newHeight -= 40;
-				}
-				summaryText.current.style.maxHeight = `${newHeight}px`;
-			} else if (summaryText.current.style.maxHeight !== "") {
-				summaryText.current.style.removeProperty("height");
-			}
-		}
-	}, [userTids]);
-
-	// Run every render, in case it changes
-	useEffect(() => {
-		updateSummaryHeight();
-	}, undefined);
-
-	useEffect(() => {
-		window.addEventListener("optimizedResize", updateSummaryHeight);
-		return () => {
-			window.removeEventListener("optimizedResize", updateSummaryHeight);
-		};
-	}, [updateSummaryHeight]);
 
 	const noTradingAllowed =
 		(phase >= PHASE.AFTER_TRADE_DEADLINE && phase <= PHASE.PLAYOFFS) ||
@@ -400,78 +364,182 @@ const Trade = (props: View<"trade">) => {
 
 	return (
 		<>
-			<div className="row">
-				<div className="col-md-9">
-					<div className="d-flex mb-2 align-items-center">
-						<div className="btn-group">
-							<button
-								className="btn btn-light-bordered btn-xs"
-								disabled={otherTeamIndex <= 0}
-								onClick={() => {
-									handleChangeTeam(teams[otherTeamIndex - 1]!.tid);
-								}}
-								title="Previous"
-							>
-								<span className="glyphicon glyphicon-menu-left" />
-							</button>
-							<button
-								className="btn btn-light-bordered btn-xs"
-								disabled={otherTeamIndex >= teams.length - 1}
-								onClick={() => {
-									handleChangeTeam(teams[otherTeamIndex + 1]!.tid);
-								}}
-								title="Next"
-							>
-								<span className="glyphicon glyphicon-menu-right" />
-							</button>
-						</div>
-						<select
-							className="float-start form-select select-team mx-2 flex-shrink-1"
-							value={otherTid}
-							onChange={(event) => {
-								handleChangeTeam(Number.parseInt(event.currentTarget.value));
-							}}
-						>
-							{teams.map((t) => (
-								<option key={t.tid} value={t.tid}>
-									{t.region} {t.name}
-								</option>
-							))}
-						</select>
-						<div className="text-nowrap me-2">
-							{won}-{lost}
-							{otl > 0 ? <>-{otl}</> : null}
-							{tied > 0 ? <>-{tied}</> : null}, {strategy}
-						</div>
-						<SaveTrade
-							className="ms-auto"
-							tradeTeams={[
-								{
-									pids: userPids,
-									dpids: userDpids,
-									tid: userTid,
-								},
-								{
-									pids: otherPids,
-									dpids: otherDpids,
-									tid: otherTid,
-								},
-							]}
-						/>
+			<div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
+				<div className="btn-group">
+					<button
+						className="btn btn-light-bordered btn-xs"
+						disabled={otherTeamIndex <= 0}
+						onClick={() => {
+							handleChangeTeam(teams[otherTeamIndex - 1]!.tid);
+						}}
+						title="Previous"
+					>
+						<span className="glyphicon glyphicon-menu-left" />
+					</button>
+					<button
+						className="btn btn-light-bordered btn-xs"
+						disabled={otherTeamIndex >= teams.length - 1}
+						onClick={() => {
+							handleChangeTeam(teams[otherTeamIndex + 1]!.tid);
+						}}
+						title="Next"
+					>
+						<span className="glyphicon glyphicon-menu-right" />
+					</button>
+				</div>
+				<select
+					aria-label="Trading partner"
+					className="form-select select-team flex-shrink-1"
+					value={otherTid}
+					onChange={(event) => {
+						handleChangeTeam(Number.parseInt(event.currentTarget.value));
+					}}
+				>
+					{teams.map((t) => (
+						<option key={t.tid} value={t.tid}>
+							{t.region} {t.name}
+						</option>
+					))}
+				</select>
+				<div className="small text-body-secondary">
+					{won}-{lost}
+					{otl > 0 ? <>-{otl}</> : null}
+					{tied > 0 ? <>-{tied}</> : null}, {strategy}
+				</div>
+				<SaveTrade
+					className="ms-auto"
+					tradeTeams={[
+						{
+							pids: userPids,
+							dpids: userDpids,
+							tid: userTid,
+						},
+						{
+							pids: otherPids,
+							dpids: otherDpids,
+							tid: otherTid,
+						},
+					]}
+				/>
+			</div>
+			<section
+				id="trade-proposal"
+				className="card mb-4"
+				aria-label="Trade proposal"
+				style={{ scrollMarginTop: 70 }}
+			>
+				<div className="card-body">
+					<div className="d-flex flex-wrap justify-content-between gap-2 mb-3">
+						<h2 className="h4 mb-0">Proposed exchange</h2>
+						<span className="small text-body-secondary">
+							{numAssets} assets selected
+						</span>
 					</div>
-					<AssetList
-						challengeNoRatings={challengeNoRatings}
-						handleBulk={handleBulk}
+					<Summary
 						handleToggle={handleChangeAsset}
-						numDraftRounds={numDraftRounds}
-						picks={otherPicks}
-						roster={otherRoster}
-						stats={stats}
-						userOrOther="other"
+						prevTeams={state.prevTeams}
+						summary={summary}
 					/>
+					{summary.warning ? (
+						<div className="alert alert-danger py-2 mb-2 small" role="alert">
+							<strong>Cannot propose:</strong> {summary.warning}
+						</div>
+					) : null}
+					{state.message ? (
+						<div
+							className={clsx(
+								"alert mb-0",
+								state.accepted ? "alert-success" : "alert-info",
+								{
+									"mt-2": summary.warning,
+								},
+							)}
+						>
+							{state.message}
+							{state.prevTeams ? (
+								<div className="mt-1 text-end">
+									<button
+										className="btn btn-secondary btn-sm"
+										onClick={async () => {
+											if (state.prevTeams) {
+												await toWorker("main", "updateTrade", state.prevTeams);
+												setState((prevState) => ({
+													...prevState,
+													message: null,
+													prevTeams: undefined,
+												}));
+											}
+										}}
+									>
+										Undo
+									</button>
+								</div>
+							) : null}
+						</div>
+					) : null}
 
-					<h2 className="mt-3">{userTeamName}</h2>
-					<AssetList
+					<div
+						className={clsx({
+							"trade-extra-margin-bottom": multiTeamMode,
+							"mt-3": summary.warning || state.message,
+						})}
+					>
+						{!noTradingAllowed ? (
+							<div className="text-center">
+								<Buttons
+									asking={state.asking}
+									enablePropose={summary.enablePropose}
+									forceTrade={state.forceTrade}
+									handleClickAsk={handleClickAsk}
+									handleClickClear={handleClickClear}
+									handleClickForceTrade={handleClickForceTrade}
+									handleClickPropose={handleClickPropose}
+									numAssets={numAssets}
+									teamNames={teamNames}
+								/>
+							</div>
+						) : challengeNoTrades ? (
+							<p className="alert alert-danger">
+								<b>Challenge Mode:</b> You're not allowed to make trades.
+							</p>
+						) : spectator ? (
+							<p className="alert alert-danger">
+								You're not allowed to make trades in spectator mode.
+							</p>
+						) : otherTeamsWantToHire ? (
+							<p className="alert alert-danger">
+								You're not allowed to make trades while you have{" "}
+								<a href={helpers.leagueUrl(["new_team"])}>
+									open job offers from other teams
+								</a>
+								.
+							</p>
+						) : (
+							<p className="alert alert-danger">
+								You're not allowed to make trades{" "}
+								{phase === PHASE.AFTER_TRADE_DEADLINE
+									? "after the trade deadline"
+									: "now"}
+								.
+							</p>
+						)}
+					</div>
+					{numAssets > 0 ? (
+						<FinancialDetails summary={summary} />
+					) : (
+						<p className="small text-body-secondary mb-0 mt-3">
+							Choose players or draft picks below to build your offer.
+						</p>
+					)}
+				</div>
+			</section>
+			<div className="row gx-3 gy-4">
+				<section className="col-12 col-xl-6" aria-label="Your trade assets">
+					<h2 className="h4">Send from {userTeamName}</h2>
+					<a href="#trade-proposal" className="small d-inline-block mb-2">
+						Review offer ({numAssets} assets)
+					</a>
+					<AssetSelector
 						challengeNoRatings={challengeNoRatings}
 						handleBulk={handleBulk}
 						handleToggle={handleChangeAsset}
@@ -481,124 +549,27 @@ const Trade = (props: View<"trade">) => {
 						stats={stats}
 						userOrOther="user"
 					/>
-				</div>
-				<div className="col-md-3">
-					<div className="trade-affix">
-						<Summary
-							handleToggle={handleChangeAsset}
-							ref={summaryText}
-							prevTeams={state.prevTeams}
-							summary={summary}
-						/>
-
-						<div ref={summaryControls}>
-							{summary.financialStatus ? (
-								<>
-									<div className="small fw-bold">
-										Projected finances after this trade
-									</div>
-									<ApronNotice status={summary.financialStatus} compact />
-									{summary.apronHardCap ? (
-										<div className="alert alert-warning">
-											This trade activates a hard cap at the{" "}
-											{summary.apronHardCap === 1 ? "first" : "second"} apron
-											for the rest of the salary year. All subsequent contracts
-											must fit.
-										</div>
-									) : null}
-								</>
-							) : null}
-							{summary.warning ? (
-								<div className="alert alert-danger mb-0">
-									<strong>Warning!</strong> {summary.warning}
-								</div>
-							) : null}
-							{state.message ? (
-								<div
-									className={clsx(
-										"alert mb-0",
-										state.accepted ? "alert-success" : "alert-info",
-										{
-											"mt-2": summary.warning,
-										},
-									)}
-								>
-									{state.message}
-									{state.prevTeams ? (
-										<div className="mt-1 text-end">
-											<button
-												className="btn btn-secondary btn-sm"
-												onClick={async () => {
-													if (state.prevTeams) {
-														await toWorker(
-															"main",
-															"updateTrade",
-															state.prevTeams,
-														);
-														setState((prevState) => ({
-															...prevState,
-															message: null,
-															prevTeams: undefined,
-														}));
-													}
-												}}
-											>
-												Undo
-											</button>
-										</div>
-									) : null}
-								</div>
-							) : null}
-
-							<div
-								className={clsx({
-									"trade-extra-margin-bottom": multiTeamMode,
-									"mt-3": summary.warning || state.message,
-								})}
-							>
-								{!noTradingAllowed ? (
-									<div className="text-center">
-										<Buttons
-											asking={state.asking}
-											enablePropose={summary.enablePropose}
-											forceTrade={state.forceTrade}
-											handleClickAsk={handleClickAsk}
-											handleClickClear={handleClickClear}
-											handleClickForceTrade={handleClickForceTrade}
-											handleClickPropose={handleClickPropose}
-											numAssets={numAssets}
-											teamNames={teamNames}
-										/>
-									</div>
-								) : challengeNoTrades ? (
-									<p className="alert alert-danger">
-										<b>Challenge Mode:</b> You're not allowed to make trades.
-									</p>
-								) : spectator ? (
-									<p className="alert alert-danger">
-										You're not allowed to make trades in spectator mode.
-									</p>
-								) : otherTeamsWantToHire ? (
-									<p className="alert alert-danger">
-										You're not allowed to make trades while you have{" "}
-										<a href={helpers.leagueUrl(["new_team"])}>
-											open job offers from other teams
-										</a>
-										.
-									</p>
-								) : (
-									<p className="alert alert-danger">
-										You're not allowed to make trades{" "}
-										{phase === PHASE.AFTER_TRADE_DEADLINE
-											? "after the trade deadline"
-											: "now"}
-										.
-									</p>
-								)}
-							</div>
-						</div>
-					</div>
-				</div>
+				</section>
+				<section
+					className="col-12 col-xl-6"
+					aria-label="Partner trade assets"
+					key={otherTid}
+				>
+					<h2 className="h4">Request from {otherTeamName}</h2>
+					<a href="#trade-proposal" className="small d-inline-block mb-2">
+						Review offer ({numAssets} assets)
+					</a>
+					<AssetSelector
+						challengeNoRatings={challengeNoRatings}
+						handleBulk={handleBulk}
+						handleToggle={handleChangeAsset}
+						numDraftRounds={numDraftRounds}
+						picks={otherPicks}
+						roster={otherRoster}
+						stats={stats}
+						userOrOther="other"
+					/>
+				</section>
 			</div>
 		</>
 	);
