@@ -3,6 +3,7 @@ import { finances, player, season, team } from "../core/index.ts";
 import { idb } from "../db/index.ts";
 import { g, helpers } from "../util/index.ts";
 import type { Player, TeamSeasonAttr } from "../../common/types.ts";
+import { projectedTax } from "../core/finances/nbaAprons.ts";
 import { defineView } from "../util/defineView.ts";
 import { addMood } from "./freeAgents.ts";
 import addFirstNameShort from "../util/addFirstNameShort.ts";
@@ -266,7 +267,7 @@ export default defineView({
 					inputs.tid,
 				);
 				payroll = await team.getPayroll(inputs.tid);
-				luxuryTaxAmount = finances.getLuxuryTaxAmount(payroll);
+				luxuryTaxAmount = await projectedTax(inputs.tid, payroll);
 				minPayrollAmount = finances.getMinPayrollAmount(payroll);
 
 				// numGamesRemaining doesn't need to be calculated except for userTid, but it is.

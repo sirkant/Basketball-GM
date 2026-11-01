@@ -1,5 +1,5 @@
 import { assert, test } from "vitest";
-import { resetCache, resetG } from "../../../test/helpers.ts";
+import { mockIDBLeague, resetCache, resetG } from "../../../test/helpers.ts";
 import { finances, player, team } from "../index.ts";
 import { idb } from "../../db/index.ts";
 import { g, helpers } from "../../util/index.ts";
@@ -7,6 +7,7 @@ import { DEFAULT_LEVEL } from "../../../common/budgetLevels.ts";
 
 test("store payroll and appropriately assess luxury and minimum payroll taxes for each team", async () => {
 	resetG();
+	idb.league = mockIDBLeague();
 
 	// Three teams. One above the luxury payroll, one below the minimum payroll, and one in between.
 	g.setWithoutSavingToDB("numTeams", 3);
@@ -43,10 +44,12 @@ test("store payroll and appropriately assess luxury and minimum payroll taxes fo
 		if (teamSeason.payrollEndOfSeason > g.get("luxuryPayroll")) {
 			assert.strictEqual(
 				teamSeason.expenses.luxuryTax,
-				g.get("luxuryTax") *
-					(teamSeason.payrollEndOfSeason - g.get("luxuryPayroll")),
+				finances.getLuxuryTaxAmount(teamSeason.payrollEndOfSeason),
 			);
-			assert.strictEqual(teamSeason.expenses.luxuryTax, g.get("luxuryTax") * 1);
+			assert.strictEqual(
+				teamSeason.expenses.luxuryTax,
+				__SPORT === "basketball" ? 1 : g.get("luxuryTax"),
+			);
 		} else {
 			assert.strictEqual(teamSeason.expenses.luxuryTax, 0);
 		}

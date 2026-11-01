@@ -5,6 +5,7 @@ import { g, helpers } from "../util/index.ts";
 import type { TeamSeason } from "../../common/types.ts";
 import { defineView } from "../util/defineView.ts";
 import { getAutoTicketPriceByTid } from "../core/game/attendance.ts";
+import { projectedTax } from "../core/finances/nbaAprons.ts";
 import addFirstNameShort from "../util/addFirstNameShort.ts";
 import type { RouteParams } from "../../ui/router/types.ts";
 import { validateAbbrev } from "../util/processInputs.ts";
@@ -29,7 +30,7 @@ export default defineView({
 		) {
 			const contractsRaw = await team.getContracts(inputs.tid);
 			let payroll = await team.getPayroll(contractsRaw);
-			const luxuryTaxAmount = finances.getLuxuryTaxAmount(payroll) / 1000;
+			const luxuryTaxAmount = (await projectedTax(inputs.tid, payroll)) / 1000;
 			const minPayrollAmount = finances.getMinPayrollAmount(payroll) / 1000;
 			payroll /= 1000;
 

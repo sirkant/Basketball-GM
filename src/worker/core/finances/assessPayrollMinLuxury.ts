@@ -3,6 +3,7 @@ import { idb } from "../../db/index.ts";
 import { g, helpers, logEvent } from "../../util/index.ts";
 import getLuxuryTaxAmount from "./getLuxuryTaxAmount.ts";
 import getMinPayrollAmount from "./getMinPayrollAmount.ts";
+import { isRepeater, apronsEnabled } from "./nbaAprons.ts";
 
 const rosterLink = (tid: number) =>
 	`<a href="${helpers.leagueUrl([
@@ -36,7 +37,10 @@ const assessPayrollMinLuxury = async () => {
 		// Store payroll
 		teamSeason.payrollEndOfSeason = payroll;
 
-		const luxuryTaxAmount = getLuxuryTaxAmount(payroll);
+		const luxuryTaxAmount = getLuxuryTaxAmount(
+			payroll,
+			apronsEnabled() && (await isRepeater(tid)),
+		);
 		const minPayrollAmount = getMinPayrollAmount(payroll);
 
 		if (minPayrollAmount > 0) {
@@ -84,7 +88,7 @@ const assessPayrollMinLuxury = async () => {
 	}
 
 	const payrollCutoff =
-		g.get("salaryCapType") === "none"
+		g.get("salaryCapType") === "none" || apronsEnabled()
 			? g.get("luxuryPayroll")
 			: g.get("salaryCap");
 
