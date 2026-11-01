@@ -5,6 +5,11 @@ import { g, helpers, toUI } from "../../util/index.ts";
 import type { Negotiation, PlayerContract } from "../../../common/types.ts";
 import { PHASE, PLAYER } from "../../../common/constants.ts";
 import { actualPhase } from "../../util/actualPhase.ts";
+import {
+	apronsEnabled,
+	checkApronSigning,
+	saveApronState,
+} from "../finances/nbaAprons.ts";
 
 /**
  * Accept the player's offer.
@@ -17,7 +22,7 @@ import { actualPhase } from "../../util/actualPhase.ts";
  */
 const accept = async <
 	DryRun extends boolean,
-	SuccessReturn extends DryRun extends true ? void : () => Promise<boolean>,
+	SuccessReturn extends (DryRun extends true ? void : () => Promise<boolean>),
 >({
 	negotiation,
 	amount,
@@ -31,6 +36,20 @@ const accept = async <
 }) => {
 	const salaryCapType = g.get("salaryCapType");
 	const tid = g.get("userTid");
+	const pForApron = await idb.cache.players.get(negotiation.pid);
+	const apronResult = pForApron
+		? await checkApronSigning(
+				tid,
+				pForApron,
+				amount,
+				exp,
+				negotiation.resigning,
+				await team.getPayroll(tid),
+			)
+		: {};
+	if (apronResult.error) {
+		return apronResult.error;
+	}
 
 	if (salaryCapType !== "none") {
 		const payroll = await team.getPayroll(tid);
@@ -39,6 +58,7 @@ const accept = async <
 		// If this contract brings team over the salary cap, it's not a minimum contract, and it's not re-signing a current
 		// player with the Bird exception, ERROR!
 		if (
+			!apronsEnabled() &&
 			!birdException &&
 			payroll + amount - 1 > g.get("salaryCap") &&
 			amount - 1 > g.get("minContract")
@@ -84,6 +104,9 @@ const accept = async <
 	}
 
 	if (!dryRun) {
+		const previousApronState = helpers.deepCopy(
+			(await idb.cache.teams.get(tid))?.apronState,
+		);
 		const rollbackInfo = {
 			numDaysFreeAgent: p.numDaysFreeAgent,
 			numPlayersTradedAwayNormalized: helpers.deepCopy(
@@ -97,10 +120,22 @@ const accept = async <
 
 		const eid = await player.sign(p, tid, contract, phase);
 		await idb.cache.players.put(p);
+		if (apronResult.state) {
+			await saveApronState(tid, apronResult.state);
+		}
 		await cancel(negotiation.pid);
+		const appliedApronState = JSON.stringify(
+			(await idb.cache.teams.get(tid))?.apronState,
+		);
 
 		// Rollback
 		return (async () => {
+			if (
+				JSON.stringify((await idb.cache.teams.get(tid))?.apronState) !==
+				appliedApronState
+			) {
+				return false;
+			}
 			const p = await idb.cache.players.get(negotiation.pid);
 			if (!p) {
 				return false;
@@ -111,6 +146,11 @@ const accept = async <
 			}
 
 			Object.assign(p, rollbackInfo);
+			const t = await idb.cache.teams.get(tid);
+			if (t) {
+				t.apronState = previousApronState;
+				await idb.cache.teams.put(t);
+			}
 			p.tid = PLAYER.FREE_AGENT;
 
 			if (phase === PHASE.RESIGN_PLAYERS) {

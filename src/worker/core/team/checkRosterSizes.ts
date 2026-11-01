@@ -7,6 +7,7 @@ import type { Player } from "../../../common/types.ts";
 import { KEY_POSITIONS_NEEDED } from "../freeAgents/getBest.ts";
 import { bySport } from "../../../common/sportFunctions.ts";
 import { last } from "../../../common/utils.ts";
+import { apronsEnabled, salaryYear } from "../finances/nbaAprons.ts";
 
 const dropPlayers = async (players: Player[], numToDrop: number) => {
 	// Automatically drop lowest value players until we reach g.get("maxRosterSize")
@@ -188,6 +189,9 @@ const checkRosterSizes = async (
 
 					if (!p) {
 						p = await player.genRandomFreeAgent();
+						if (apronsEnabled()) {
+							p.contract = { amount: g.get("minContract"), exp: salaryYear() };
+						}
 					}
 
 					await player.sign(p, tid, p.contract, g.get("phase"));
@@ -212,7 +216,10 @@ const checkRosterSizes = async (
 
 	// List of free agents looking for minimum contracts, sorted by value. This is used to bump teams up to the minimum roster size.
 	for (const p of players) {
-		if (p.contract.amount === g.get("minContract")) {
+		if (
+			p.contract.amount === g.get("minContract") &&
+			(!apronsEnabled() || p.contract.exp < salaryYear() + 2)
+		) {
 			minFreeAgents.push(p);
 		}
 	}

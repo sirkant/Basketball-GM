@@ -1,6 +1,7 @@
 import { showNotification } from "../util/showNotification.ts";
 import { toWorker } from "../util/toWorker.ts";
 import { showUndoNotification } from "./UndoNotification.tsx";
+import { useLocal } from "../util/local.ts";
 
 export const showSignUndo = ({
 	name,
@@ -43,6 +44,7 @@ export const NegotiateButtons = ({
 	};
 	willingToNegotiate: boolean;
 }) => {
+	const { salaryCapType } = useLocal(["salaryCapType"]);
 	if (spectator) {
 		return null;
 	}
@@ -54,10 +56,11 @@ export const NegotiateButtons = ({
 	const contractAmount = p.mood.user.contractAmount;
 
 	const signDisabled =
-		!canGoOverCap &&
-		(!!disabled ||
-			(contractAmount / 1000 > capSpace + 1 / 1000 &&
-				contractAmount / 1000 > (minContract + 1) / 1000));
+		!!disabled ||
+		(!canGoOverCap &&
+			!(__SPORT === "basketball" && salaryCapType === "soft") &&
+			contractAmount / 1000 > capSpace + 1 / 1000 &&
+			contractAmount / 1000 > (minContract + 1) / 1000);
 	return (
 		<>
 			<button

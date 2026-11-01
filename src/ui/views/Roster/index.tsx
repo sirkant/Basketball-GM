@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ApronNotice } from "../../components/ApronNotice.tsx";
 import { arrayMove } from "@dnd-kit/sortable";
 import { PLAYER, WEBSITE_ROOT } from "../../../common/constants.ts";
 import { DataTable } from "../../components/DataTable/index.tsx";
@@ -86,6 +87,7 @@ const handleRelease = async (
 };
 
 const Roster = ({
+	financialStatus,
 	abbrev,
 	editable,
 	luxuryTaxAmount,
@@ -387,6 +389,7 @@ const Roster = ({
 				season={season}
 			/>
 
+			<ApronNotice status={financialStatus} />
 			<TopStuff
 				abbrev={abbrev}
 				currentSeason={currentSeason}

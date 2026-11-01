@@ -36,6 +36,7 @@ const showReleaseUndo = ({
 };
 
 const NegotiationList = ({
+	financialStatus,
 	capSpace,
 	draftPickAutoContract,
 	numRosterSpots,
@@ -259,6 +260,7 @@ const NegotiationList = ({
 			) : null}
 
 			<RosterSalarySummary
+				financialStatus={financialStatus}
 				capSpace={capSpace}
 				numRosterSpots={numRosterSpots}
 				payroll={payroll}

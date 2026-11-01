@@ -4,6 +4,12 @@ import { g, helpers, logEvent } from "../../util/index.ts";
 import type { Phase, Player, PlayerContract } from "../../../common/types.ts";
 import genJerseyNumber from "./genJerseyNumber.ts";
 import setJerseyNumber from "./setJerseyNumber.ts";
+import {
+	apronsEnabled,
+	checkApronSigning,
+	salaryYear,
+} from "../finances/nbaAprons.ts";
+import getPayroll from "../team/getPayroll.ts";
 
 const sign = async (
 	p: Player,
@@ -15,6 +21,23 @@ const sign = async (
 		p.stats.length === 0 &&
 		p.draft.year === g.get("season") &&
 		p.draft.tid === tid;
+	if (apronsEnabled()) {
+		let payroll = await getPayroll(tid, salaryYear());
+		if (p.tid === tid && p.contract.exp >= salaryYear()) {
+			payroll -= p.contract.amount;
+		}
+		const rule = await checkApronSigning(
+			tid,
+			p,
+			contract.amount,
+			contract.exp,
+			isRookie || phase === PHASE.RESIGN_PLAYERS,
+			payroll,
+		);
+		if (rule.error) {
+			throw new Error(rule.error);
+		}
+	}
 
 	p.tid = tid;
 	p.numDaysFreeAgent = 0;

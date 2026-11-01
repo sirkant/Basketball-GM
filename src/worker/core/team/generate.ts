@@ -49,6 +49,8 @@ const generate = (tm: any): Team => {
 			scouting: budget.scouting,
 		},
 		strategy,
+		apronState: tm.apronState,
+		apronPickPenalties: tm.apronPickPenalties,
 		depth: tm.depth,
 		colors: tm.colors ? tm.colors : DEFAULT_TEAM_COLORS,
 		jersey,

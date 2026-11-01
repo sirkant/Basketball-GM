@@ -2248,6 +2248,31 @@ export const generateJsonSchema = (sport: Sport | "test") => {
 				items: {
 					type: "object",
 					properties: {
+						apronState: {
+							type: "object",
+							properties: {
+								season: { type: "integer" },
+								hardCap: { enum: [1, 2] },
+								mleUsed: { type: "number", minimum: 0 },
+								mleType: { enum: ["room", "taxpayer", "nonTaxpayer"] },
+							},
+							required: ["season"],
+						},
+						apronPickPenalties: {
+							type: "array",
+							items: {
+								type: "object",
+								properties: {
+									season: { type: "integer" },
+									triggerSeason: { type: "integer" },
+									over: { type: "integer", minimum: 0 },
+									under: { type: "integer", minimum: 0 },
+									penalized: { type: "boolean" },
+									unfrozen: { type: "boolean" },
+								},
+								required: ["season", "triggerSeason", "over", "under"],
+							},
+						},
 						tid: {
 							type: "integer",
 						},

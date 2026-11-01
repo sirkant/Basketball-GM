@@ -492,8 +492,8 @@ export const defaultGameAttributes: GameAttributesLeagueWithHistory = {
 	godMode: false,
 	godModeInPast: false,
 	salaryCap: 150000, // [thousands of dollars]
-	minPayroll: 95000, // [thousands of dollars]
-	luxuryPayroll: 182246, // [thousands of dollars]
+	minPayroll: 135000, // [thousands of dollars], 90% of salary cap
+	luxuryPayroll: 182246, // [thousands of dollars], modern NBA ratio
 	luxuryTax: 1.5,
 	minContract: 1200, // [thousands of dollars]
 	maxContract: 50000, // [thousands of dollars]
@@ -554,7 +554,7 @@ export const defaultGameAttributes: GameAttributesLeagueWithHistory = {
 	allStarDunk: true,
 	allStarThree: true,
 	budget: true,
-	numSeasonsFutureDraftPicks: 4,
+	numSeasonsFutureDraftPicks: bySport({ basketball: 8, default: 4 }),
 	foulRateFactor: 1,
 	foulsNeededToFoulOut: 6,
 	foulsUntilBonus: [5, 4, 2],

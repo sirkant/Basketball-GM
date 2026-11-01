@@ -8,6 +8,8 @@ import type {
 } from "../../../common/types.ts";
 import { orderBy } from "../../../common/utils.ts";
 import isUntradable from "./isUntradable.ts";
+import { getApronTradeRule } from "../../../common/nbaAprons.ts";
+import { apronsEnabled, currentApronState } from "../finances/nbaAprons.ts";
 
 const getTeamOvr = async (playersRaw: Player[]) => {
 	const players = await player.formatAll(playersRaw, {
@@ -147,6 +149,7 @@ const summary = async (teams: TradeTeams): Promise<TradeSummary> => {
 
 	const softCapCondition =
 		g.get("salaryCapType") === "soft" &&
+		!apronsEnabled() &&
 		((ratios[0] > softCapTradeSalaryMatch && overCap[0]) ||
 			(ratios[1] > softCapTradeSalaryMatch && overCap[1]));
 
@@ -180,6 +183,39 @@ const summary = async (teams: TradeTeams): Promise<TradeSummary> => {
 		s.warningAmount = amountOverCap;
 	}
 
+	if (apronsEnabled()) {
+		for (const i of [0, 1] as const) {
+			const j = i === 0 ? 1 : 0;
+			const t = await idb.cache.teams.get(tids[i]);
+			const rule = getApronTradeRule({
+				payrollAfter: s.teams[i].payrollAfterTrade * 1000,
+				outgoing: s.teams[i].total * 1000,
+				incoming: s.teams[j].total * 1000,
+				outgoingSalaries: s.teams[i].trade.map((p) => p.contract.amount * 1000),
+				incomingSalaries: s.teams[j].trade.map((p) => p.contract.amount * 1000),
+				salaryCap: g.get("salaryCap"),
+				taxLevel: g.get("luxuryPayroll"),
+				hardCap: currentApronState(t)?.hardCap,
+			});
+			if (rule.error) {
+				s.warning = `${s.teams[i].name}: ${rule.error}`;
+			}
+			for (const dp of s.teams[i].picks) {
+				const raw = await idb.cache.draftPicks.get(dp.dpid);
+				const original = raw
+					? await idb.cache.teams.get(raw.originalTid)
+					: undefined;
+				if (
+					raw?.round === 1 &&
+					original?.apronPickPenalties?.some(
+						(p) => p.season === raw.season && !p.unfrozen,
+					)
+				) {
+					s.warning = `${s.teams[i].name}: This first-round pick is frozen by the second-apron rules and cannot be traded.`;
+				}
+			}
+		}
+	}
 	return s;
 };
 

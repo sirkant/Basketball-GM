@@ -3,7 +3,6 @@ import { finances, player, season, team } from "../core/index.ts";
 import { idb } from "../db/index.ts";
 import { g, helpers } from "../util/index.ts";
 import type { Player, TeamSeasonAttr } from "../../common/types.ts";
-import { projectedTax } from "../core/finances/nbaAprons.ts";
 import { defineView } from "../util/defineView.ts";
 import { addMood } from "./freeAgents.ts";
 import addFirstNameShort from "../util/addFirstNameShort.ts";
@@ -14,6 +13,10 @@ import type { RouteParams } from "../../ui/router/types.ts";
 import { validateAbbrev } from "../util/processInputs.ts";
 import { validateSeason } from "../util/processInputs.ts";
 import { validateSeasonType } from "../util/processInputs.ts";
+import {
+	getFinancialStatus,
+	projectedTax,
+} from "../core/finances/nbaAprons.ts";
 
 const processInputs = (params: RouteParams<"roster">) => {
 	// Fix broken links
@@ -404,6 +407,10 @@ export default defineView({
 				abbrev: inputs.abbrev,
 				editable,
 				maxRosterSize: g.get("maxRosterSize"),
+				financialStatus:
+					inputs.season === g.get("season")
+						? await getFinancialStatus(inputs.tid)
+						: undefined,
 				numPlayersOnCourt: g.get("numPlayersOnCourt"),
 				luxuryTaxAmount,
 				minPayrollAmount,

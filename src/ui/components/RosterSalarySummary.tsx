@@ -1,15 +1,18 @@
 import { HelpPopover } from "./HelpPopover.tsx";
 import { helpers } from "../util/helpers.ts";
 import { useLocal } from "../util/local.ts";
+import { ApronNotice, type FinancialStatus } from "./ApronNotice.tsx";
 
 export const RosterSalarySummary = ({
 	capSpace,
 	numRosterSpots,
 	payroll,
+	financialStatus,
 }: {
 	capSpace: number;
 	numRosterSpots: number;
 	payroll: number;
+	financialStatus?: FinancialStatus;
 }) => {
 	const { luxuryPayroll, maxContract, minContract, salaryCapType } = useLocal([
 		"luxuryPayroll",
@@ -22,6 +25,7 @@ export const RosterSalarySummary = ({
 
 	return (
 		<div className="mb-3">
+			<ApronNotice status={financialStatus} />
 			You currently have <b>{numRosterSpots}</b> open roster spots
 			{salaryCapType === "none" ? (
 				<>
@@ -57,9 +61,15 @@ export const RosterSalarySummary = ({
 							{salaryCapType === "hard"
 								? "You "
 								: "After the season you can go over the salary cap to re-sign your own players. Besides that, you "}
-							can only exceed the salary cap to sign players to minimum
-							contracts ({helpers.formatCurrency(minContract / 1000, "M")}
-							/year).
+							{__SPORT === "basketball" && salaryCapType === "soft" ? (
+								"can use an available mid-level or minimum exception. Open a negotiation to see legal offers and apron consequences."
+							) : (
+								<>
+									can only exceed the salary cap to sign players to minimum
+									contracts ({helpers.formatCurrency(minContract / 1000, "M")}
+									/year).
+								</>
+							)}
 						</p>
 					</HelpPopover>
 				</>

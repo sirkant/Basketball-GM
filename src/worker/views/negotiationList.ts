@@ -5,6 +5,7 @@ import { g } from "../util/index.ts";
 import addFirstNameShort from "../util/addFirstNameShort.ts";
 import { addMood, freeAgentStats } from "./freeAgents.ts";
 import { defineView } from "../util/defineView.ts";
+import { getFinancialStatus } from "../core/finances/nbaAprons.ts";
 
 export const getNegotiationPids = async (tid: number) => {
 	const negotiations = await idb.cache.negotiations.getAll();
@@ -83,6 +84,7 @@ export default defineView({
 
 		return {
 			capSpace,
+			financialStatus: await getFinancialStatus(userTid, payroll),
 			draftPickAutoContract: g.get("draftPickAutoContract"),
 			numRosterSpots: g.get("maxRosterSize") - userPlayersAll.length,
 			payroll: payroll / 1000,

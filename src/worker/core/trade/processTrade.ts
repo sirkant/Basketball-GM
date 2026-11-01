@@ -18,6 +18,13 @@ import {
 } from "../../../common/types.ts";
 import { getTeammateJerseyNumbers } from "../player/genJerseyNumber.ts";
 import { recomputeLocalUITeamOvrs } from "../../util/recomputeLocalUITeamOvrs.ts";
+import summary from "./summary.ts";
+import { getApronTradeRule } from "../../../common/nbaAprons.ts";
+import {
+	apronsEnabled,
+	currentApronState,
+	saveApronState,
+} from "../finances/nbaAprons.ts";
 
 const processTrade = async (
 	rawTeams: TradeTeams,
@@ -26,6 +33,28 @@ const processTrade = async (
 	const tids: [number, number] = [rawTeams[0].tid, rawTeams[1].tid];
 	const pids: [number[], number[]] = [rawTeams[0].pids, rawTeams[1].pids];
 	const dpids: [number[], number[]] = [rawTeams[0].dpids, rawTeams[1].dpids];
+	const previousApronStates = new Map<number, Team["apronState"]>();
+	if (apronsEnabled()) {
+		const s = await summary(rawTeams);
+		for (const i of [0, 1] as const) {
+			const j = i === 0 ? 1 : 0;
+			const t = await idb.cache.teams.get(tids[i]);
+			previousApronStates.set(tids[i], helpers.deepCopy(t?.apronState));
+			const rule = getApronTradeRule({
+				payrollAfter: s.teams[i].payrollAfterTrade * 1000,
+				outgoing: s.teams[i].total * 1000,
+				incoming: s.teams[j].total * 1000,
+				outgoingSalaries: s.teams[i].trade.map((p) => p.contract.amount * 1000),
+				incomingSalaries: s.teams[j].trade.map((p) => p.contract.amount * 1000),
+				salaryCap: g.get("salaryCap"),
+				taxLevel: g.get("luxuryPayroll"),
+				hardCap: currentApronState(t)?.hardCap,
+			});
+			if (!rule.error && rule.hardCap) {
+				await saveApronState(tids[i], { hardCap: rule.hardCap });
+			}
+		}
+	}
 
 	const teams: TradeEventTeams = [
 		{
@@ -231,8 +260,22 @@ const processTrade = async (
 		initialHash !== undefined
 			? await idb.cache.savedTrades.get(initialHash)
 			: undefined;
+	const appliedApronStates = new Map<number, string | undefined>();
+	for (const tid of previousApronStates.keys()) {
+		appliedApronStates.set(
+			tid,
+			JSON.stringify((await idb.cache.teams.get(tid))?.apronState),
+		);
+	}
 
 	const undo = async () => {
+		for (const [tid, state] of appliedApronStates) {
+			if (
+				JSON.stringify((await idb.cache.teams.get(tid))?.apronState) !== state
+			) {
+				return false;
+			}
+		}
 		// Collect assets
 		const players: [Player[], Player[]] = [[], []];
 		const draftPicks: [DraftPick[], DraftPick[]] = [[], []];
@@ -285,6 +328,13 @@ const processTrade = async (
 		}
 
 		// Restore other various state
+		for (const [tid, state] of previousApronStates) {
+			const t = await idb.cache.teams.get(tid);
+			if (t) {
+				t.apronState = state;
+				await idb.cache.teams.put(t);
+			}
+		}
 
 		for (const [pid, info] of undoInfoOtherPlayers) {
 			const p = await idb.cache.players.get(pid);

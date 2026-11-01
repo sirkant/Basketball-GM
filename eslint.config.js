@@ -35,6 +35,7 @@ const commonGlobals = getCommonGlobals(globals.browser, globals.sharedWorker);
 
 export default defineConfig(
 	globalIgnores([
+		".tools/",
 		"analysis/",
 		"build/",
 		"public/upgrade-50/",
