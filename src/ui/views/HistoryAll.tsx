@@ -1,0 +1,170 @@
+import { DataTable } from "../components/DataTable/index.tsx";
+import { MoreLinks } from "../components/MoreLinks.tsx";
+import useTitleBar from "../hooks/useTitleBar.tsx";
+import { helpers } from "../util/helpers.ts";
+import { getCols } from "../../common/getCols.ts";
+import type { View } from "../../common/types.ts";
+import {
+	CountBadge,
+	wrappedPlayerNameLabels,
+} from "../components/PlayerNameLabels.tsx";
+import { TeamLogoInline } from "../components/TeamLogoInline.tsx";
+import { useLocal } from "../util/local.ts";
+
+const awardName = (
+	award: {
+		pid: number;
+		pos: string | undefined;
+		name: string;
+		tid: number;
+		abbrev: string;
+		count: number;
+	},
+	season: number,
+	userTid: number,
+) => {
+	const wrappedValue = wrappedPlayerNameLabels({
+		pid: award.pid,
+		pos: award.pos,
+		season,
+		legacyName: award.name,
+		abbrev: award.abbrev,
+		tid: award.tid,
+		count: award.count,
+	});
+
+	// This is our team.
+	if (award.tid === userTid) {
+		return {
+			...wrappedValue,
+			classNames: "table-info",
+		};
+	}
+
+	return wrappedValue;
+};
+
+const teamName = (
+	t: View<"historyAll">["seasons"][number]["champ"],
+	season: number,
+) => {
+	if (t) {
+		if (t.missing) {
+			return t.region;
+		}
+
+		return (
+			<>
+				<a href={helpers.leagueUrl(["roster", `${t.abbrev}_${t.tid}`, season])}>
+					{t.region}
+				</a>{" "}
+				({helpers.formatRecord(t)})
+			</>
+		);
+	}
+
+	// This happens if there is missing data, such as from Delete Old Data
+	return "N/A";
+};
+
+const formatTeam = (
+	t: View<"historyAll">["seasons"][number]["champ"],
+	season: number,
+	userTid: number,
+) => {
+	if (!t) {
+		return null;
+	}
+
+	return {
+		classNames: t.tid === userTid ? "table-info py-1" : "py-1",
+		value: (
+			<div className="d-flex align-items-center">
+				{t.missing ? null : (
+					<TeamLogoInline imgURL={t.imgURL} imgURLSmall={t.imgURLSmall} />
+				)}
+				<div className="ms-1 me-auto">
+					{t.seed !== undefined ? `${t.seed}. ` : null}
+					{teamName(t, season)}
+				</div>
+				<CountBadge count={t.count} />
+			</div>
+		),
+		sortValue: t.missing
+			? `${t.region} ${season}`
+			: `${t.region} ${t.name} ${season}`,
+	};
+};
+
+const HistoryAll = ({ awards, seasons }: View<"historyAll">) => {
+	useTitleBar({ title: "League History" });
+	const { userTid } = useLocal(["userTid"]);
+
+	const cols = getCols([
+		"Season",
+		"League Champion",
+		"Runner Up",
+		...awards.map((award) => {
+			return {
+				desc: award.name,
+				title: award.shortName,
+				sortType: "name" as const,
+			};
+		}),
+	]);
+
+	const rows = seasons.map((s) => {
+		let seasonLink;
+		if (s.champ) {
+			seasonLink = (
+				<a href={helpers.leagueUrl(["history", s.season])}>{s.season}</a>
+			);
+		} else {
+			// This happens if there is missing data, such as from Delete Old Data
+			seasonLink = String(s.season);
+		}
+
+		const champEl = formatTeam(s.champ, s.season, userTid);
+
+		const runnerUpEl = formatTeam(s.runnerUp, s.season, userTid);
+
+		const awardsByShortName = Object.groupBy(
+			s.awards,
+			(award) => award.awardShortName,
+		);
+
+		return {
+			key: s.season,
+			data: [
+				seasonLink,
+				champEl,
+				runnerUpEl,
+				...awards.map(({ shortName }) => {
+					const award = awardsByShortName[shortName];
+					if (!award || !award[0]) {
+						return;
+					}
+
+					return awardName(award[0], s.season, userTid);
+				}),
+			],
+		};
+	});
+
+	return (
+		<>
+			<MoreLinks type="league" page="history_all" />
+
+			<DataTable
+				cols={cols}
+				defaultSort={[0, "desc"]}
+				defaultStickyCols={1}
+				name="HistoryAll"
+				pagination
+				rows={rows}
+			/>
+		</>
+	);
+};
+
+export default HistoryAll;

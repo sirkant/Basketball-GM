@@ -1,0 +1,115 @@
+import { PHASE, RATINGS } from "../../../common/constants.ts";
+import type { Player } from "../../../common/types.ts";
+import { g } from "../../util/index.ts";
+import { getPlayerProfileStats } from "../../views/player.ts";
+import player from "./index.ts";
+import getSeasonLeaders, {
+	splitRegularSeasonPlayoffsCombined,
+} from "../season/getSeasonLeaders.ts";
+
+// Return the attrs/ratings/stats this player is the leader in, by season
+const getLeaders = async (pRaw: Player) => {
+	const seasons = new Set<number>();
+	for (const row of [...pRaw.stats, ...pRaw.ratings]) {
+		seasons.add(row.season);
+	}
+
+	const currentSeason = g.get("season");
+	const currentPhase = g.get("phase");
+
+	const stats = getPlayerProfileStats();
+	const ratings = ["ovr", "pot", ...RATINGS] as const;
+
+	const leaders: Record<
+		string,
+		{
+			attrs: Set<string>;
+			regularSeason: Set<string>;
+			playoffs: Set<string>;
+			combined: Set<string>;
+			ratings: Set<string>;
+		}
+	> = {};
+	for (const season of seasons) {
+		const regularSeasonOnly =
+			season === currentSeason && currentPhase < PHASE.PLAYOFFS;
+
+		const p = await player.format(pRaw, {
+			attrs: ["age"],
+			// pos is for getLeaderRequirements
+			ratings: ["pos", ...ratings],
+			// tid is for GamesPlayedCache lookup
+			stats: ["tid", ...stats],
+			season,
+			mergeStats: "totOnly",
+			fuzz: true,
+			seasonType: regularSeasonOnly
+				? ["regularSeason"]
+				: ["regularSeason", "playoffs", "combined"],
+		});
+		if (!p) {
+			// Could be a season where player is a draft prospect or free agent
+			continue;
+		}
+		const statsByType = splitRegularSeasonPlayoffsCombined(p.stats);
+
+		const leadersCache = await getSeasonLeaders(season);
+		if (!leadersCache) {
+			continue;
+		}
+
+		const leader = {
+			attrs: new Set<string>(),
+			regularSeason: new Set<string>(),
+			playoffs: new Set<string>(),
+			combined: new Set<string>(),
+			ratings: new Set<string>(),
+		};
+
+		// Oldest player must have been on a team this season
+		if (
+			(statsByType.regularSeason || statsByType.playoffs) &&
+			p.age === leadersCache.age
+		) {
+			leader.attrs.add("age");
+		}
+
+		const ratingsCache =
+			leadersCache[g.get("godMode") ? "ratings" : "ratingsFuzz"];
+		if (ratingsCache) {
+			for (const rating of ratings) {
+				if (p.ratings[rating] === ratingsCache[rating]) {
+					leader.ratings.add(rating);
+				}
+			}
+		}
+
+		for (const type of ["regularSeason", "playoffs", "combined"] as const) {
+			const leadersCacheType = leadersCache[type];
+			const playerStats = statsByType[type];
+			if (leadersCacheType && playerStats) {
+				for (const stat of stats) {
+					let value = playerStats[stat];
+					if (player.stats.max.includes(stat) && Array.isArray(value)) {
+						value = value[0];
+					}
+
+					if (value === leadersCacheType[stat]) {
+						leader[type].add(stat);
+					}
+				}
+			}
+		}
+
+		if (regularSeasonOnly) {
+			// Combined and regular season leaders are the same, but until the playoffs start, seasonLeaders is not calculated for combined stats
+			leader.combined = leader.regularSeason;
+		}
+
+		leaders[season] = leader;
+	}
+
+	return leaders;
+};
+
+export default getLeaders;

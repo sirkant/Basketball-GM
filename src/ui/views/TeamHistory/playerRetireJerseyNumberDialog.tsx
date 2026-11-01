@@ -1,0 +1,88 @@
+import { useState } from "react";
+import { confirmable, createConfirmation } from "react-confirm";
+import { helpers } from "../../util/helpers.ts";
+import { focusOnMount } from "../../util/refCallbacks.ts";
+import { Modal } from "../../components/Modal.tsx";
+
+export type RetireJerseyNumberPlayer = {
+	pid: number;
+	firstName: string;
+	lastName: string;
+	retirableJerseyNumbers: Record<string, number[]>;
+};
+
+const Confirm = confirmable<
+	{
+		p: RetireJerseyNumberPlayer;
+	},
+	string | undefined
+>(({ show, proceed, p }) => {
+	const numbers = Object.keys(p.retirableJerseyNumbers);
+	const [number, setNumber] = useState(() => {
+		let maxSeasons = -Infinity;
+		let selectedNumber;
+		for (const number of numbers) {
+			const seasons = p.retirableJerseyNumbers[number];
+			if (seasons && seasons.length >= maxSeasons) {
+				maxSeasons = seasons.length;
+				selectedNumber = number;
+			}
+		}
+		return selectedNumber;
+	});
+
+	const cancel = () => proceed(undefined);
+	const ok = () => proceed(number);
+
+	return (
+		<Modal show={show} onHide={cancel}>
+			<Modal.Header closeButton>
+				Retire {p.firstName} {p.lastName}'s jersey number
+			</Modal.Header>
+			<Modal.Body>
+				<form
+					onSubmit={(event) => {
+						event.preventDefault();
+						ok();
+					}}
+				>
+					<div className="d-flex">
+						<div className="flex-grow-1 me-2">
+							<select
+								ref={focusOnMount}
+								className="form-select"
+								onChange={(event) => {
+									setNumber(event.target.value);
+								}}
+								value={number}
+							>
+								{numbers.map((number) => (
+									<option key={number} value={number}>
+										#{number} (
+										{helpers
+											.yearRanges(p.retirableJerseyNumbers[number] ?? [])
+											.join(", ")}
+										)
+									</option>
+								))}
+							</select>
+						</div>
+						<button className="btn btn-primary" type="submit">
+							Retire jersey number
+						</button>
+					</div>
+				</form>
+			</Modal.Body>
+		</Modal>
+	);
+});
+
+const confirmFunction = createConfirmation(Confirm);
+
+const playerRetireJerseyNumberDialog = (p: RetireJerseyNumberPlayer) => {
+	return confirmFunction({
+		p,
+	});
+};
+
+export default playerRetireJerseyNumberDialog;

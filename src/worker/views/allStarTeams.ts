@@ -1,0 +1,174 @@
+import { allStar, player } from "../core/index.ts";
+import { idb } from "../db/index.ts";
+import { g, helpers } from "../util/index.ts";
+import type {
+	AllStars,
+	AllStarPlayer,
+	PlayerInjury,
+} from "../../common/types.ts";
+import { defineView } from "../util/defineView.ts";
+import { PHASE, POSITIONS } from "../../common/constants.ts";
+import { orderBy } from "../../common/utils.ts";
+import { extraStats } from "./hallOfFame.ts";
+import { getPosByGpF } from "../core/player/getPosByGpF.ts";
+import { bySport } from "../../common/sportFunctions.ts";
+import { getTeamInfoBySeason } from "../util/getTeamInfoBySeason.ts";
+import { validateSeasonOnly } from "../util/processInputs.ts";
+
+const sortByPos = (p: {
+	bestPos: string;
+	ratings: {
+		ovr: number;
+	};
+}) => {
+	const ind = POSITIONS.indexOf(p.bestPos);
+	return (POSITIONS.length - ind) * 1000 + p.ratings.ovr;
+};
+
+const stats = bySport({
+	baseball: ["keyStats"],
+	basketball: ["pts", "trb", "ast"],
+	football: ["keyStats"],
+	hockey: ["keyStats"],
+} as const);
+
+const getPlayerInfo = async (
+	{ pid, tid, name }: AllStarPlayer,
+	season: number,
+) => {
+	const p = await idb.merged.players.get(pid);
+	if (!p) {
+		// Can happen if player was deleted before starting sim
+		return;
+	}
+
+	const p2 = await player.format(p, {
+		attrs: ["pid", "injury", "watch", "age", "numAllStar"],
+		ratings: ["ovr", "skills", "pos"],
+		season,
+		stats: [...stats, "jerseyNumber", "tid", "abbrev", ...extraStats],
+		fuzz: true,
+		showNoStats: true,
+		mergeStats: "totOnly",
+	});
+
+	if (!p2) {
+		return;
+	}
+
+	return {
+		...p2,
+
+		// Use values at time of draft
+		tid,
+		name,
+		abbrev:
+			(await getTeamInfoBySeason(tid, season))?.abbrev ??
+			helpers.getAbbrev(p.tid),
+
+		bestPos:
+			(__SPORT === "baseball" && p2.stats.gpF
+				? getPosByGpF(p2.stats.gpF)
+				: undefined) ?? p2.ratings.pos,
+	};
+};
+
+const augment = async (allStars: AllStars) => {
+	const remaining = (
+		await Promise.all(
+			allStars.remaining.map((info) => getPlayerInfo(info, allStars.season)),
+		)
+	).filter((p) => p !== undefined);
+	const teams = (await Promise.all(
+		allStars.teams.map((players) =>
+			Promise.all(players.map((info) => getPlayerInfo(info, allStars.season))),
+		),
+	)) as [any[], any[]];
+
+	if (__SPORT !== "basketball") {
+		for (const t of teams) {
+			t.sort((a, b) => sortByPos(b) - sortByPos(a));
+		}
+		remaining.sort((a, b) => sortByPos(b) - sortByPos(a));
+	}
+
+	return {
+		finalized: allStars.finalized,
+		gid: allStars.gid,
+		remaining,
+		teams,
+		teamNames: allStars.teamNames,
+	};
+};
+
+export default defineView({
+	id: "allStarTeams",
+	processInputs: validateSeasonOnly,
+	load: async ({ inputs: { season }, updateEvents, prevInputs }) => {
+		if (
+			updateEvents.has("firstRun") ||
+			updateEvents.has("gameSim") ||
+			updateEvents.has("playerMovement") ||
+			updateEvents.has("gameAttributes") ||
+			season !== prevInputs?.season
+		) {
+			const allStars = await allStar.getOrCreate(season);
+			if (allStars === undefined) {
+				if (season === g.get("season") && g.get("phase") < PHASE.PLAYOFFS) {
+					return {
+						redirectUrl: helpers.leagueUrl(["all_star", "teams", season - 1]),
+					};
+				}
+
+				// https://stackoverflow.com/a/59923262/786644
+				const returnValue = {
+					errorMessage: "All-Star teams not found",
+				};
+				return returnValue;
+			}
+
+			const { finalized, gid, teams, teamNames, remaining } =
+				await augment(allStars);
+
+			const nextGameIsAllStar =
+				season === g.get("season") && (await allStar.nextGameIsAllStar());
+
+			const godMode = g.get("godMode");
+
+			const started = teams[0].length > 1;
+
+			let allPossiblePlayers: {
+				pid: number;
+				tid: number;
+				name: string;
+				abbrev: string;
+				injury: PlayerInjury;
+			}[] = [];
+			if (godMode && (!started || allStars.type !== "draft")) {
+				allPossiblePlayers = orderBy(
+					await idb.cache.players.indexGetAll("playersByTid", [0, Infinity]),
+					["lastName", "firstName"],
+				).map((p) => ({
+					pid: p.pid,
+					tid: p.tid,
+					name: `${p.firstName} ${p.lastName}`,
+					abbrev: helpers.getAbbrev(p.tid),
+					injury: p.injury,
+				}));
+			}
+
+			return {
+				allPossiblePlayers,
+				finalized,
+				gid,
+				nextGameIsAllStar,
+				remaining,
+				season,
+				stats,
+				teams,
+				teamNames,
+				type: allStars.type,
+			};
+		}
+	},
+});

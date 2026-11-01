@@ -1,0 +1,290 @@
+import { idb } from "../db/index.ts";
+import type { PlayerAward } from "../../common/types.ts"; // Keep in sync with Dropdown.js
+import { defineView, keepType } from "../util/defineView.ts";
+import { bySport } from "../../common/sportFunctions.ts";
+import addFirstNameShort from "../util/addFirstNameShort.ts";
+import { countBy, maxBy, range } from "../../common/utils.ts";
+import type { DropdownOption } from "../../ui/hooks/useDropdownOptions.tsx";
+import {
+	formatPlayerAwardName,
+	leaderAwardCategories,
+} from "../../common/awards.ts";
+import type { RouteParams } from "../../ui/router/types.ts";
+import { player } from "../core/index.ts";
+
+const processInputs = (params: RouteParams<"awardsRecords">) => {
+	return {
+		awardType: params.awardType ?? "champion",
+	};
+};
+
+// Sync with useDropdownOptions
+const nonCustomAwardsList = [
+	{
+		value: "All-Star",
+		key: "all_star",
+	},
+	{
+		value: "All-Star MVP",
+		key: "all_star_mvp",
+	},
+	{
+		value: "Won Championship",
+		key: "champion",
+	},
+	...bySport({
+		baseball: [],
+		basketball: [
+			{
+				value: "Slam Dunk Contest Winner",
+				key: "dunk",
+			},
+			{
+				value: "Three-Point Contest Winner",
+				key: "three",
+			},
+		],
+		football: [],
+		hockey: [],
+	}),
+];
+
+nonCustomAwardsList.push(
+	...leaderAwardCategories.map((x) => {
+		return {
+			value: x.name,
+			key: `${x.stat}_leader`,
+		};
+	}),
+);
+
+const nonCustomAwards: Record<string, string> = {};
+for (const row of nonCustomAwardsList) {
+	nonCustomAwards[row.key] = row.value;
+}
+
+const DELIMITER = "~";
+
+type LocalPlayer = {
+	awards: PlayerAward[];
+	draft: { round: number; pick: number; year: number };
+	firstName: string;
+	hof: boolean;
+	lastName: string;
+	pid: number;
+	retiredYear: number;
+	ratings: {
+		pos: string;
+		season: number;
+	}[];
+	stats: {
+		abbrev: string;
+		season: number;
+	}[];
+};
+
+const getPlayerAwards = (p: LocalPlayer, key: string) => {
+	let filter: ((award: PlayerAward) => boolean) | undefined;
+	if (nonCustomAwards[key] !== undefined) {
+		filter = (award) => award.type === nonCustomAwards[key];
+	} else {
+		// Must be a real custom award
+
+		// Look for a team number
+		const parts = key.split(DELIMITER);
+		if (parts.length > 0) {
+			const suffix = Number.parseInt(parts.at(-1)!);
+			if (!Number.isNaN(suffix)) {
+				const targetShortName = parts.slice(0, -1).join("");
+				const targetRank = suffix;
+
+				// Return all players on the Nth team only
+				filter = (award) =>
+					award.type === undefined &&
+					award.shortName === targetShortName &&
+					award.numTeams !== undefined &&
+					award.rank === targetRank;
+			}
+		}
+
+		if (!filter) {
+			// Return all players on all teams if numTeams, otherwise return only award winner
+			filter = (award) =>
+				award.type === undefined &&
+				award.shortName === key &&
+				(award.numTeams !== undefined ||
+					(award.numTeams === undefined && award.rank === 1));
+		}
+	}
+
+	const getTeam = (season: number) => {
+		return p.stats.findLast((row) => row.season === season)?.abbrev ?? "???";
+	};
+
+	const awards = p.awards.filter(filter);
+
+	if (awards.length === 0) {
+		return;
+	}
+
+	const years = awards.map((a) => {
+		return {
+			team: getTeam(a.season),
+			season: a.season,
+		};
+	});
+	const lastYear = Math.max(...years.map((y) => y.season));
+
+	// Find most common pos that this player had for this type of award
+	let maxPos;
+	const yearsSet = new Set(years.map((row) => row.season));
+	const allPos = p.ratings.filter((row) => yearsSet.has(row.season));
+	if (allPos.length > 0) {
+		const posCounts = Object.entries(countBy(allPos, "pos"));
+		maxPos = maxBy(posCounts, 1)![0];
+	}
+
+	return {
+		firstName: p.firstName,
+		lastName: p.lastName,
+		pid: p.pid,
+		count: awards.length,
+		years,
+		lastYear,
+		retired: p.retiredYear !== Infinity,
+		hof: p.hof,
+		pos: maxPos,
+		draft: p.draft,
+	};
+};
+
+type AwardType = {
+	maxNumTeams?: number;
+	name: string;
+	shortName: string;
+};
+
+// awardTypes is expensive to compute, so it's computed once when the page loads and then reused
+const keepPrevOutput = {
+	awardTypes: keepType<AwardType[]>(),
+};
+
+export default defineView({
+	id: "awardsRecords",
+	processInputs,
+	keepPrevOutput,
+	load: async ({ inputs, updateEvents, prevInputs, prevOutput }) => {
+		let awardTypes: AwardType[];
+		if (!prevOutput.awardTypes) {
+			const awards = await idb.merged.awards.getAll();
+			awards.reverse();
+			awardTypes = [];
+
+			// Number contains the number of teams
+			const seenAwardTypes = new Map<string, AwardType>();
+
+			for (const row of awards) {
+				for (const award of row.awards) {
+					const info = seenAwardTypes.get(award.shortName);
+					if (!info) {
+						const newInfo: AwardType = {
+							name: award.name,
+							shortName: award.shortName,
+						};
+						if (award.numTeams !== undefined) {
+							newInfo.maxNumTeams = award.numTeams;
+						}
+						seenAwardTypes.set(award.shortName, newInfo);
+						awardTypes.push(newInfo);
+					} else if (
+						award.numTeams !== undefined &&
+						(info.maxNumTeams === undefined ||
+							award.numTeams > info.maxNumTeams)
+					) {
+						info.maxNumTeams = award.numTeams;
+					}
+				}
+			}
+		} else {
+			awardTypes = prevOutput.awardTypes;
+		}
+
+		if (
+			updateEvents.has("firstRun") ||
+			inputs.awardType !== prevInputs?.awardType
+		) {
+			const formatOptions = {
+				attrs: [
+					"awards",
+					"firstName",
+					"lastName",
+					"pid",
+					"retiredYear",
+					"hof",
+					"draft",
+				],
+				ratings: ["pos", "season"],
+				stats: ["abbrev", "season"],
+			} as const;
+			const abbrevs = await player.loadAbbrevs(formatOptions);
+			const formatPlayer = player.createFormatter(formatOptions, abbrevs);
+			const awardType = inputs.awardType;
+
+			const playersAwards = (
+				await idb.merged.players.getAll(
+					{ activeAndRetired: true },
+					{
+						filter: (p) => p.awards.length > 0,
+						map: (pRaw) => {
+							const p: LocalPlayer | undefined = formatPlayer(pRaw);
+							if (!p) {
+								return;
+							}
+							return getPlayerAwards(p, awardType);
+						},
+					},
+				)
+			).filter((p) => p !== undefined);
+
+			const awardsRecords = addFirstNameShort(playersAwards);
+
+			const awardTypeOptions: DropdownOption[] = [
+				...awardTypes.flatMap((row) => {
+					if (row.maxNumTeams !== undefined && row.maxNumTeams > 1) {
+						return [
+							...range(1, row.maxNumTeams + 1).map((rank) => {
+								return {
+									key: `${row.shortName}${DELIMITER}${rank}`,
+									value: formatPlayerAwardName({
+										name: row.name,
+										numTeams: row.maxNumTeams,
+										rank,
+									}),
+								};
+							}),
+							{
+								key: row.shortName,
+								value: row.name,
+							},
+						];
+					}
+
+					return {
+						key: row.shortName,
+						value: row.name,
+					};
+				}),
+				...nonCustomAwardsList,
+			];
+
+			return {
+				awardsRecords,
+				awardType,
+				awardTypeOptions,
+
+				// This is just for prevOutput.awardTypes so it doesn't need to be recomputed every time
+				awardTypes,
+			};
+		}
+	},
+});

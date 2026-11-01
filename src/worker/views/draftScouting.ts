@@ -1,0 +1,89 @@
+import { PHASE, PLAYER } from "../../common/constants.ts";
+import { idb } from "../db/index.ts";
+import { g } from "../util/index.ts";
+import type { Player } from "../../common/types.ts";
+import addFirstNameShort from "../util/addFirstNameShort.ts";
+import { last } from "../../common/utils.ts";
+import { defineView } from "../util/defineView.ts";
+import { player } from "../core/index.ts";
+
+const getSeason = async (playersAll: Player[], season: number) => {
+	const playersAllFiltered = playersAll.filter((p) => p.draft.year === season);
+	const players = await player.formatAll(playersAllFiltered, {
+		attrs: ["pid", "firstName", "lastName", "age", "valueFuzz", "watch"],
+		ratings: ["ovr", "pot", "skills", "fuzz", "pos"],
+		showNoStats: true,
+		showRookies: true,
+		fuzz: true,
+	});
+	players.sort((a, b) => b.valueFuzz - a.valueFuzz);
+
+	const players2 = addFirstNameShort(
+		players.map((pa, i) => {
+			const ratings = last(pa.ratings);
+
+			return {
+				pid: pa.pid,
+				firstName: pa.firstName,
+				lastName: pa.lastName,
+				age: pa.age,
+				watch: pa.watch,
+
+				// Ratings - just take the only entry
+				ovr: ratings.ovr,
+				pot: ratings.pot,
+				skills: ratings.skills,
+				pos: ratings.pos,
+				rank: i + 1,
+			};
+		}),
+	);
+
+	return {
+		players: players2,
+		season,
+	};
+};
+
+export default defineView({
+	id: "draftScouting",
+	load: async ({ updateEvents }) => {
+		if (updateEvents.has("firstRun") || updateEvents.has("playerMovement")) {
+			const fantasyDraft = g.get("phase") === PHASE.FANTASY_DRAFT;
+
+			// In fantasy draft, use temp tid
+			const tid = fantasyDraft
+				? PLAYER.UNDRAFTED_FANTASY_TEMP
+				: PLAYER.UNDRAFTED;
+
+			// Once a new draft class is generated, if the next season hasn't started, need to bump up year numbers
+			const seasonOffset = g.get("phase") >= PHASE.RESIGN_PLAYERS ? 1 : 0;
+
+			const firstSeason = g.get("season") + seasonOffset;
+
+			const players = (
+				await idb.cache.players.indexGetAll("playersByDraftYearRetiredYear", [
+					[firstSeason],
+					[Infinity, Infinity],
+				])
+			).filter((p) => p.tid === tid);
+
+			let maxDraftYear = firstSeason + 2;
+			for (const p of players) {
+				if (p.draft.year > maxDraftYear) {
+					maxDraftYear = p.draft.year;
+				}
+			}
+
+			const seasons: Awaited<ReturnType<typeof getSeason>>[] = [];
+			for (let season = firstSeason; season <= maxDraftYear; season++) {
+				seasons.push(await getSeason(players, season));
+			}
+
+			return {
+				fantasyDraft,
+				seasons,
+			};
+		}
+	},
+});

@@ -1,0 +1,139 @@
+import { Cache, idb } from "../worker/db/index.ts";
+import { STORES, type Store } from "../worker/db/Cache.ts";
+import { g, helpers } from "../worker/util/index.ts";
+import {
+	defaultGameAttributes,
+	footballOverrides,
+} from "../common/defaultGameAttributes.ts";
+
+export const mockIDBLeague = (): any => {
+	const queries = {
+		get() {
+			return undefined;
+		},
+		getAll() {
+			return [];
+		},
+		async *iterate() {},
+		async *[Symbol.asyncIterator]() {},
+	};
+
+	const store = {
+		...queries,
+		index() {
+			return queries;
+		},
+	};
+
+	const league = {
+		get: queries.get,
+		getAll: queries.getAll,
+		transaction() {
+			return {
+				store,
+				objectStore() {
+					return store;
+				},
+			};
+		},
+	};
+
+	return league;
+};
+
+/**
+ * Finds the number of times an element appears in an array.
+ *
+ * @memberOf test.core
+ * @param {Array} array The array to search over.
+ * @param {*} x Element to search for
+ * @return {number} The number of times x was found in array.
+ */
+export function numInArrayEqualTo<T>(array: T[], x: T): number {
+	let n = 0;
+	let idx = array.indexOf(x);
+
+	while (idx !== -1) {
+		n += 1;
+		idx = array.indexOf(x, idx + 1);
+	}
+
+	return n;
+}
+
+export const resetCache = async (
+	data: Partial<Record<Store, Readonly<any[]>>>,
+	{ stubFlush = true }: { stubFlush?: boolean } = {},
+) => {
+	idb.cache = new Cache(); // We want these to do nothing while testing, usually
+
+	idb.cache.fill = async () => {};
+
+	if (stubFlush) {
+		idb.cache.flush = async () => {};
+	}
+
+	for (const store of STORES) {
+		// This stuff is all needed because a real Cache.fill is not called.
+		idb.cache._data[store] = {};
+		idb.cache._deletes[store] = new Set();
+		idb.cache._dirtyRecords[store] = new Set();
+		idb.cache._maxIds[store] = -1;
+
+		idb.cache._markDirtyIndexes(store);
+	}
+
+	idb.cache._status = "full";
+
+	if (!data) {
+		return;
+	}
+
+	if (data.players) {
+		await idb.cache.players.addAll(data.players);
+	}
+
+	if (data.teams) {
+		await idb.cache.teams.addAll(data.teams);
+	}
+
+	if (data.teamSeasons) {
+		await idb.cache.teamSeasons.addAll(data.teamSeasons);
+	}
+
+	if (data.teamStats) {
+		await idb.cache.teamStats.addAll(data.teamStats);
+	}
+
+	if (data.trade) {
+		await idb.cache.trade.addAll(data.trade);
+	}
+};
+
+export const resetG = () => {
+	const season = 2016;
+	const teams = helpers.getTeamsDefault();
+	Object.assign(g, defaultGameAttributes);
+
+	if (__SPORT === "football") {
+		Object.assign(g, footballOverrides);
+	}
+
+	Object.assign(g, {
+		userTid: 0,
+		userTids: [0],
+		season,
+		startingSeason: season,
+		teamInfoCache: teams.map((t) => ({
+			abbrev: t.abbrev,
+			disabled: false,
+			imgURL: t.imgURL,
+			imgURLSmall: t.imgURLSmall,
+			name: t.name,
+			region: t.region,
+		})),
+		gracePeriodEnd: season + 2,
+		numTeams: teams.length,
+		numActiveTeams: teams.length,
+	});
+};

@@ -1,0 +1,571 @@
+import { g, helpers, local } from "../../util/index.ts";
+import type {
+	PlayerRatings,
+	Position,
+} from "../../../common/types.baseball.ts";
+import type { Player } from "../../../common/types.ts";
+import { groupByUnique, last, maxBy } from "../../../common/utils.ts";
+import { shuffle } from "../../../common/random.ts";
+import { player } from "../index.ts";
+
+// Everything used here, either from player.formatAll or from the ratings of a Player
+type PlayerForDepth = {
+	pid: number;
+	ratings: Pick<PlayerRatings, "spd" | "con" | "hpw" | "eye" | "ovrs"> & {
+		pos: Position;
+	};
+};
+
+const getScorePosBonus = (pos: Position) => {
+	if (pos === "C") {
+		// More likely to put actual catcher at catcher
+		return 25;
+	} else if (pos !== "RP") {
+		// Relief pitcher, who cares about "right" position
+		return 10;
+	}
+
+	return 0;
+};
+
+// Score for playing a specific position. Players come from player.formatAll or are constructed manually, so the type is just what this needs
+const score = (
+	p: {
+		ratings: {
+			pos?: string;
+			ovrs: Record<Position, number>;
+		};
+	},
+	pos: Position,
+) => {
+	let tempScore = p.ratings.ovrs[pos];
+
+	if (p.ratings.pos === pos) {
+		tempScore += getScorePosBonus(pos);
+	}
+
+	return tempScore;
+};
+
+// Score for ordering position players on the bench. Pitchers are ranked by their ovr at a position they are bad at, so they wind up at the end
+const benchScore = (ratings: {
+	pos: Position;
+	ovrs: Record<Position, number>;
+}) =>
+	ratings.pos === "RP" || ratings.pos === "SP"
+		? ratings.ovrs.LF
+		: ratings.ovrs[ratings.pos];
+
+const DEF_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"] as const;
+export const DEF_POSITIONS_DH = [
+	"C",
+	"1B",
+	"2B",
+	"3B",
+	"SS",
+	"LF",
+	"CF",
+	"RF",
+	"DH",
+] as const;
+const NUM_STARTERS = 5;
+
+// Only the deterministic traversal order is shared; roster evaluations remain
+// independent. Keep at most five permutations for each DH setting this season.
+let positionIndexesCache:
+	| { season: number; dh: number[][]; noDh: number[][] }
+	| undefined;
+
+const getPositionIndexes = (dh: boolean, attempt: number) => {
+	const season = g.get("season");
+	if (!positionIndexesCache || positionIndexesCache.season !== season) {
+		positionIndexesCache = { season, dh: [], noDh: [] };
+	}
+	const permutations = dh ? positionIndexesCache.dh : positionIndexesCache.noDh;
+	let indexes = permutations[attempt];
+	if (indexes === undefined) {
+		indexes = (dh ? DEF_POSITIONS_DH : DEF_POSITIONS).map((_, i) => i);
+		shuffle(indexes, season + attempt);
+		permutations[attempt] = indexes;
+	}
+	return indexes;
+};
+
+const sortBattingOrder = (
+	starters: {
+		i: number;
+		p: {
+			ratings: {
+				con: number;
+				hpw: number;
+				eye: number;
+				spd: number;
+			};
+		};
+	}[],
+) => {
+	const hasDh = starters.length === 9;
+
+	const availablePlayers = new Set(starters);
+
+	const lineup = [];
+
+	// Helper function: scores players using all 4 ratings with custom weights
+	const pluckBestPlayer = (weights: {
+		con: number;
+		hpw: number;
+		eye: number;
+		spd: number;
+	}) => {
+		const p = maxBy(
+			availablePlayers,
+			({ p }) =>
+				p.ratings.con * weights.con +
+				p.ratings.hpw * weights.hpw +
+				p.ratings.eye * weights.eye +
+				p.ratings.spd * weights.spd,
+		);
+		if (p) {
+			availablePlayers.delete(p);
+		}
+
+		return p;
+	};
+
+	const bestHitter = { con: 1, hpw: 1, eye: 1, spd: 0.2 };
+
+	// Best hitters 2nd and 3rd
+	lineup[1] = pluckBestPlayer(bestHitter);
+	lineup[2] = pluckBestPlayer(bestHitter);
+
+	// Next best hitter 1st, but also value speed
+	lineup[0] = pluckBestPlayer({ con: 1, hpw: 1, eye: 1, spd: 1 });
+
+	// Best remaining power hitters 4th and 5th
+	lineup[3] = pluckBestPlayer({ con: 0.5, hpw: 1, eye: 0.5, spd: 0.1 });
+	lineup[4] = pluckBestPlayer({ con: 0.5, hpw: 1, eye: 0.5, spd: 0.1 });
+
+	// If we have a DH, then make 9th "second leadoff". Otherwise, put them 6th
+	const secondLeadoff = pluckBestPlayer({ con: 1, hpw: 0.25, eye: 1, spd: 1 });
+	if (hasDh) {
+		lineup[5] = pluckBestPlayer(bestHitter);
+		lineup[6] = pluckBestPlayer(bestHitter);
+		lineup[7] = pluckBestPlayer(bestHitter);
+		lineup[8] = secondLeadoff;
+	} else {
+		lineup[5] = secondLeadoff;
+		lineup[6] = pluckBestPlayer(bestHitter);
+		lineup[7] = pluckBestPlayer(bestHitter);
+	}
+
+	return lineup.filter((x) => x !== undefined);
+};
+
+const findMaxBy = <T>(
+	records: T[],
+	count: number,
+	getScore: (record: T) => number,
+) => {
+	const output: {
+		index: number;
+		record: T;
+		score: number;
+	}[] = [];
+
+	const addToOutput = (x: (typeof output)[number]) => {
+		for (let i = 0; i < count - 1; i++) {
+			if (output[i] === undefined) {
+				output[i] = x;
+				return;
+			} else if (output[i]!.score < x.score) {
+				output.splice(i, 0, x);
+				if (output.length > count) {
+					output.pop();
+				}
+				return;
+			}
+		}
+
+		output[count - 1] = x;
+	};
+
+	for (let i = 0; i < records.length; i++) {
+		const record = records[i]!;
+		const score = getScore(record);
+		if (output.length < count || score > output[count - 1]!.score) {
+			addToOutput({
+				index: i,
+				record,
+				score,
+			});
+		}
+	}
+
+	return output;
+};
+
+export const getDepthDefense = (
+	players: {
+		pid: number;
+		ratings: {
+			ovrs: Record<Position, number>;
+			pos: Position;
+		};
+	}[],
+	dh: boolean,
+) => {
+	const defensivePlayersSorted: typeof players = [];
+
+	const playersRemaining = [...players];
+
+	const defPositions = dh ? DEF_POSITIONS_DH : DEF_POSITIONS;
+
+	if (playersRemaining.length > 0) {
+		for (const scorePos of defPositions) {
+			const positionBonus = getScorePosBonus(scorePos);
+			let maxIndex = 0;
+			let maxScore = -Infinity;
+			for (let i = 0; i < playersRemaining.length; i++) {
+				const ratings = playersRemaining[i]!.ratings;
+				let currentScore = ratings.ovrs[scorePos];
+				if (ratings.pos === scorePos) {
+					currentScore += positionBonus;
+				}
+				if (currentScore > maxScore) {
+					maxIndex = i;
+					maxScore = currentScore;
+				}
+			}
+
+			defensivePlayersSorted.push(playersRemaining[maxIndex]!);
+			playersRemaining.splice(maxIndex, 1);
+			if (playersRemaining.length === 0) {
+				break;
+			}
+		}
+	}
+
+	playersRemaining.sort((a, b) => {
+		const diff = benchScore(b.ratings) - benchScore(a.ratings);
+		if (diff === 0) {
+			// Deterministic order
+			return b.pid - a.pid;
+		}
+		return diff;
+	});
+	defensivePlayersSorted.push(...playersRemaining);
+
+	// Try swappinng players to see if that improves the total ovr
+	const numPlayersToTest =
+		defensivePlayersSorted.length < 11 ? defensivePlayersSorted.length : 11;
+	for (let numSwapTries = 0; numSwapTries < 5; numSwapTries++) {
+		let swapped = false;
+
+		const positionIndexes = getPositionIndexes(dh, numSwapTries);
+
+		for (const i of positionIndexes) {
+			let p = defensivePlayersSorted[i];
+			// Needed for empty rosters, like expansion drafts.
+			if (!p) {
+				continue;
+			}
+
+			const pos = defPositions[i]!;
+			let currentOvrs = p.ratings.ovrs;
+			let currentPosOvr = currentOvrs[pos];
+			for (let j = 0; j < numPlayersToTest; j++) {
+				if (i === j) {
+					continue;
+				}
+
+				const p2 = defensivePlayersSorted[j];
+				if (!p2) {
+					continue;
+				}
+
+				const pos2 = defPositions[j]!;
+				const otherOvrs = p2.ratings.ovrs;
+				if (
+					currentOvrs[pos2] + otherOvrs[pos] >
+					currentPosOvr + otherOvrs[pos2]
+				) {
+					defensivePlayersSorted[i] = p2;
+					defensivePlayersSorted[j] = p;
+					p = p2;
+					currentOvrs = otherOvrs;
+					currentPosOvr = currentOvrs[pos];
+					swapped = true;
+				}
+			}
+		}
+
+		if (!swapped) {
+			break;
+		}
+	}
+
+	return defensivePlayersSorted.map((p) => p.pid);
+};
+
+export const getDepthPitchers = (
+	players: {
+		pid: number;
+		ratings: {
+			ovrs: Record<Position, number>;
+		};
+	}[],
+) => {
+	const pitchersSorted: number[] = [];
+
+	let playersRemaining = [...players];
+
+	const getTopByPos = (pos: "SP" | "RP", numToAdd: number) => {
+		const pids = [];
+		const indexes = new Set<number>();
+		const records = findMaxBy(playersRemaining, numToAdd, (p) => score(p, pos));
+		for (const record of records) {
+			pids.push(playersRemaining[record.index]!.pid);
+			indexes.add(record.index);
+		}
+
+		// Can't use splice if there are multiple to remove
+		playersRemaining = playersRemaining.filter((p, i) => !indexes.has(i));
+
+		return pids;
+	};
+
+	// Top 3 starters
+	pitchersSorted.push(...getTopByPos("SP", 3));
+
+	// Closer
+	const closer = getTopByPos("RP", 1)[0];
+
+	// Remaining 2 starters
+	pitchersSorted.push(...getTopByPos("SP", 2));
+
+	// Everybody else
+	if (closer !== undefined) {
+		pitchersSorted.push(closer);
+	}
+	playersRemaining.sort((a, b) => {
+		// Inlining this improves performance significantly, for some reason
+		const diff = b.ratings.ovrs.RP - a.ratings.ovrs.RP;
+		if (diff === 0) {
+			// Deterministic order
+			return b.pid - a.pid;
+		}
+		return diff;
+	});
+	pitchersSorted.push(...playersRemaining.map((p) => p.pid));
+
+	return pitchersSorted;
+};
+
+const genDepth = async (
+	playersRaw: Player[],
+	initialDepth: {
+		L: number[];
+		LP: number[];
+		D: number[];
+		DP: number[];
+		P: number[];
+	},
+	onlyNewPlayers?: boolean,
+	pos?: "L" | "LP" | "D" | "DP" | "P",
+) => {
+	if (initialDepth === undefined) {
+		throw new Error("Missing depth");
+	}
+	const depth = helpers.deepCopy(initialDepth);
+
+	let players: PlayerForDepth[];
+
+	// Can't use player.formatAll in exhibition game, and also want to ignore fuzz, so just keep these two code paths
+	if (local.exhibitionGamePlayers) {
+		players = playersRaw.map((p) => {
+			const ratings = last(p.ratings) as PlayerRatings;
+			return {
+				pid: p.pid,
+				ratings: {
+					spd: ratings.spd,
+					con: ratings.con,
+					hpw: ratings.hpw,
+					eye: ratings.eye,
+					ovrs: ratings.ovrs,
+					pos: ratings.pos as Position,
+				},
+			};
+		});
+	} else {
+		const playersFiltered = await player.formatAll(playersRaw, {
+			attrs: ["pid"],
+			ratings: ["spd", "con", "hpw", "eye", "pos", "ovrs"],
+			season: g.get("season"),
+			showNoStats: true,
+			showRookies: true,
+			fuzz: true,
+		});
+		players = playersFiltered.map((p) => ({
+			pid: p.pid,
+			ratings: {
+				...p.ratings,
+				pos: p.ratings.pos as Position,
+			},
+		}));
+	}
+
+	// Lineup last, since that depends on defensive starters
+	const positions: (keyof typeof depth)[] = pos
+		? [pos]
+		: ["P", "D", "DP", "L", "LP"];
+
+	for (const pos2 of positions) {
+		if (onlyNewPlayers) {
+			if (pos2 === "L" || pos2 === "LP") {
+				continue;
+			}
+
+			// Identify players not currently in the depth chart, and add them to the depth chart above any player worse
+			// than them without otherwise disturbing the order of the depth chart. This is useful for adding free agents to
+			// the user's team - start them if they're better, but otherwise don't fuck with the user's depth chart.
+			const playersNotInDepth = players.filter(
+				(p) => !depth[pos2].includes(p.pid),
+			);
+
+			if (pos2 === "D" || pos2 === "DP") {
+				const addToBench = [];
+
+				const defPositions = pos2 === "D" ? DEF_POSITIONS_DH : DEF_POSITIONS;
+
+				for (const p of playersNotInDepth) {
+					let added = false;
+
+					// Put in starting lineup if better than existing starter
+					for (const [i, scorePos] of defPositions.entries()) {
+						const pScore = score(p, scorePos);
+						const p2 = players.find((p2) => p2.pid === depth[pos2][i]);
+						if (!p2 || pScore > score(p2, scorePos)) {
+							depth[pos2][i] = p.pid;
+							added = true;
+
+							if (p2) {
+								addToBench.push(p2);
+							}
+
+							break;
+						}
+					}
+
+					if (!added) {
+						addToBench.push(p);
+					}
+				}
+
+				// Add any players not put in starting lineup or removed from starting lineup to bench
+				for (const p of addToBench) {
+					const pScore = benchScore(p.ratings);
+					let added = false;
+					for (let i = defPositions.length; i < depth[pos2].length; i++) {
+						const p2 = players.find((p2) => p2.pid === depth[pos2][i]);
+
+						if (!p2 || pScore > benchScore(p2.ratings)) {
+							depth[pos2].splice(i, 0, p.pid);
+							added = true;
+							break;
+						}
+					}
+
+					if (!added) {
+						depth[pos2].push(p.pid);
+					}
+				}
+			} else if (pos2 === "P") {
+				const addToBullpen = [];
+
+				for (const p of playersNotInDepth) {
+					let added = false;
+
+					// Put in starting rotation if better than existing starter
+					for (let i = 0; i < NUM_STARTERS; i++) {
+						const pScore = score(p, "SP");
+						const p2 = players.find((p2) => p2.pid === depth[pos2][i]);
+						if (!p2 || pScore > score(p2, "SP")) {
+							depth[pos2].splice(i, 0, p.pid);
+							added = true;
+
+							// Move last starter to reliever
+							const lastStarter = players.find(
+								(p2) => p2.pid === depth[pos2][NUM_STARTERS],
+							);
+							if (lastStarter) {
+								depth[pos2].splice(NUM_STARTERS, 1);
+								addToBullpen.push(lastStarter);
+							}
+
+							break;
+						}
+					}
+
+					if (!added) {
+						addToBullpen.push(p);
+					}
+				}
+
+				// Add any players not put in starting lineup or removed from starting lineup to bullpen
+				for (const p of addToBullpen) {
+					const pScore = score(p, "RP");
+					let added = false;
+					for (let i = NUM_STARTERS; i < depth[pos2].length; i++) {
+						const p2 = players.find((p2) => p2.pid === depth[pos2][i]);
+
+						if (!p2 || pScore > score(p2, "RP")) {
+							depth[pos2].splice(i, 0, p.pid);
+							added = true;
+							break;
+						}
+					}
+
+					if (!added) {
+						depth[pos2].push(p.pid);
+					}
+				}
+			}
+		} else {
+			depth[pos2] = [];
+
+			if (pos2 === "LP" || pos2 === "L") {
+				const depthDefense = depth[pos2 === "L" ? "D" : "DP"];
+				const playersByPid = groupByUnique(players, "pid");
+
+				// If a player is somehow missing, the lineup will be the wrong length and getDepthPlayers will use the default lineup
+				const starters = depthDefense
+					.slice(0, pos2 === "L" ? 9 : 8)
+					.flatMap((pid, i) => {
+						const p = playersByPid[pid];
+						return p ? [{ i, p }] : [];
+					});
+
+				const sortedStarters = sortBattingOrder(starters);
+
+				const indexes = sortedStarters.map((info) => info.i);
+
+				if (pos2 === "LP") {
+					// Pitcher last
+					indexes.push(-1);
+				}
+
+				depth[pos2] = indexes;
+			} else if (pos2 === "DP") {
+				depth[pos2] = getDepthDefense(players, false);
+			} else if (pos2 === "D") {
+				depth[pos2] = getDepthDefense(players, true);
+			} else if (pos2 === "P") {
+				depth[pos2] = getDepthPitchers(players);
+			}
+		}
+	}
+
+	return depth;
+};
+
+export default genDepth;

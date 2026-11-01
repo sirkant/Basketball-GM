@@ -1,0 +1,188 @@
+import type { PLAYER } from "../../../common/constants.ts";
+import type { Phase, ScheduledEventWithoutKey } from "../../../common/types.ts";
+
+export type Ratings = {
+	slug: string;
+	season: number;
+	hgt: number;
+	stre: number;
+	spd: number;
+	jmp: number;
+	endu: number;
+	ins: number;
+	dnk: number;
+	ft: number;
+	fg: number;
+	tp: number;
+	diq: number;
+	oiq: number;
+	drb: number;
+	pss: number;
+	reb: number;
+	abbrev_if_new_row?: string;
+	retiredUntil?: number;
+};
+
+export type Basketball = {
+	awards: Record<
+		string,
+		(
+			| {
+					season: number;
+					type: string;
+			  }
+			| {
+					rank?: number; // Usually 1, so just leave those out and fill in on import
+					season: number;
+					shortName: string;
+					type?: undefined;
+			  }
+		)[]
+	>;
+	teams: Record<
+		string,
+		{
+			season: number;
+			abbrev: string | (typeof PLAYER)["RETIRED"]; // RETIRED is for players who retired/died while active
+			jerseyNumber?: string;
+
+			// Currently, phase is only set for players in the alexnoob rosters who move between phases in the same year. So currently I have those for PRESEASON and DRAFT_LOTTERY, meaning it can't identify players who joined a team during the season but before the playoffs. Well, handles the 2021 Horford trade at least.
+			phase?: number;
+		}[]
+	>;
+	bios: Record<
+		string,
+		{
+			name: string;
+			bornYear: number;
+			diedYear: number;
+			country: string;
+			weight: number;
+			pos: string;
+			height: number;
+			college: string;
+			draftYear: number;
+			draftRound?: number;
+			draftPick?: number;
+			draftAbbrev?: string;
+		}
+	>;
+	ratings: Ratings[];
+	relatives: {
+		type: "son" | "brother" | "father";
+		slug: string;
+		slug2: string;
+	}[];
+	salaries: Record<
+		string,
+		{
+			start: number;
+			exp: number;
+			amounts: number[];
+		}[]
+	>;
+	injuries: Record<
+		string,
+		{
+			season: number;
+			phase: Phase;
+			type: string;
+			gamesRemaining: number;
+		}[]
+	>;
+	scheduledEventsGameAttributes: ScheduledEventWithoutKey[];
+	scheduledEventsTeams: ScheduledEventWithoutKey[];
+	draftPicks: Record<
+		number,
+		{
+			abbrev: string;
+			round: number;
+			pick?: number;
+
+			// Would be nice to have all these, but we don't, so just assume it's same as abbrev then
+			originalAbbrev?: string;
+
+			// If a player was drafted with this pick
+			slug?: string;
+
+			// Only for the hardcoded current season picks
+			season?: number;
+
+			// Records when picks have been traded
+			range?:
+				| [[number, number], [number, number]]
+				| [[number, number], null]
+				| [null, [number, number]];
+		}[]
+	>;
+	freeAgents: any[];
+	teamSeasons: Record<
+		number,
+		Record<
+			string,
+			{
+				abbrev: string;
+				won: number;
+				lost: number;
+				wonHome: number;
+				lostHome: number;
+				wonAway: number;
+				lostAway: number;
+				wonDiv: number;
+				lostDiv: number;
+				wonConf: number;
+				lostConf: number;
+				avgAge: number;
+			}
+		>
+	>;
+	playoffSeries: Record<
+		number,
+		{
+			round: number;
+			abbrevs: [string, string];
+			seeds: [number, number];
+			wons: [number, number];
+		}[]
+	>;
+	playIns: Record<
+		number,
+		// First array is indexed by conference ID, similar to PlayoffSeries["playIns"]
+		{
+			abbrevs: [string, string];
+			seeds: [number, number];
+		}[][]
+	>;
+	expansionDrafts: Record<number, Record<string, string[]>>;
+	retiredJerseyNumbers: Record<
+		string,
+		{
+			number: string;
+			season: number;
+			slug: string;
+		}[]
+	>;
+};
+
+// Cache the promise rather than the result, so concurrent calls (like a prefetch followed by actually creating a league) only fetch once
+let cachedPromise: Promise<Basketball> | undefined;
+const loadData = () => {
+	if (!cachedPromise) {
+		cachedPromise = (async () => {
+			const response = await fetch(__JSON_URLS.realPlayerData);
+			if (!response.ok) {
+				throw new Error(`HTTP error ${response.status}`);
+			}
+			return (await response.json()) as Basketball;
+		})();
+
+		// Allow retrying after an error
+		cachedPromise.catch(() => {
+			cachedPromise = undefined;
+		});
+	}
+
+	return cachedPromise;
+};
+
+export default loadData;

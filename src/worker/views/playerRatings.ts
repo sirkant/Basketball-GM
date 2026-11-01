@@ -1,0 +1,335 @@
+import {
+	PHASE,
+	RATINGS,
+	REMAINING_PLAYOFF_TEAMS_PHASES,
+} from "../../common/constants.ts";
+import { idb } from "../db/index.ts";
+import { g } from "../util/index.ts";
+import type {
+	Player,
+	PlayerAttr,
+	PlayerRatingAttr,
+	PlayerStatAttr,
+	PlayInTournament,
+	PlayoffSeries,
+	PlayoffSeriesTeam,
+} from "../../common/types.ts";
+import { defineView } from "../util/defineView.ts";
+import addFirstNameShort from "../util/addFirstNameShort.ts";
+import { buffOvrDH } from "./depth.ts";
+import { actualPhase } from "../util/actualPhase.ts";
+import { player, season } from "../core/index.ts";
+import { bySport } from "../../common/sportFunctions.ts";
+import type { RouteParams } from "../../ui/router/types.ts";
+import { validateAbbrev } from "../util/processInputs.ts";
+import { validateSeason } from "../util/processInputs.ts";
+
+export const processInputs = (
+	params: RouteParams<"playerBios"> | RouteParams<"playerRatings">,
+) => {
+	let abbrev;
+	let tid: number | undefined;
+
+	const [validatedTid, validatedAbbrev] = validateAbbrev(params.abbrev, true);
+
+	if (params.abbrev !== undefined && validatedAbbrev !== "???") {
+		abbrev = validatedAbbrev;
+		tid = validatedTid;
+	} else if (params.abbrev === "watch") {
+		abbrev = "watch";
+	} else if (
+		params.abbrev === "playoffs" &&
+		REMAINING_PLAYOFF_TEAMS_PHASES.has(actualPhase())
+	) {
+		abbrev = "playoffs";
+	} else {
+		abbrev = "all";
+	}
+
+	return {
+		abbrev,
+		season: validateSeason(params.season),
+		tid,
+	};
+};
+
+export const extraRatings = bySport({
+	baseball: ["ovrs", "pots"],
+	basketball: [],
+	football: ["ovrs", "pots"],
+	hockey: ["ovrs", "pots"],
+} as const);
+
+export const getActivePlayoffTids = async () => {
+	const tids = new Set<number>();
+	const phase = actualPhase();
+	if (!REMAINING_PLAYOFF_TEAMS_PHASES.has(phase)) {
+		return tids;
+	}
+
+	let series: PlayoffSeries["series"];
+	let playIns: PlayoffSeries["playIns"];
+
+	const playoffSeries = await idb.cache.playoffSeries.get(g.get("season"));
+	let currentRound;
+	if (playoffSeries) {
+		series = playoffSeries.series;
+		playIns = playoffSeries.playIns;
+		currentRound = playoffSeries.currentRound;
+	} else {
+		const result = await season.genPlayoffSeries();
+		series = result.series;
+		playIns = result.playIns;
+		currentRound = playIns ? -1 : 0;
+	}
+
+	let actualCurrentRound;
+	if (currentRound === -1 && playIns) {
+		const saveMatchupBoth = (matchup: PlayInTournament[0]) => {
+			tids.add(matchup.away.tid);
+			tids.add(matchup.home.tid);
+		};
+		const saveMatchupWinner = (matchup: PlayInTournament[0]) => {
+			if (matchup.away.won === 1) {
+				tids.add(matchup.away.tid);
+			} else if (matchup.home.won === 1) {
+				tids.add(matchup.home.tid);
+			}
+		};
+		const saveMatchupWinnerOrBoth = (matchup: PlayInTournament[0]) => {
+			if (matchup.away.won === 0 && matchup.home.won === 0) {
+				tids.add(matchup.away.tid);
+				tids.add(matchup.home.tid);
+			} else if (matchup.away.won === 1) {
+				tids.add(matchup.away.tid);
+			} else if (matchup.home.won === 1) {
+				tids.add(matchup.home.tid);
+			}
+		};
+
+		for (const playIn of playIns) {
+			const game78 = playIn[0];
+			const game910 = playIn[1];
+			const gameFinal = playIn[2];
+
+			if (gameFinal) {
+				// First round of play-in has happened, so take the winner of game78 and the winner (or both if it hasn't happened yet) of gameFinal
+				saveMatchupWinner(game78);
+				saveMatchupWinnerOrBoth(gameFinal);
+			} else {
+				// First round of play-in is ongoing, so both teams from game78 are still alive and only the winner (or both if it hasn't happened yet) of game910
+				saveMatchupBoth(game78);
+				saveMatchupWinnerOrBoth(game910);
+			}
+		}
+		actualCurrentRound = 0;
+	} else {
+		actualCurrentRound = currentRound;
+	}
+
+	const matchups = series[actualCurrentRound];
+	const numGamesInRound =
+		g.get("numGamesPlayoffSeries", "current")[actualCurrentRound] ?? Infinity;
+	if (matchups) {
+		const saveTid = (t: PlayoffSeriesTeam) => {
+			if (!t.pendingPlayIn) {
+				tids.add(t.tid);
+			}
+		};
+
+		// Save any teams that have won their series, or are in a series that is not over yet
+		for (const matchup of matchups) {
+			if (!matchup.away) {
+				saveTid(matchup.home);
+			} else {
+				if (matchup.away.won >= numGamesInRound) {
+					saveTid(matchup.away);
+				} else if (matchup.home.won >= numGamesInRound) {
+					saveTid(matchup.home);
+				} else {
+					saveTid(matchup.away);
+					saveTid(matchup.home);
+				}
+			}
+		}
+	}
+
+	return tids;
+};
+
+export const getPlayers = async (
+	season: number,
+	abbrev: string,
+	attrs: Readonly<PlayerAttr[]>,
+	ratings: Readonly<PlayerRatingAttr[]>,
+	stats: Readonly<PlayerStatAttr[]>,
+	tid: number | undefined,
+) => {
+	let filter: ((p: Player) => boolean) | undefined;
+	if (tid === undefined) {
+		if (abbrev === "watch") {
+			filter = (p) => p.watch !== undefined;
+		} else if (abbrev === "playoffs") {
+			const playoffTids = await getActivePlayoffTids();
+			filter = (p) => playoffTids.has(p.tid);
+		}
+	}
+
+	const playersAll = await idb.merged.players.getAll(
+		g.get("season") === season
+			? { nonRetired: true }
+			: { activeSeason: season },
+		{ filter },
+	);
+
+	// showNoStats for current season (so draft picks etc show up on their correct team) or for no team (so free agents show up)
+	const showNoStats = season === g.get("season") || tid === undefined;
+
+	const playersMaybeWithoutStats = await player.formatAll(playersAll, {
+		attrs: [
+			"pid",
+			"firstName",
+			"lastName",
+			"age",
+			"contract",
+			"injury",
+			"hof",
+			"watch",
+			"tid",
+			"abbrev",
+			"draft",
+			"awards",
+			...attrs,
+		],
+		ratings: ["ovr", "pot", "skills", "pos", ...ratings],
+		stats: ["abbrev", "tid", "jerseyNumber", ...stats],
+		season,
+		showNoStats,
+		showRookies: true,
+		fuzz: true,
+	});
+
+	// stats can only be undefined with showRookies and no showNoStats. But showRookies only has an effect for the current season, when showNoStats is always true, so this doesn't actually remove anything. It's just to make the types work
+	let players = playersMaybeWithoutStats.filter(
+		(p): p is typeof p & { stats: NonNullable<(typeof p)["stats"]> } =>
+			p.stats !== undefined,
+	);
+
+	// player.formatAll `tid` option doesn't work well enough (factoring in showNoStats and showRookies), so let's do it manually
+	// For the current season, use the current abbrev (including FA), not the last stats abbrev
+	// For other seasons, use the stats abbrev for filtering
+	if (g.get("season") === season) {
+		if (tid !== undefined) {
+			players = players.filter((p) => p.tid === tid);
+		}
+
+		for (const p of players) {
+			p.stats.abbrev = p.abbrev;
+			p.stats.tid = p.tid;
+		}
+	} else if (tid !== undefined) {
+		players = players.filter((p) => p.stats.tid === tid);
+	}
+
+	if (__SPORT === "baseball") {
+		for (const p of players) {
+			buffOvrDH(p);
+		}
+	}
+
+	return players;
+};
+
+export default defineView({
+	id: "playerRatings",
+	processInputs,
+	load: async ({ inputs, updateEvents, prevInputs }) => {
+		if (
+			updateEvents.has("firstRun") ||
+			(inputs.season === g.get("season") &&
+				updateEvents.has("playerMovement")) ||
+			(updateEvents.has("newPhase") && g.get("phase") === PHASE.PRESEASON) ||
+			(inputs.abbrev === "playoffs" && updateEvents.has("gameSim")) ||
+			inputs.season !== prevInputs?.season ||
+			inputs.abbrev !== prevInputs?.abbrev
+		) {
+			const ratings = bySport({
+				baseball: RATINGS,
+				basketball: [
+					"hgt",
+					"stre",
+					"spd",
+					"jmp",
+					"endu",
+					"ins",
+					"dnk",
+					"ft",
+					"fg",
+					"tp",
+					"oiq",
+					"diq",
+					"drb",
+					"pss",
+					"reb",
+				],
+				football: [
+					"hgt",
+					"stre",
+					"spd",
+					"endu",
+					"thv",
+					"thp",
+					"tha",
+					"bsc",
+					"elu",
+					"rtr",
+					"hnd",
+					"pbk",
+					"rbk",
+					"pcv",
+					"tck",
+					"prs",
+					"rns",
+					"kpw",
+					"kac",
+					"ppw",
+					"pac",
+				],
+				hockey: [
+					"hgt",
+					"stre",
+					"spd",
+					"endu",
+					"pss",
+					"wst",
+					"sst",
+					"stk",
+					"oiq",
+					"chk",
+					"blk",
+					"fcf",
+					"diq",
+					"glk",
+				],
+			} as const);
+
+			const players = addFirstNameShort(
+				await getPlayers(
+					inputs.season,
+					inputs.abbrev,
+					[],
+					[...ratings, ...extraRatings],
+					[],
+					inputs.tid,
+				),
+			);
+
+			return {
+				abbrev: inputs.abbrev,
+				season: inputs.season,
+				players,
+				ratings,
+			};
+		}
+	},
+});

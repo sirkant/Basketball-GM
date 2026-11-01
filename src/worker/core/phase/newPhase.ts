@@ -1,0 +1,128 @@
+import { PHASE, WEBSITE_ROOT } from "../../../common/constants.ts";
+import finalize from "./finalize.ts";
+import newPhasePreseason from "./newPhasePreseason.ts";
+import newPhaseRegularSeason from "./newPhaseRegularSeason.ts";
+import newPhaseAfterTradeDeadline from "./newPhaseAfterTradeDeadline.ts";
+import newPhasePlayoffs from "./newPhasePlayoffs.ts";
+import newPhaseBeforeDraft from "./newPhaseBeforeDraft.ts";
+import newPhaseDraft from "./newPhaseDraft.ts";
+import newPhaseAfterDraft from "./newPhaseAfterDraft.ts";
+import newPhaseResignPlayers from "./newPhaseResignPlayers.ts";
+import newPhaseFreeAgency from "./newPhaseFreeAgency.ts";
+import newPhaseFantasyDraft from "./newPhaseFantasyDraft.ts";
+import newPhaseExpansionDraft from "./newPhaseExpansionDraft.ts";
+import {
+	g,
+	helpers,
+	lock,
+	logEvent,
+	updatePlayMenu,
+	updateStatus,
+} from "../../util/index.ts";
+import type { Conditions, Phase } from "../../../common/types.ts";
+import { cleanupAutoPlay } from "../league/autoPlay.ts";
+import { InvalidPlayoffSettingsError } from "../season/genPlayoffSeries.ts";
+
+/**
+ * Set a new phase of the game.
+ *
+ * @memberOf core.phase
+ * @param {number} phase Numeric phase ID. This should always be one of the PHASE.* variables defined in globals.js.
+ * @param {} extra Parameter containing extra info to be passed to phase changing function. Currently only used for newPhaseFantasyDraft.
+ * @return {Promise}
+ */
+const newPhase = async (phase: Phase, conditions: Conditions, extra?: any) => {
+	// Prevent at least some cases of code running twice
+	if (phase === g.get("phase")) {
+		return;
+	}
+
+	if (g.get("phase") < 0) {
+		throw new Error(
+			"Can't call newPhase when expansion/fantasy draft is in progress",
+		);
+	}
+
+	const doPhaseChange = {
+		[PHASE.PRESEASON]: newPhasePreseason,
+		[PHASE.REGULAR_SEASON]: newPhaseRegularSeason,
+		[PHASE.AFTER_TRADE_DEADLINE]: newPhaseAfterTradeDeadline,
+		[PHASE.PLAYOFFS]: newPhasePlayoffs,
+		[PHASE.DRAFT_LOTTERY]: newPhaseBeforeDraft,
+		[PHASE.DRAFT]: newPhaseDraft,
+		[PHASE.AFTER_DRAFT]: newPhaseAfterDraft,
+		[PHASE.RESIGN_PLAYERS]: newPhaseResignPlayers,
+		[PHASE.FREE_AGENCY]: newPhaseFreeAgency,
+		[PHASE.FANTASY_DRAFT]: newPhaseFantasyDraft,
+		[PHASE.EXPANSION_DRAFT]: newPhaseExpansionDraft,
+	};
+
+	if (lock.get("newPhase")) {
+		logEvent(
+			{
+				type: "error",
+				text: "Phase change already in progress.",
+				saveToDb: false,
+			},
+			conditions,
+		);
+	} else {
+		try {
+			// While this lock is held, don't await toUI("realtimeUpdate") from anywhere in the phase change code, or anywhere else that could block setting the newPhase lock to false. Views wait for the newPhase lock to be released before running and newPhase waits for the views to all finish, so that could deadlock.
+			await lock.set("newPhase", true);
+
+			if (phase !== PHASE.AFTER_TRADE_DEADLINE) {
+				// Adter trade deadline is so fast that it's not worth the flicker, maybe applies to others too sometimes
+				await updateStatus("Processing...");
+			}
+			await updatePlayMenu();
+
+			if (doPhaseChange[phase]) {
+				const result = await doPhaseChange[phase](conditions, extra);
+
+				await finalize(phase, conditions, result);
+			} else {
+				throw new Error(`Unknown phase number ${phase}`);
+			}
+		} catch (error) {
+			const handleError = async ({
+				rejectAutoPlay,
+				text,
+			}: {
+				// Rejecting the auto play promise means the error will be logged as unhandled
+				rejectAutoPlay: boolean;
+				text: string;
+			}) => {
+				logEvent(
+					{
+						type: "error",
+						text,
+						saveToDb: false,
+						persistent: true,
+					},
+					conditions,
+				);
+				cleanupAutoPlay(rejectAutoPlay ? error : undefined);
+				await lock.set("newPhase", false);
+				await updatePlayMenu();
+				await updateStatus();
+			};
+
+			if (error instanceof InvalidPlayoffSettingsError) {
+				// Not a bug, the user's settings just don't work for the teams in the league. So tell the user how to fix it, rather than treating it as an unexpected error
+				await handleError({
+					rejectAutoPlay: false,
+					text: `<p>Invalid playoff settings: ${error.message}</p><p>You can change playoff settings on the <a href="${helpers.leagueUrl(["settings"])}">League Settings</a> page.</p>`,
+				});
+			} else {
+				await handleError({
+					rejectAutoPlay: true,
+					text: `<p>Critical error during phase change:</p><p>${error.message}</p><a href="https://${WEBSITE_ROOT}/manual/debugging/"><b>Read this to learn about debugging.</b></a>`,
+				});
+				throw error;
+			}
+		}
+	}
+};
+
+export default newPhase;
