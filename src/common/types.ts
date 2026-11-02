@@ -1999,6 +1999,7 @@ export type SortType =
 	| "pos";
 
 export type Team = {
+	ownerMandate?: import("./ownership.ts").OwnerMandate;
 	ownerPriority?: import("./nbaAprons.ts").OwnerPriority;
 	apronState?: import("./nbaAprons.ts").ApronState;
 	apronPickPenalties?: import("./nbaAprons.ts").ApronPickPenalty[];
@@ -2260,6 +2261,7 @@ export type TeamSeasonWithoutKey = {
 	};
 	payrollEndOfSeason: number;
 	ownerMood?: OwnerMood;
+	ownerReview?: import("./ownership.ts").OwnerReview;
 	nbaFinancials?: {
 		salaryCap: number;
 		taxLevel: number;

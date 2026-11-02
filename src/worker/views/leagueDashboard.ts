@@ -11,6 +11,7 @@ import { bySport } from "../../common/sportFunctions.ts";
 import { orderTeams } from "../util/orderTeams.ts";
 import { getNumericStat } from "../../common/statValue.ts";
 import { getFinancialStatus } from "../core/finances/nbaAprons.ts";
+import { ensureOwnerMandate } from "../core/finances/ownership.ts";
 
 const updateInbox = async ({ updateEvents }: ViewArgs) => {
 	if (updateEvents.has("firstRun") || updateEvents.has("newPhase")) {
@@ -634,6 +635,7 @@ const updateNewsFeed = async ({ updateEvents }: ViewArgs) => {
 export default defineView({
 	id: "leagueDashboard",
 	load: async (args) => {
+		await ensureOwnerMandate();
 		// Woo TypeScript, gotta break this up into 3 parts or it just says fuck it and calls it any
 		const part1 = Object.assign(
 			{},

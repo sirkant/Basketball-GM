@@ -440,6 +440,33 @@ const Trade = (props: View<"trade">) => {
 						prevTeams={state.prevTeams}
 						summary={summary}
 					/>
+					{summary.ownerImpact && !state.accepted ? (
+						<details className="owner-trade-view">
+							<summary
+								className={
+									summary.ownerImpact.concerns.length
+										? "text-warning-emphasis"
+										: undefined
+								}
+							>
+								Owner:{" "}
+								{summary.ownerImpact.concerns.length
+									? `${summary.ownerImpact.concerns.length} conflict(s) with the ${summary.ownerImpact.mode === "rebuild" ? "rebuilding" : "compete-now"} mandate`
+									: "no explicit instruction breached"}
+							</summary>
+							<ul>
+								{[
+									...summary.ownerImpact.concerns,
+									...summary.ownerImpact.positives,
+								].map((text) => (
+									<li key={text}>{text}</li>
+								))}
+							</ul>
+							<a href={helpers.leagueUrl(["team_finances"]) + "#ownership"}>
+								Read the mandate & decision journal
+							</a>
+						</details>
+					) : null}
 					{summary.warning ? (
 						<div className="alert alert-danger py-2 mb-2 small" role="alert">
 							<strong>Cannot propose:</strong> {summary.warning}

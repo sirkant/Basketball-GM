@@ -45,9 +45,11 @@ const ApronMargin = ({
 export const ApronNotice = ({
 	status,
 	compact = false,
+	showOwner = true,
 }: {
 	status: FinancialStatus;
 	compact?: boolean;
+	showOwner?: boolean;
 }) => {
 	if (!status) {
 		return null;
@@ -151,17 +153,19 @@ export const ApronNotice = ({
 					. All signings, including renewals and minimum contracts, must fit.
 				</div>
 			) : null}
-			{!compact ? (
+			{!compact && showOwner ? (
 				<div className="border-top pt-2 mt-3">
 					<b>Owner: {owner.label}.</b> {owner.text}
 				</div>
 			) : null}
 			<details className="small mt-2">
 				<summary className="fw-semibold">
-					{compact ? "Apron rules & penalties" : "Owner targets & apron rules"}
+					{compact || !showOwner
+						? "Apron rules & penalties"
+						: "Owner targets & apron rules"}
 				</summary>
 				<div className="mt-2">
-					{!compact ? (
+					{!compact && showOwner ? (
 						<div>
 							Target: {Math.round(owner.winPct * 100)}% wins
 							{budget

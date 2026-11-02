@@ -26,7 +26,6 @@ import { choice, randInt, uniform } from "../../../common/random.ts";
 import { env } from "../../util/env.ts";
 import { getTeamInfoCache } from "../team/getTeamInfoCache.ts";
 import { getMetaAttribute } from "../../db/metaAttributes.ts";
-import { apronsEnabled, ownerExpectations } from "../finances/nbaAprons.ts";
 
 const newPhasePreseason = async (
 	conditions: Conditions,
@@ -495,26 +494,6 @@ const newPhasePreseason = async (
 	}
 
 	await idb.cache.players.putAll(players);
-	if (
-		apronsEnabled() &&
-		!local.autoPlayUntil &&
-		!g.get("spectator") &&
-		g.get("userTids").length === 1
-	) {
-		const t = await idb.cache.teams.get(g.get("userTid"));
-		if (t) {
-			const owner = ownerExpectations(t);
-			await idb.cache.messages.add({
-				read: false,
-				from: "The Owner",
-				year: newSeason,
-				tid: t.tid,
-				subject: "Ownership expectations",
-				text: `<p><b>${owner.label}.</b> ${owner.text}</p><p>Win at least ${Math.round(owner.winPct * 100)}% of games. ${g.get("budget") ? `Target profit: ${helpers.formatCurrency(owner.minProfit / 1000, "M")}. Salaries and luxury tax budget: ${helpers.formatCurrency(owner.maxCost / 1000, "M")}. Going over budget or leaving us above the second apron counts against your evaluation. A $500M roster cost above the second apron means dismissal regardless of results.` : ""}</p>`,
-			});
-		}
-	}
-
 	await realRosters.checkDisableForceHistoricalRosters(
 		newSeason,
 		PHASE.PRESEASON,

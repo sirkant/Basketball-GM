@@ -207,11 +207,20 @@ const OwnerMoodsChart = ({
 					fired!
 				</p>
 				<p>
-					The other lines (regular season, playoffs, finances) cannot
-					individually get you fired. You only get fired based on the
-					combination, which is the <b>Total</b> line.
+					The other lines (regular season,{" "}
+					{__SPORT === "basketball" ? "roster plan and playoffs" : "playoffs"},
+					finances) cannot individually get you fired. You only get fired based
+					on the combination, which is the <b>Total</b> line.
 				</p>
-				<p>The owner only starts judging you two years after you're hired.</p>
+				{__SPORT === "basketball" ? (
+					<p>
+						Normal performance evaluation respects the grace period. The $500M
+						second-apron red line and explicit firing challenges can end your
+						tenure independently of this total.
+					</p>
+				) : (
+					<p>The owner only starts judging you two years after you're hired.</p>
+				)}
 			</HelpPopover>
 			<Chart
 				definition={definition}
@@ -244,7 +253,12 @@ const OwnerMoodsChart = ({
 			<div className="chart-legend">
 				<ul className="list-unstyled mb-0">
 					<li className="text-danger">— Regular season success</li>
-					<li className="text-info">— Playoff success</li>
+					<li className="text-info">
+						—{" "}
+						{__SPORT === "basketball"
+							? "Roster plan & playoffs"
+							: "Playoff success"}
+					</li>
 					<li className="text-success">— Finances</li>
 					<li className="text-dark fw-bold">— Total</li>
 				</ul>

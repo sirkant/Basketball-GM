@@ -35,6 +35,7 @@ const summaryTeam = (other: 0 | 1) => ({
 const fixture = (): View<"trade">["summary"] => ({
 	enablePropose: true,
 	warning: null,
+	ownerImpact: undefined,
 	warningAmount: undefined,
 	apronHardCap: undefined,
 	teams: [summaryTeam(1), summaryTeam(0)],

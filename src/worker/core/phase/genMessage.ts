@@ -7,6 +7,7 @@ import type { OwnerMood } from "../../../common/types.ts";
 import { COURT } from "../../../common/constants.ts";
 import { apronsEnabled, ownerExpectations } from "../finances/nbaAprons.ts";
 import { getApronLevels } from "../../../common/nbaAprons.ts";
+import { ownerReviewHtml } from "../finances/ownership.ts";
 
 const moodTexts = ["Horrible!", "Bad.", "Pretty good.", "Good.", "Excellent!"];
 
@@ -63,11 +64,20 @@ export const genMessage = async (
 	});
 
 	let m = "";
+	const candidateReview = teamSeasons.at(-1)?.ownerReview;
+	const ownershipReview =
+		Array.isArray(candidateReview?.paragraphs) &&
+		Array.isArray(candidateReview?.mandate?.decisions)
+			? candidateReview
+			: undefined;
+	if (ownershipReview) {
+		m += ownerReviewHtml(ownershipReview);
+	}
 	let fired = false;
 	if (apronsEnabled()) {
 		const t = await idb.cache.teams.get(g.get("userTid"));
 		const ts = teamSeasons.at(-1);
-		if (t) {
+		if (t && !ownershipReview) {
 			const owner = ownerExpectations(t);
 			m += `<p><b>Ownership priority: ${owner.label}.</b> ${owner.text}</p><p>Targets: ${Math.round(owner.winPct * 100)}% wins; profit ${helpers.formatCurrency(owner.minProfit / 1000, "M")}; salaries plus luxury tax at most ${helpers.formatCurrency(owner.maxCost / 1000, "M")}.</p>`;
 		}
@@ -187,7 +197,7 @@ export const genMessage = async (
 
 			m += `<p>This year: ${thisYear}</p><p>Overall: ${overall}</p>`;
 
-			if (text) {
+			if (text && !ownershipReview) {
 				m += `<p>${text}</p>`;
 			}
 
@@ -199,7 +209,10 @@ export const genMessage = async (
 			});
 		} else {
 			// Fired!
-			if (
+			if (ownershipReview) {
+				m +=
+					"<p>Your accumulated record has exhausted my confidence. This season's evidence does not erase prior evaluations. We are making a change. You're fired.</p>";
+			} else if (
 				currentMood.wins < 0 &&
 				currentMood.playoffs < 0 &&
 				currentMood.money < 0

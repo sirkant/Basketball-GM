@@ -2268,6 +2268,15 @@ export const generateJsonSchema = (sport: Sport | "test") => {
 							type: "string",
 							enum: ["winning", "profit", "lowPayroll", "balanced"],
 						},
+						ownerMandate: {
+							type: "object",
+							properties: {
+								version: { const: 1 },
+								season: { type: "integer" },
+								mode: { enum: ["rebuild", "compete"] },
+							},
+							required: ["version", "season", "mode"],
+						},
 						apronState: {
 							type: "object",
 							properties: {
@@ -2793,6 +2802,7 @@ export const generateJsonSchema = (sport: Sport | "test") => {
 										},
 										required: ["wins", "playoffs", "money"],
 									},
+									ownerReview: { type: "object" },
 									numPlayersTradedAway: {
 										type: "number",
 										minimum: 0,

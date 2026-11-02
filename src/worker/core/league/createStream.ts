@@ -1,3 +1,4 @@
+import { ensureOwnerMandate } from "../finances/ownership.ts";
 import type { IDBPTransaction } from "@dumbmatter/idb";
 import {
 	draft,
@@ -1830,6 +1831,7 @@ const afterDBStream = async ({
 	await idb.cache.flush();
 	idb.cache.startAutoFlush();
 	local.leagueLoaded = true;
+	await ensureOwnerMandate();
 
 	// Version 65 upgrade
 	if (fromFile.version !== undefined && fromFile.version < 65) {

@@ -17,6 +17,7 @@ import { processScheduledEvents } from "./processScheduledEvents.ts";
 import { autoPlayStopsAt, cleanupAutoPlay } from "../league/autoPlay.ts";
 import { updateAnnualSalaries } from "../finances/updateAnnualSalaries.ts";
 import { salaryYear } from "../finances/nbaAprons.ts";
+import { ensureOwnerMandate } from "../finances/ownership.ts";
 
 const save = async () => {
 	await updateStatus("Saving...");
@@ -44,6 +45,9 @@ const finalize = async (
 		phase,
 	});
 	await updateAnnualSalaries(salaryYear());
+	if (phase === PHASE.PRESEASON || phase === PHASE.DRAFT_LOTTERY) {
+		await ensureOwnerMandate();
+	}
 
 	let saved = false;
 	if (phase === PHASE.PRESEASON) {
