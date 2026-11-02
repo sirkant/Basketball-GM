@@ -46,7 +46,9 @@ const LeagueDashboard = ({
 	usePts,
 	won,
 }: View<"leagueDashboard">) => {
-	useTitleBar({ title: `${region} ${name} Dashboard` });
+	useTitleBar({
+		title: `${region} ${name} ${__SPORT === "basketball" ? "· Front office" : "Dashboard"}`,
+	});
 
 	const { luxuryPayroll, salaryCap, salaryCapType, season, userTid } = useLocal(
 		["luxuryPayroll", "salaryCap", "salaryCapType", "season", "userTid"],

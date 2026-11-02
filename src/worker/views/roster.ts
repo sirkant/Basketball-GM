@@ -1,8 +1,15 @@
 import { PHASE, POSITIONS } from "../../common/constants.ts";
+import {
+	getPositionProfiles,
+	ROLE_ATTRIBUTES,
+	type PositionProfiles,
+	type RoleAttributes,
+} from "../../common/basketballPositions.ts";
 import { finances, player, season, team } from "../core/index.ts";
 import { idb } from "../db/index.ts";
 import { g, helpers } from "../util/index.ts";
 import type { Player, TeamSeasonAttr } from "../../common/types.ts";
+import type { PlayerRatings as BasketballRatings } from "../../common/types.basketball.ts";
 import { defineView } from "../util/defineView.ts";
 import { addMood } from "./freeAgents.ts";
 import addFirstNameShort from "../util/addFirstNameShort.ts";
@@ -262,6 +269,7 @@ export default defineView({
 			let payroll: number | undefined;
 			let luxuryTaxAmount: number | undefined;
 			let minPayrollAmount: number | undefined;
+			let positionProfiles: PositionProfiles | undefined;
 
 			if (inputs.season === g.get("season")) {
 				const schedule = await season.getSchedule();
@@ -300,6 +308,20 @@ export default defineView({
 					numGamesRemaining,
 				});
 				players = await addMood(players, playersAll);
+				if (__SPORT === "basketball" && !g.get("challengeNoRatings")) {
+					positionProfiles = Object.fromEntries(
+						playersAll.map((p) => {
+							const r = p.ratings.at(-1)! as BasketballRatings;
+							const scouted = Object.fromEntries(
+								ROLE_ATTRIBUTES.map((key) => [
+									key,
+									key === "hgt" ? r[key] : player.fuzzRating(r[key], r.fuzz),
+								]),
+							) as RoleAttributes;
+							return [p.pid, getPositionProfiles(scouted, r.pos)];
+						}),
+					);
+				}
 
 				if (__SPORT === "basketball") {
 					players.sort((a, b) => a.rosterOrder - b.rosterOrder);
@@ -420,6 +442,7 @@ export default defineView({
 				playoffs: inputs.playoffs,
 				playoffsByConf,
 				players: addFirstNameShort(players),
+				positionProfiles,
 				season: inputs.season,
 				showSpectatorWarning:
 					inputs.season === g.get("season") &&

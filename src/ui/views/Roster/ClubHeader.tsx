@@ -1,5 +1,4 @@
 import type { View } from "../../../common/types.ts";
-import { helpers } from "../../util/helpers.ts";
 import { useLocal } from "../../util/local.ts";
 
 const ClubHeader = ({
@@ -10,52 +9,26 @@ const ClubHeader = ({
 }: Pick<View<"roster">, "t" | "season" | "players" | "maxRosterSize">) => {
 	const { challengeNoRatings } = useLocal(["challengeNoRatings"]);
 	return (
-		<header className="club-header">
-			<div className="club-header-identity">
-				{t.seasonAttrs.imgURL ? (
-					<img className="club-crest" src={t.seasonAttrs.imgURL} alt="" />
-				) : null}
-				<div>
-					<div className="franchise-eyebrow">
-						Basketball operations / {season}
-					</div>
-					<p className="club-region">{t.seasonAttrs.region}</p>
-					<h2 className="club-name">{t.seasonAttrs.name}</h2>
-					<div className="club-record">
-						{t.seasonAttrs.won}–{t.seasonAttrs.lost}{" "}
-						<span>
-							season record
-							{t.rank !== undefined
-								? ` · ${helpers.ordinal(t.rank)} in standings`
-								: ""}
-						</span>
-					</div>
-				</div>
+		<header className="basketball-clubbar">
+			{t.seasonAttrs.imgURL ? <img src={t.seasonAttrs.imgURL} alt="" /> : null}
+			<div className="basketball-clubbar-name">
+				<span>Basketball operations / {season}</span>
+				<h2>
+					{t.seasonAttrs.region} <strong>{t.seasonAttrs.name}</strong>
+				</h2>
 			</div>
-			<div className="club-header-facts">
+			<div className="basketball-clubbar-meta">
+				<strong>
+					{t.seasonAttrs.won}–{t.seasonAttrs.lost}
+				</strong>
+				<span>
+					{players.length}/{maxRosterSize} players
+				</span>
 				{!challengeNoRatings ? (
-					<div>
-						<span>Team rating</span>
-						<strong>
-							{t.ovrCurrent}
-							<small>/100</small>
-						</strong>
-					</div>
+					<span>
+						Team OVR <strong>{t.ovrCurrent}</strong>
+					</span>
 				) : null}
-				<div>
-					<span>Roster</span>
-					<strong>
-						{players.length}
-						<small>/{maxRosterSize}</small>
-					</strong>
-				</div>
-				<div>
-					<span>Expiring</span>
-					<strong>
-						{players.filter((p) => p.contract.exp <= season).length}
-						<small> players</small>
-					</strong>
-				</div>
 			</div>
 		</header>
 	);
