@@ -134,11 +134,13 @@ export const menuItems: (MenuItemLink | MenuItemHeader)[] = [
 		league: true,
 		path: [],
 		text: {
-			side: "Dashboard",
+			side: __SPORT === "basketball" ? "Front office" : "Dashboard",
 			top: (
 				<>
 					<span className="glyphicon glyphicon-home" />
-					<span className="visually-hidden">League Dashboard</span>
+					<span className="visually-hidden">
+						{__SPORT === "basketball" ? "Front office" : "League Dashboard"}
+					</span>
 				</>
 			),
 		},
@@ -156,7 +158,7 @@ export const menuItems: (MenuItemLink | MenuItemHeader)[] = [
 				commandPalette: true,
 				commandPaletteOnly: true,
 				path: [],
-				text: "Dashboard",
+				text: __SPORT === "basketball" ? "Front office" : "Dashboard",
 			},
 			{
 				type: "link",

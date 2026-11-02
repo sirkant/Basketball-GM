@@ -48,6 +48,12 @@ option, extension and simulation development remains separate.
 
 ## Design rules
 
+The next revision follows direct gameplay feedback: court and PG/SG/SF/PF/C
+depth take priority over the player dossier. Ownership objectives belong in
+Finances, with only relevant risks in daily screens. See CONTEXTUAL_FINANCE_UI.md
+and BASKETBALL_COURT_AND_DEPTH.md for the implemented interaction changes and
+the distinction between scouting projections and simulator mechanics.
+
 - One dominant task per screen; names and decisions before decoration.
 - Preserve data density through aligned comparisons and specialist tables.
 - Semantic colors indicate risk as well as text; healthy finance is neutral.

@@ -36,6 +36,8 @@ import useLocalStorageState from "use-local-storage-state";
 import Overview from "./Overview.tsx";
 import ClubHeader from "./ClubHeader.tsx";
 import { FinancialStrip } from "../../components/FinancialStrip.tsx";
+import CourtView from "./CourtView.tsx";
+import { replaceStarter } from "../../../common/basketballPositions.ts";
 
 const handleRelease = async (
 	p: View<"roster">["players"][number],
@@ -100,6 +102,7 @@ const Roster = ({
 	numPlayersOnCourt,
 	payroll,
 	players,
+	positionProfiles,
 	playoffs,
 	playoffsByConf,
 	season,
@@ -113,8 +116,8 @@ const Roster = ({
 	usePts,
 }: View<"roster">) => {
 	const [rosterView, setRosterView] = useLocalStorageState<
-		"overview" | "table"
-	>("roster-view", { defaultValue: "overview" });
+		"court" | "overview" | "table"
+	>("basketball-roster-layout", { defaultValue: "court" });
 	const [sortedPids, setSortedPids] = useState<number[] | undefined>(undefined);
 	const [prevPlayers, setPrevPlayers] = useState(players);
 	const {
@@ -166,7 +169,32 @@ const Roster = ({
 
 	const showMood = season === currentSeason;
 	const hasOverview = __SPORT === "basketball" && season === currentSeason;
-	const showOverview = hasOverview && rosterView !== "table";
+	const showCourt =
+		hasOverview &&
+		numPlayersOnCourt === 5 &&
+		rosterView !== "table" &&
+		rosterView !== "overview";
+	const showOverview = hasOverview && rosterView !== "table" && !showCourt;
+	const showVisual = showCourt || showOverview;
+	const handleMakeStarter = async (starterPid: number, benchPid: number) => {
+		if (!editable) {
+			return;
+		}
+		const next = replaceStarter(
+			playersSorted.map((p) => p.pid),
+			starterPid,
+			benchPid,
+			numPlayersOnCourt,
+		);
+		const previous = sortedPids;
+		setSortedPids(next);
+		try {
+			await toWorker("main", "reorderRosterDrag", next);
+		} catch (error) {
+			setSortedPids(previous);
+			throw error;
+		}
+	};
 
 	const cols = getCols(
 		[
@@ -406,7 +434,7 @@ const Roster = ({
 			t={t}
 			tid={tid}
 			usePts={usePts}
-			showTableControls={!showOverview}
+			showTableControls={!showVisual}
 		/>
 	);
 
@@ -439,14 +467,7 @@ const Roster = ({
 			) : (
 				<ApronNotice status={financialStatus} />
 			)}
-			{showOverview ? (
-				<details className="club-team-report">
-					<summary>Team report & coaching</summary>
-					{teamReport}
-				</details>
-			) : (
-				teamReport
-			)}
+			{!showVisual ? teamReport : null}
 
 			{showSpectatorWarning ? (
 				<p className="alert alert-danger d-inline-block">
@@ -456,20 +477,30 @@ const Roster = ({
 
 			{hasOverview ? (
 				<div className="roster-section-bar d-flex flex-wrap align-items-center gap-2 mb-3">
-					<h2 className="h4 mb-0 me-auto">The squad</h2>
+					<h2 className="h4 mb-0 me-auto">Team rotation</h2>
 					<div className="btn-group" role="group" aria-label="Roster display">
+						{numPlayersOnCourt === 5 ? (
+							<button
+								type="button"
+								className={`btn btn-sm ${showCourt ? "btn-primary" : "btn-light-bordered"}`}
+								aria-pressed={showCourt}
+								onClick={() => setRosterView("court")}
+							>
+								Court & depth
+							</button>
+						) : null}
 						<button
 							type="button"
 							className={`btn btn-sm ${showOverview ? "btn-primary" : "btn-light-bordered"}`}
 							aria-pressed={showOverview}
 							onClick={() => setRosterView("overview")}
 						>
-							Squad view
+							Rotation
 						</button>
 						<button
 							type="button"
-							className={`btn btn-sm ${!showOverview ? "btn-primary" : "btn-light-bordered"}`}
-							aria-pressed={!showOverview}
+							className={`btn btn-sm ${!showVisual ? "btn-primary" : "btn-light-bordered"}`}
+							aria-pressed={!showVisual}
 							onClick={() => setRosterView("table")}
 						>
 							Lineup & full table
@@ -477,7 +508,15 @@ const Roster = ({
 					</div>
 				</div>
 			) : null}
-			{showOverview ? (
+			{showCourt ? (
+				<CourtView
+					key={tid}
+					players={playersSorted}
+					positionProfiles={positionProfiles}
+					editable={editable}
+					onMakeStarter={handleMakeStarter}
+				/>
+			) : showOverview ? (
 				<Overview
 					key={tid}
 					players={playersSorted}
@@ -617,6 +656,12 @@ const Roster = ({
 					}
 				/>
 			)}
+			{showVisual ? (
+				<details className="club-team-report">
+					<summary>Team report & coaching</summary>
+					{teamReport}
+				</details>
+			) : null}
 		</>
 	);
 };

@@ -1,0 +1,508 @@
+// Basketball workspace: court first, role decisions beside it.
+.franchise-ui {
+	--fr-paper: #ececea;
+	--fr-ink: #202125;
+	--fr-accent: #914319;
+	@if $black == #fff {
+		--fr-paper: #161719;
+		--fr-ink: #f1f0ec;
+		--fr-accent: #f0b078;
+	}
+	.navbar.fixed-top,
+	.sidebar-inner {
+		background: #191b1e !important;
+		border-color: #35373a;
+	}
+	.sidebar-inner .nav-link.active {
+		background: #35302c;
+		color: #ffd4a9;
+		box-shadow: inset 3px 0 #e49754;
+	}
+	.btn-primary {
+		background-color: #a2471e;
+		border-color: #a2471e;
+		--bs-btn-bg: #a2471e;
+		--bs-btn-border-color: #a2471e;
+		&:hover,
+		&:focus-visible,
+		&:active {
+			background-color: #803616;
+			border-color: #803616;
+		}
+	}
+}
+.basketball-clubbar {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 12px 0;
+	border-bottom: 1px solid var(--fr-line);
+	img {
+		width: 48px;
+		height: 52px;
+		object-fit: contain;
+	}
+}
+.basketball-clubbar-name {
+	min-width: 0;
+	> span {
+		font-size: 10px;
+		color: var(--fr-muted);
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+	h2 {
+		margin: 4px 0 0;
+		font-size: 24px;
+		letter-spacing: -0.035em;
+		font-weight: 400;
+	}
+}
+.basketball-clubbar-meta {
+	margin-left: auto;
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 6px 20px;
+	color: var(--fr-muted);
+	font-size: 12px;
+	> strong {
+		color: var(--fr-ink);
+		font-size: 24px;
+		letter-spacing: -0.04em;
+	}
+}
+.court-workspace {
+	display: grid;
+	grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+	gap: 20px;
+	align-items: start;
+}
+.court-lineup-panel,
+.position-depth-panel {
+	min-width: 0;
+}
+.position-depth-panel {
+	scroll-margin-top: 70px;
+}
+.court-panel-heading {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 16px;
+	margin-bottom: 12px;
+	h3 {
+		margin: 3px 0 0;
+		font-size: 24px;
+		letter-spacing: -0.04em;
+		font-weight: 700;
+	}
+	> span {
+		color: var(--fr-muted);
+		font-size: 11px;
+	}
+}
+.basketball-kicker {
+	color: var(--fr-accent);
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.15em;
+	font-weight: 600;
+}
+.basketball-halfcourt {
+	height: 500px;
+	position: relative;
+	isolation: isolate;
+	overflow: hidden;
+	background-color: #c49362;
+	background-image:
+		repeating-linear-gradient(
+			90deg,
+			transparent 0,
+			transparent 39px,
+			#7c512622 39px,
+			#7c512622 40px
+		),
+		repeating-linear-gradient(
+			0deg,
+			#ffffff04 0,
+			#ffffff04 85px,
+			#6d48290a 86px,
+			#6d48290a 172px
+		);
+	border: 9px solid #2d2f32;
+	box-shadow: inset 0 0 50px #66432530;
+}
+.basketball-court-lines {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	inset: 0;
+	fill: none;
+	stroke: #fff7e4;
+	stroke-width: 2;
+	opacity: 0.8;
+}
+.court-player {
+	position: absolute;
+	width: 132px;
+	min-height: 125px;
+	transform: translate(-50%, -50%);
+	border: 1px solid #53504a;
+	border-top: 3px solid #54504a;
+	padding: 8px 5px 7px;
+	background: #22252a;
+	color: #fff;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3px;
+	box-shadow: 0 6px 12px #3e291b35;
+	&:hover {
+		background: #32343a;
+	}
+	&.selected {
+		border-color: #ffd1a3;
+		border-top-color: #ffa353;
+		box-shadow:
+			0 0 0 2px #ffd1a3,
+			0 6px 12px #3e291b35;
+	}
+}
+.court-player[data-position="PG"] {
+	left: 27%;
+	top: 76%;
+}
+.court-player[data-position="SG"] {
+	left: 73%;
+	top: 76%;
+}
+.court-player[data-position="SF"] {
+	left: 78%;
+	top: 43%;
+}
+.court-player[data-position="PF"] {
+	left: 22%;
+	top: 43%;
+}
+.court-player[data-position="C"] {
+	left: 50%;
+	top: 19%;
+}
+.court-position {
+	position: absolute;
+	left: 8px;
+	top: 7px;
+	color: #ffcb95;
+	font-size: 11px;
+	letter-spacing: 0.1em;
+	font-weight: 700;
+}
+.court-portrait {
+	height: 58px;
+	width: 46px;
+	overflow: hidden;
+	flex-shrink: 0;
+}
+.court-player-name {
+	font-weight: 650;
+	font-size: 12px;
+	line-height: 1.2;
+	overflow-wrap: anywhere;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+.court-fit {
+	font-size: 10px;
+	color: #e4d5c4;
+	line-height: 1.25;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+.court-coaching-note,
+.position-method {
+	color: var(--fr-muted);
+	font-size: 11px;
+	margin-top: 10px;
+}
+.position-method {
+	padding-block: 14px;
+	border-top: 1px solid var(--fr-line);
+	p {
+		max-width: 72em;
+		margin: 12px 0 0;
+		line-height: 1.7;
+	}
+}
+.depth-role-description {
+	color: var(--fr-muted);
+	font-size: 12px;
+	margin-bottom: 12px;
+	min-height: 36px;
+	line-height: 1.5;
+}
+.court-panel-heading > .depth-position-mark {
+	color: var(--fr-accent);
+	font-size: 28px;
+	font-weight: 800;
+	letter-spacing: -0.06em;
+}
+.depth-position-tabs {
+	display: flex;
+	border-bottom: 1px solid var(--fr-line);
+	margin-bottom: 12px;
+	button {
+		flex: 1;
+		padding: 8px;
+		border: 0;
+		border-bottom: 2px solid transparent;
+		background: transparent;
+		color: var(--fr-muted);
+		font-size: 12px;
+		font-weight: 600;
+		&.active {
+			color: var(--fr-ink);
+			border-color: var(--fr-accent);
+		}
+		&:hover {
+			background: var(--fr-soft);
+		}
+	}
+}
+.depth-search {
+	margin-bottom: 12px;
+	font-size: 12px;
+	min-height: 36px;
+}
+.depth-candidates {
+	max-height: 460px;
+	overflow-y: auto;
+	border: 1px solid var(--fr-line);
+	scrollbar-gutter: stable;
+	background: var(--fr-surface);
+}
+.depth-candidate {
+	padding: 12px;
+	border-top: 1px solid var(--fr-line);
+	&:first-child {
+		border-top: 0;
+	}
+	&.at-position {
+		border-left: 3px solid var(--fr-accent);
+	}
+}
+.depth-candidate-heading {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+}
+.depth-portrait {
+	width: 32px;
+	height: 42px;
+	flex-shrink: 0;
+	overflow: hidden;
+}
+.depth-candidate-identity {
+	min-width: 0;
+	flex: 1;
+	a {
+		display: block;
+		font-size: 13px;
+		font-weight: 650;
+		color: var(--fr-ink);
+		overflow-wrap: anywhere;
+	}
+	> span {
+		display: block;
+		font-size: 10px;
+		color: var(--fr-muted);
+		margin-top: 3px;
+	}
+}
+.position-fit {
+	font-size: 10px;
+	color: var(--fr-muted);
+	white-space: nowrap;
+}
+.position-fit[data-fit="listed"],
+.position-fit[data-fit="comfortable"] {
+	font-weight: 600;
+	color: var(--fr-accent);
+}
+.position-fit[data-fit="emergency"] {
+	color: var(--bs-danger-text-emphasis);
+}
+.depth-candidate-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding-left: 42px;
+	margin-top: 4px;
+	> span {
+		font-size: 10px;
+		color: var(--fr-muted);
+	}
+}
+.depth-fit-report {
+	padding-left: 42px;
+	margin-top: 6px;
+	summary {
+		font-size: 10px;
+		color: var(--fr-muted);
+		width: fit-content;
+	}
+}
+.depth-fit-report-body {
+	padding-top: 10px;
+	font-size: 11px;
+	p {
+		margin: 7px 0;
+	}
+}
+.position-fit-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px 14px;
+	> span {
+		display: flex;
+		gap: 5px;
+		color: var(--fr-muted);
+	}
+	strong {
+		font-weight: 500;
+		color: var(--fr-ink);
+	}
+}
+.depth-empty {
+	padding: 20px;
+	font-size: 12px;
+}
+.depth-update-notice {
+	font-size: 12px;
+	color: var(--fr-accent);
+	margin-top: 12px;
+}
+@media (min-width: 1450px) {
+	.basketball-halfcourt {
+		height: 540px;
+	}
+	.court-player {
+		width: 145px;
+		min-height: 136px;
+	}
+	.court-portrait {
+		height: 66px;
+		width: 52px;
+	}
+	.depth-candidates {
+		max-height: 500px;
+	}
+}
+@media (max-width: 1050px) {
+	.court-workspace {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.basketball-halfcourt {
+		max-width: 700px;
+		height: 500px;
+		margin-inline: auto;
+	}
+	.depth-candidates {
+		max-height: none;
+	}
+	.position-depth-panel {
+		margin-top: 8px;
+	}
+}
+@media (max-width: 575px) {
+	.basketball-clubbar {
+		flex-wrap: wrap;
+		gap: 8px 12px;
+		padding-block: 10px;
+		img {
+			width: 38px;
+			height: 44px;
+		}
+	}
+	.basketball-clubbar-name {
+		flex: 1;
+		h2 {
+			font-size: 20px;
+		}
+		> span {
+			font-size: 9px;
+		}
+	}
+	.basketball-clubbar-meta {
+		flex-basis: 100%;
+		margin-left: 50px;
+		font-size: 11px;
+		gap: 6px 16px;
+		> strong {
+			font-size: 18px;
+		}
+	}
+	.court-panel-heading h3 {
+		font-size: 22px;
+	}
+	.basketball-halfcourt {
+		height: 440px;
+		border-width: 5px;
+	}
+	.court-player {
+		width: 104px;
+		min-height: 115px;
+		padding-inline: 4px;
+	}
+	.court-player[data-position="PF"] {
+		left: 18%;
+		top: 48%;
+	}
+	.court-player[data-position="SF"] {
+		left: 82%;
+		top: 48%;
+	}
+	.court-player[data-position="PG"] {
+		left: 25%;
+		top: 80%;
+	}
+	.court-player[data-position="SG"] {
+		left: 75%;
+		top: 80%;
+	}
+	.court-player[data-position="C"] {
+		top: 17%;
+	}
+	.court-player-name {
+		font-size: 11px;
+	}
+	.court-fit {
+		font-size: 9px;
+	}
+	.court-position {
+		font-size: 10px;
+		left: 5px;
+	}
+	.court-portrait {
+		width: 40px;
+		height: 53px;
+	}
+	.depth-candidate-heading {
+		gap: 8px;
+	}
+	.position-fit {
+		font-size: 9px;
+	}
+	.franchise-ui .roster-section-bar {
+		gap: 8px !important;
+	}
+	.roster-section-bar h2 {
+		font-size: 20px;
+	}
+}
