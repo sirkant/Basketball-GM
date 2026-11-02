@@ -9,6 +9,7 @@ import { ValueChangeCalculator } from "../core/team/ValueChangeCalculator.ts";
 import { defineView } from "../util/defineView.ts";
 import { getFinancialStatus } from "../core/finances/nbaAprons.ts";
 import { getApronTradeRule } from "../../common/nbaAprons.ts";
+import { ownerTradeImpact } from "../core/finances/ownership.ts";
 
 const getSummaryTeam = (summary: TradeSummary, i: 0 | 1) => {
 	return {
@@ -35,6 +36,7 @@ export const getSummary = async (teams: TradeTeams) => {
 				teams[1].pids.length > 0 ||
 				teams[1].dpids.length > 0),
 		warning: summary.warning,
+		ownerImpact: await ownerTradeImpact(teams),
 		financialStatus: await getFinancialStatus(
 			teams[0].tid,
 			summary.teams[0].payrollAfterTrade * 1000,

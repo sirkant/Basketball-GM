@@ -1,4 +1,5 @@
 import { PHASE } from "../../common/constants.ts";
+import { getOwnershipBoard } from "../core/finances/ownership.ts";
 import { getContractSalary } from "../../common/contractSalary.ts";
 import { finances, team } from "../core/index.ts";
 import { idb } from "../db/index.ts";
@@ -29,6 +30,8 @@ export default defineView({
 			updateEvents.has("gameSim") ||
 			updateEvents.has("playerMovement") ||
 			updateEvents.has("teamFinances") ||
+			updateEvents.has("newPhase") ||
+			updateEvents.has("gameAttributes") ||
 			inputs.tid !== prevInputs?.tid ||
 			inputs.show !== prevInputs?.show
 		) {
@@ -240,6 +243,7 @@ export default defineView({
 			return {
 				abbrev: inputs.abbrev,
 				financialStatus: await getFinancialStatus(inputs.tid, payroll * 1000),
+				ownership: await getOwnershipBoard(inputs.tid),
 				autoTicketPrice,
 				tid: inputs.tid,
 				show: inputs.show,

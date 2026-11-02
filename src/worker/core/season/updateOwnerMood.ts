@@ -10,6 +10,7 @@ import {
 	projectedTax,
 } from "../finances/nbaAprons.ts";
 import { getApronLevels } from "../../../common/nbaAprons.ts";
+import { assessOwner } from "../finances/ownership.ts";
 
 /**
  * Update teamSeason.ownerMood based on performance this season, only for user's team.
@@ -51,6 +52,9 @@ const updateOwnerMood = async (): Promise<
 	);
 
 	if (!teamSeason) {
+		return;
+	}
+	if (teamSeason.ownerReview?.applied) {
 		return;
 	}
 
@@ -145,6 +149,47 @@ const updateOwnerMood = async (): Promise<
 		}
 	}
 
+	const ownerReview = await assessOwner(true);
+	if (ownerReview?.season === g.get("season")) {
+		deltas.wins = ownerReview.winsDelta;
+		const targetRounds = ownerReview.mandate.targets.playoffRounds;
+		const actualRounds = t.seasonAttrs.playoffRoundsWon;
+		deltas.playoffs =
+			ownerReview.mandate.mode === "rebuild"
+				? 0
+				: actualRounds < targetRounds
+					? -(actualRounds < 0
+							? 0.2 + 0.1 * targetRounds
+							: 0.1 * (targetRounds - actualRounds)) *
+						ownerReview.mandate.weights.wins
+					: (actualRounds >= numPlayoffRounds
+							? 0.2
+							: (0.16 / Math.max(1, numPlayoffRounds)) *
+								Math.max(0, actualRounds)) * ownerReview.mandate.weights.wins;
+		deltas.playoffs += ownerReview.strategyDelta;
+		if (g.get("budget")) {
+			const cost =
+				ownerReview.objectives.find((o) => o.key === "cost")?.actual ?? 0;
+			const profit =
+				ownerReview.objectives.find((o) => o.key === "profit")?.actual ?? 0;
+			deltas.money =
+				((profit - ownerReview.mandate.targets.minProfit) / g.get("salaryCap") -
+					Math.max(
+						0,
+						(cost - ownerReview.mandate.targets.maxCost) / g.get("salaryCap"),
+					)) *
+				ownerReview.mandate.weights.money;
+			if (
+				teamSeason.nbaFinancials?.secondApron ||
+				teamSeason.payrollEndOfSeason >
+					getApronLevels(g.get("salaryCap"), g.get("luxuryPayroll")).second
+			) {
+				deltas.money -= 0.15;
+			}
+		}
+		teamSeason.ownerReview = { ...structuredClone(ownerReview), applied: true };
+	}
+
 	// Bound only the top - can't win the game by doing only one thing, but you can lose it by neglecting one thing
 	const cappedDeltas = { ...deltas };
 
@@ -166,6 +211,9 @@ const updateOwnerMood = async (): Promise<
 		ownerMood.money += cappedDeltas.money;
 		ownerMood.playoffs += cappedDeltas.playoffs;
 		ownerMood.wins += cappedDeltas.wins;
+		await idb.cache.teamSeasons.put(teamSeason);
+	}
+	if (teamSeason.ownerReview) {
 		await idb.cache.teamSeasons.put(teamSeason);
 	}
 

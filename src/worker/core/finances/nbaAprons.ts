@@ -21,14 +21,16 @@ export const salaryYear = () =>
 export const currentApronState = (t: Team | undefined) =>
 	t?.apronState?.season === salaryYear() ? t.apronState : undefined;
 
-export const ownerExpectations = (t: Pick<Team, "tid" | "ownerPriority">) => {
+export const ownerExpectations = (
+	t: Pick<Team, "tid" | "ownerPriority" | "ownerMandate">,
+) => {
 	const priorities: OwnerPriority[] = [
 		"balanced",
 		"winning",
 		"profit",
 		"lowPayroll",
 	];
-	return getOwnerExpectations(
+	const profile = getOwnerExpectations(
 		t.ownerPriority ??
 			priorities[
 				(((t.tid * 7) % priorities.length) + priorities.length) %
@@ -36,6 +38,20 @@ export const ownerExpectations = (t: Pick<Team, "tid" | "ownerPriority">) => {
 			]!,
 		g.get("salaryCap"),
 	);
+	const mandate = t.ownerMandate;
+	if (
+		mandate?.season === salaryYear() &&
+		Number.isFinite(mandate.targets?.maxCost) &&
+		Number.isFinite(mandate.targets?.minProfit)
+	) {
+		return {
+			...profile,
+			winPct: mandate.targets.winPct,
+			minProfit: mandate.targets.minProfit,
+			maxCost: mandate.targets.maxCost,
+		};
+	}
+	return profile;
 };
 
 export const isRepeater = async (tid: number) => {

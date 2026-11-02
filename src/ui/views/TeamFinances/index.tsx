@@ -8,6 +8,7 @@ import {
 } from "react";
 import { DataTable } from "../../components/DataTable/index.tsx";
 import { ApronNotice } from "../../components/ApronNotice.tsx";
+import { OwnershipBrief } from "../../components/OwnershipBrief.tsx";
 import { MoreLinks } from "../../components/MoreLinks.tsx";
 import useTitleBar from "../../hooks/useTitleBar.tsx";
 import { helpers } from "../../util/helpers.ts";
@@ -732,6 +733,7 @@ const TeamFinances = ({
 	autoTicketPrice,
 	barData,
 	financialStatus,
+	ownership,
 	contractTotals,
 	contracts,
 	luxuryTaxAmount,
@@ -859,7 +861,8 @@ const TeamFinances = ({
 	return (
 		<>
 			<MoreLinks type="team" page="team_finances" abbrev={abbrev} tid={tid} />
-			<ApronNotice status={financialStatus} />
+			<OwnershipBrief ownership={ownership} />
+			<ApronNotice status={financialStatus} showOwner={!ownership} />
 
 			<PayrollInfo
 				luxuryTaxAmount={luxuryTaxAmount}

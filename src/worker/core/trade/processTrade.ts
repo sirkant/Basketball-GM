@@ -21,6 +21,11 @@ import { recomputeLocalUITeamOvrs } from "../../util/recomputeLocalUITeamOvrs.ts
 import summary from "./summary.ts";
 import { getApronTradeRule } from "../../../common/nbaAprons.ts";
 import {
+	ownerTradeImpact,
+	recordOwnerTrade,
+	undoOwnerTrade,
+} from "../finances/ownership.ts";
+import {
 	apronsEnabled,
 	currentApronState,
 	saveApronState,
@@ -30,6 +35,7 @@ const processTrade = async (
 	rawTeams: TradeTeams,
 	initialHash: string | undefined,
 ) => {
+	const ownershipImpact = await ownerTradeImpact(rawTeams);
 	const tids: [number, number] = [rawTeams[0].tid, rawTeams[1].tid];
 	const pids: [number[], number[]] = [rawTeams[0].pids, rawTeams[1].pids];
 	const dpids: [number[], number[]] = [rawTeams[0].dpids, rawTeams[1].dpids];
@@ -234,6 +240,9 @@ const processTrade = async (
 	});
 
 	// Can only do this now, after we know the eid
+	if (eid !== undefined) {
+		await recordOwnerTrade(eid, ownershipImpact);
+	}
 	for (const [p, info] of playerTransactionInfo) {
 		if (!p.transactions) {
 			p.transactions = [];
@@ -375,6 +384,9 @@ const processTrade = async (
 		}
 
 		await idb.cache.events.delete(eid);
+		if (eid !== undefined) {
+			await undoOwnerTrade(eid, ownershipImpact?.tid);
+		}
 
 		void toUI("realtimeUpdate", [["playerMovement", "undoTrade"]]);
 		void recomputeLocalUITeamOvrs();

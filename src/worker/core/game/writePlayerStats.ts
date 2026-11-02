@@ -1,3 +1,4 @@
+import { recordOwnerGame } from "../finances/ownership.ts";
 import { PHASE } from "../../../common/constants.ts";
 import { finances, player } from "../index.ts";
 import { idb } from "../../db/index.ts";
@@ -289,6 +290,15 @@ const writePlayerStats = async (
 
 		for (const i of [0, 1] as const) {
 			const t = result.team[i];
+			if (!allStarGame) {
+				await recordOwnerGame(
+					result.gid,
+					t.id,
+					playoffs,
+					t.player,
+					playersByPid,
+				);
+			}
 			let goaliePID: number | undefined;
 
 			// This needs to be before checkStatisticalFeat

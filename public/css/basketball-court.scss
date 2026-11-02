@@ -1,4 +1,132 @@
 // Basketball workspace: court first, role decisions beside it.
+.ownership-office {
+	scroll-margin-top: 74px;
+	padding: 20px 22px;
+	background: var(--fr-surface);
+	border: 1px solid var(--fr-line);
+	border-top: 3px solid var(--fr-accent);
+	margin-block: 16px 24px;
+}
+.ownership-heading {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	h2 {
+		font-size: 28px;
+		letter-spacing: -0.04em;
+		margin: 5px 0 0;
+		font-weight: 700;
+	}
+	> span {
+		color: var(--fr-muted);
+		font-size: 12px;
+	}
+}
+.ownership-letter {
+	font-size: 16px;
+	line-height: 1.7;
+	max-width: 70em;
+	margin: 20px 0;
+	color: var(--fr-ink);
+}
+.ownership-plan {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+	gap: 28px;
+	h3 {
+		font-size: 16px;
+		font-weight: 650;
+		margin-bottom: 14px;
+	}
+	ul {
+		padding-left: 18px;
+		font-size: 13px;
+		line-height: 1.6;
+	}
+	li {
+		margin-bottom: 10px;
+	}
+}
+.ownership-objective {
+	display: grid;
+	grid-template-columns: minmax(120px, 1fr) auto;
+	gap: 3px 12px;
+	border-bottom: 1px solid var(--fr-line);
+	padding: 10px 0;
+	font-size: 12px;
+	> span:nth-child(3) {
+		color: var(--fr-muted);
+		font-size: 11px;
+	}
+	> strong {
+		text-align: right;
+		font-size: 16px;
+	}
+}
+.ownership-grade {
+	text-align: right;
+	font-size: 11px;
+	color: var(--fr-muted);
+}
+.ownership-grade[data-status="met"] {
+	color: var(--fr-accent);
+}
+.ownership-grade[data-status="missed"] {
+	color: var(--bs-danger-text-emphasis);
+}
+.ownership-evidence {
+	padding: 14px 0;
+	border-top: 1px solid var(--fr-line);
+	summary {
+		font-weight: 600;
+		font-size: 12px;
+		color: var(--fr-accent);
+	}
+	> p:first-of-type {
+		margin-top: 14px;
+	}
+	p {
+		font-size: 12px;
+		line-height: 1.7;
+	}
+}
+.ownership-decision {
+	border-bottom: 1px solid var(--fr-line);
+	padding: 14px 0;
+	p {
+		margin: 6px 0;
+	}
+}
+.owner-trade-view {
+	border-left: 2px solid var(--fr-accent, var(--bs-border-color));
+	padding-left: 10px;
+	margin: 12px 0;
+	font-size: 12px;
+	summary {
+		font-weight: 600;
+	}
+	ul {
+		margin: 10px 0;
+		padding-left: 18px;
+	}
+}
+@media (max-width: 767px) {
+	.ownership-office {
+		padding: 18px 14px;
+	}
+	.ownership-plan {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 16px;
+	}
+	.ownership-heading h2 {
+		font-size: 24px;
+	}
+	.ownership-letter {
+		font-size: 14px;
+	}
+}
 .franchise-ui {
 	--fr-paper: #ececea;
 	--fr-ink: #202125;
@@ -505,4 +633,16 @@
 	.roster-section-bar h2 {
 		font-size: 20px;
 	}
+}
+
+.ownership-letter,
+.ownership-decision {
+	overflow-wrap: anywhere;
+}
+.ownership-followup {
+	font-size: 13px;
+	line-height: 1.7;
+	padding: 12px 0;
+	border-block: 1px solid var(--fr-line);
+	margin-bottom: 20px;
 }

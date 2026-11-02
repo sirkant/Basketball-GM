@@ -50,6 +50,7 @@ const generate = (tm: any): Team => {
 		},
 		strategy,
 		ownerPriority: tm.ownerPriority,
+		ownerMandate: tm.ownerMandate,
 		apronState: tm.apronState,
 		apronPickPenalties: tm.apronPickPenalties,
 		depth: tm.depth,
