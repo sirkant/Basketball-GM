@@ -78,7 +78,8 @@ bounded by the actual target shortfall and observed core absence rate. It never
 credits additional wins, excuses cost or reverses a transaction conflict.
 Playoff injury absences are reported separately without awarding unearned series.
 Wins need ten post-mandate games (or the shorter configured season length).
-Late adoption with fewer games also leaves new roster milestones ungraded;
+Late adoption with fewer games, or after the normal trading window has closed,
+also leaves new roster milestones ungraded;
 pre-existing financial evaluation remains intact. No old injuries or trades are
 reconstructed from forecasts or assumed causal stories.
 
@@ -98,7 +99,7 @@ structure is replaced prospectively. Season changes create new clean evidence
 without overwriting archived reviews. Source and meaningful model/integration
 tests ship in the same feature PR; production browser QA uses disposable leagues.
 
-Verified: 655 tests passed and 12 skipped, ESLint and TypeScript. Production
+Verified: 656 tests passed and 12 skipped, ESLint and TypeScript. Production
 Chromium checked a new mandate letter, frozen age/talent targets, a real injury
 game, an accepted trade against explicit instructions, undo and re-execution,
 then a complete manually simulated season and annual review. The owner recorded

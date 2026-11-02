@@ -19,6 +19,7 @@ import {
 	salaryYear,
 } from "./nbaAprons.ts";
 import { getContractSalary } from "../../../common/contractSalary.ts";
+import { PHASE } from "../../../common/constants.ts";
 
 const enabled = () =>
 	apronsEnabled() && !g.get("spectator") && g.get("userTids").length === 1;
@@ -140,6 +141,11 @@ const issueOwnerMandate = async () => {
 		hidden: g.get("challengeNoRatings"),
 		numGames: g.get("numGames"),
 	});
+	mandate.deferRosterAssessment =
+		year === g.get("season") &&
+		mandate.issuedGames > 0 &&
+		g.get("phase") >= PHASE.AFTER_TRADE_DEADLINE &&
+		g.get("phase") <= PHASE.PLAYOFFS;
 	const previous = await idb.cache.teamSeasons.indexGet(
 		"teamSeasonsByTidSeason",
 		[t.tid, year - 1],
@@ -177,7 +183,7 @@ const issueOwnerMandate = async () => {
 				mandate.mode === "rebuild"
 					? "The rebuild: our agreement"
 					: "Our competitive window",
-			text: `<p>${escape(mandate.opening)}</p><p>These targets are fixed for this mandate:</p><ul>${targets.map((text) => `<li>${escape(text)}</li>`).join("")}</ul><p>How I expect you to work:</p><ul>${mandate.instructions.map((text) => `<li>${escape(text)}</li>`).join("")}</ul><p>Review the targets and decision journal in <a href="/l/${g.get("lid")}/team_finances#ownership">Ownership</a>. Injuries will be recorded from now on; they do not excuse budget or trade-policy breaches.</p>${mandate.issuedGames ? `<p>This mandate begins after ${mandate.issuedGames} games. Earlier decisions will not be judged retroactively.</p>` : ""}`,
+			text: `<p>${escape(mandate.opening)}</p>${mandate.deferRosterAssessment ? "<p>The trading window has already closed. New roster-building milestones are informational this season and will not be graded retroactively.</p>" : ""}<p>These targets are fixed for this mandate:</p><ul>${targets.map((text) => `<li>${escape(text)}</li>`).join("")}</ul><p>How I expect you to work:</p><ul>${mandate.instructions.map((text) => `<li>${escape(text)}</li>`).join("")}</ul><p>Review the targets and decision journal in <a href="/l/${g.get("lid")}/team_finances#ownership">Ownership</a>. Injuries will be recorded from now on; they do not excuse budget or trade-policy breaches.</p>${mandate.issuedGames ? `<p>This mandate begins after ${mandate.issuedGames} games. Earlier decisions will not be judged retroactively.</p>` : ""}`,
 		});
 	}
 	return mandate;

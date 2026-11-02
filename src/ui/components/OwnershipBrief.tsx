@@ -104,6 +104,12 @@ export const OwnershipBrief = ({
 						? `I have recorded ${mandate.injuries.keyMissed} core player-games lost to injury. That context will be considered separately from your spending and trade decisions.`
 						: "We will review the evidence against this agreement at season end."}
 			</p>
+			{mandate.deferRosterAssessment ? (
+				<p className="small text-body-secondary">
+					This mandate was issued after the trade deadline. New roster-building
+					milestones are informational until the next mandate.
+				</p>
+			) : null}
 			<div className="ownership-plan">
 				<div>
 					<h3>The agreement</h3>

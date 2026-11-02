@@ -37,6 +37,20 @@ const results = {
 };
 
 describe("ownership mandates", () => {
+	test("adopting a mandate after the trading window does not punish unavailable roster changes", () => {
+		const m = mandate();
+		m.issuedGames = 60;
+		m.issuedWins = 20;
+		m.deferRosterAssessment = true;
+		const r = reviewOwnerMandate(m, m.baseline, results, true);
+		expect(r.strategyDelta).toBe(0);
+		expect(r.objectives.find((o) => o.key === "age")?.status).toBe(
+			"unassessed",
+		);
+		expect(r.paragraphs.join(" ")).toContain(
+			"trading window was already closed",
+		);
+	});
 	test("cutting weak players does not inflate a short rotation's talent score", () => {
 		const full = ownershipRoster(players(), 3, false);
 		const short = ownershipRoster(players().slice(0, 5), 3, false);

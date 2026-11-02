@@ -33,6 +33,7 @@ export type OwnerMandate = {
 	issuedGames: number;
 	issuedWins: number;
 	ratingsHidden: boolean;
+	deferRosterAssessment?: boolean;
 	baseline: OwnershipRoster;
 	targets: {
 		winPct: number;
@@ -321,7 +322,9 @@ export const reviewOwnerMandate = (
 		? Math.max(0, results.wins - mandate.issuedWins) / sample
 		: undefined;
 	const enoughGames = sample >= (mandate.targets.minimumGames ?? 10);
-	const assessRoster = mandate.issuedGames === 0 || enoughGames;
+	const assessRoster =
+		!mandate.deferRosterAssessment &&
+		(mandate.issuedGames === 0 || enoughGames);
 	const objectives: OwnerObjective[] = [];
 	const add = (
 		key: string,
@@ -477,7 +480,9 @@ export const reviewOwnerMandate = (
 			? "Your decisions need an explanation"
 			: "The plan is in progress"
 		: !assessRoster && breaches === 0
-			? "Insufficient time to judge this mandate"
+			? mandate.deferRosterAssessment
+				? "Roster-building transition deferred"
+				: "Insufficient time to judge this mandate"
 			: breaches > 0
 				? "Results with a mandate conflict"
 				: progress >= 0.75
@@ -509,6 +514,11 @@ export const reviewOwnerMandate = (
 		);
 	}
 	if (mandate.issuedGames > 0) {
+		if (mandate.deferRosterAssessment) {
+			paragraphs.push(
+				"This mandate arrived after the trade deadline. New roster-building milestones are tracked but not graded this season because the normal trading window was already closed.",
+			);
+		}
 		paragraphs.push(
 			`The mandate was issued after ${mandate.issuedGames} games. Earlier games, trades and injuries are not retroactively attributed to this mandate.`,
 		);
