@@ -1,4 +1,37 @@
 // Basketball-only presentation layer. Data tables and game rules retain their APIs.
+.finance-context {
+	border-bottom: 1px solid var(--fr-line, var(--bs-border-color));
+	padding: 10px 0;
+	margin-bottom: 12px;
+	font-size: 12px;
+}
+.finance-context-line {
+	display: flex;
+	gap: 8px 22px;
+	flex-wrap: wrap;
+	align-items: baseline;
+	color: var(--fr-muted, var(--bs-secondary-color));
+	strong {
+		color: var(--fr-ink, var(--bs-body-color));
+		margin-left: 5px;
+	}
+	a {
+		margin-left: auto;
+		color: var(--fr-accent, var(--bs-link-color));
+	}
+}
+.finance-context-warning,
+.finance-context-danger {
+	margin: 6px 0 0;
+	padding-left: 10px;
+	border-left: 2px solid #ad771a;
+	font-size: 11px;
+}
+.finance-context-danger {
+	font-weight: 700;
+	border-color: #cf3a3a;
+	color: var(--bs-danger-text-emphasis);
+}
 .franchise-ui {
 	--fr-paper: #f1f2f0;
 	--fr-surface: #fff;

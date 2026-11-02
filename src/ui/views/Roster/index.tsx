@@ -428,7 +428,13 @@ const Roster = ({
 						players={players}
 						maxRosterSize={maxRosterSize}
 					/>
-					<FinancialStrip status={financialStatus} />
+					<FinancialStrip
+						status={financialStatus}
+						financeUrl={helpers.leagueUrl([
+							"team_finances",
+							`${abbrev}_${tid}`,
+						])}
+					/>
 				</>
 			) : (
 				<ApronNotice status={financialStatus} />

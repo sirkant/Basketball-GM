@@ -1,5 +1,5 @@
 import useTitleBar from "../../hooks/useTitleBar.tsx";
-import { ApronNotice } from "../../components/ApronNotice.tsx";
+import { FinancialStrip } from "../../components/FinancialStrip.tsx";
 import { helpers } from "../../util/helpers.ts";
 import { PlayoffMatchup } from "../../components/PlayoffMatchup.tsx";
 import Leaders from "./Leaders.tsx";
@@ -54,7 +54,7 @@ const LeagueDashboard = ({
 
 	return (
 		<>
-			<ApronNotice status={financialStatus} />
+			<FinancialStrip status={financialStatus} />
 			<div className="row">
 				<div className="col-xl-7 col-lg-8">
 					<div className="row">
