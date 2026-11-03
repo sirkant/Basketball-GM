@@ -103,6 +103,7 @@ const Roster = ({
 	payroll,
 	players,
 	positionProfiles,
+	coachReport,
 	playoffs,
 	playoffsByConf,
 	season,
@@ -513,6 +514,7 @@ const Roster = ({
 					key={tid}
 					players={playersSorted}
 					positionProfiles={positionProfiles}
+					coachReport={coachReport}
 					editable={editable}
 					onMakeStarter={handleMakeStarter}
 				/>
