@@ -168,45 +168,51 @@ const TeamStatDists = ({ season, statsAll }: View<"teamStatDists">) => {
 				median, the third quartile, the maximum, and the maximum of the scale.
 			</p>
 
-			<table>
-				<tbody>
-					{Object.entries(statsAll)
-						.filter(([stat]) => stat !== "playoffs")
-						.map(([stat, values]) => {
-							const bbgmPlot = (
-								<tr key={`${stat}-bbgm`}>
-									<td className="pe-3 text-end">{stat}</td>
-									<td style={width100}>
-										<BoxPlot
-											color="var(--bs-blue)"
-											data={values}
-											scale={scale[stat]}
-										/>
-									</td>
-								</tr>
-							);
-							let proPlot: ReactNode = null;
-							if (proStatsAll[stat]) {
-								proPlot = (
-									<tr key={`${stat}-pro`}>
-										<td />
+			<div
+				className={
+					__SPORT === "basketball" ? "clubhouse-distributions" : undefined
+				}
+			>
+				<table>
+					<tbody>
+						{Object.entries(statsAll)
+							.filter(([stat]) => stat !== "playoffs")
+							.map(([stat, values]) => {
+								const bbgmPlot = (
+									<tr key={`${stat}-bbgm`}>
+										<td className="pe-3 text-end">{stat}</td>
 										<td style={width100}>
-											<div style={{ marginTop: "-26px" }}>
-												<BoxPlot
-													color="var(--bs-green)"
-													data={proStatsAll[stat]}
-													labels={false}
-													scale={scale[stat]}
-												/>
-											</div>
+											<BoxPlot
+												color="var(--bs-blue)"
+												data={values}
+												scale={scale[stat]}
+											/>
 										</td>
 									</tr>
 								);
-							}
-							return [bbgmPlot, proPlot];
-						})}
-				</tbody>
-			</table>
+								let proPlot: ReactNode = null;
+								if (proStatsAll[stat]) {
+									proPlot = (
+										<tr key={`${stat}-pro`}>
+											<td />
+											<td style={width100}>
+												<div style={{ marginTop: "-26px" }}>
+													<BoxPlot
+														color="var(--bs-green)"
+														data={proStatsAll[stat]}
+														labels={false}
+														scale={scale[stat]}
+													/>
+												</div>
+											</td>
+										</tr>
+									);
+								}
+								return [bbgmPlot, proPlot];
+							})}
+					</tbody>
+				</table>
+			</div>
 		</>
 	);
 };

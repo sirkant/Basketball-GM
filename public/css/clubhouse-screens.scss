@@ -1,0 +1,335 @@
+.franchise-ui {
+	.clubhouse-distributions {
+		overflow-x: auto;
+		padding: 12px 24px;
+		background: var(--fr-surface);
+		border: 1px solid var(--fr-line);
+		border-radius: 4px;
+		table {
+			width: 100%;
+		}
+	}
+	&.clubhouse-modal {
+		background: transparent;
+		.modal-title {
+			font-size: 20px;
+		}
+		.modal-header,
+		.modal-body,
+		.modal-footer {
+			padding: 14px 18px;
+		}
+	}
+	// The same work surface carries full tables, filters and their existing tools.
+	.data-workspace {
+		margin-block: 8px 16px;
+		padding: 0 10px 8px;
+		border: 1px solid var(--fr-line);
+		border-radius: 4px;
+		background: var(--fr-surface);
+		min-width: 0;
+		.table {
+			margin-bottom: 0;
+		}
+		> div > .d-flex:first-child {
+			padding-block: 7px;
+		}
+		.table-responsive {
+			border-top: 1px solid var(--fr-line);
+		}
+		.datatable-header-text {
+			font-size: 15px;
+			font-weight: 500;
+		}
+		.table th {
+			font-size: 12px;
+			font-weight: 500;
+			letter-spacing: 0.1px;
+		}
+		.input-group-sm,
+		.input-group-sm > .form-control {
+			font-size: 12px;
+		}
+	}
+	.table-responsive {
+		scrollbar-color: var(--fr-muted) transparent;
+		scrollbar-width: thin;
+	}
+	.table thead {
+		color: var(--fr-muted);
+	}
+	.table th {
+		vertical-align: bottom;
+	}
+	.table a:focus-visible {
+		outline: 2px solid var(--clubhouse-gold);
+		outline-offset: 2px;
+	}
+	.nav-tabs {
+		margin-bottom: 10px;
+		border-bottom: 1px solid var(--fr-line);
+		gap: 3px;
+		.nav-link {
+			font-size: 13px;
+			padding: 8px 12px;
+			border-radius: 3px 3px 0 0;
+			color: var(--fr-muted);
+		}
+		.nav-link.active {
+			border-color: var(--fr-line);
+			border-bottom-color: var(--fr-surface);
+			background: var(--fr-surface);
+			color: var(--fr-ink);
+		}
+	}
+	.clubhouse-player-dossier {
+		> .d-sm-flex {
+			gap: 14px;
+			align-items: stretch !important;
+		}
+		.player-bio {
+			padding: 16px;
+			background: linear-gradient(
+				130deg,
+				var(--fr-soft),
+				var(--fr-surface) 75%
+			);
+			border: 1px solid var(--fr-line);
+			border-top: 3px solid var(--fr-accent);
+			border-radius: 4px;
+			min-width: 0;
+			font-size: 13px;
+			line-height: 1.55;
+		}
+		.player-picture {
+			height: 170px;
+			width: 115px;
+			flex-shrink: 0;
+			margin-top: 0 !important;
+			margin-right: 12px;
+			display: flex;
+			align-items: end;
+		}
+		.player-stats-summary {
+			font-size: 12px;
+		}
+	}
+	.clubhouse-player-attributes {
+		padding: 13px 16px;
+		border: 1px solid var(--fr-line);
+		border-radius: 4px;
+		background: var(--fr-surface);
+		min-width: 0;
+		flex: 1;
+		table {
+			font-size: 13px;
+		}
+		h2,
+		h3,
+		h4 {
+			font-size: 15px;
+		}
+	}
+	.basketball-clubbar {
+		border-bottom: 1px solid var(--fr-line);
+		background: var(--fr-surface);
+		padding: 10px 12px;
+		border-radius: 4px;
+	}
+	.basketball-clubbar-name strong {
+		font-size: 21px;
+		letter-spacing: 0;
+	}
+	.court-workspace {
+		gap: 12px;
+	}
+	.court-lineup-panel,
+	.depth-panel,
+	.court-coach-report {
+		border-radius: 4px;
+		background: var(--fr-surface);
+		border-color: var(--fr-line);
+	}
+	.court-panel-heading {
+		padding-block: 10px;
+		h2,
+		h3 {
+			font-size: 16px;
+			font-weight: 500;
+			letter-spacing: 0;
+		}
+	}
+	.basketball-halfcourt {
+		background: radial-gradient(ellipse at center, #303540, #20262f);
+		border-color: #586171;
+	}
+	.basketball-court-lines {
+		color: #707a8b;
+		stroke: #8994a6;
+		opacity: 0.65;
+	}
+	.court-player {
+		border-radius: 3px;
+		border-color: #51576a;
+		background: #252b36;
+		color: #e6ecf3;
+		box-shadow: 0 2px 5px #0003;
+		&[aria-pressed="true"] {
+			border-color: #d4b47b;
+			background: #393349;
+			box-shadow: 0 0 0 1px #d4b47b;
+		}
+	}
+	.court-position {
+		background: #554367;
+		color: #f0e4fd;
+		font-size: 10px;
+		letter-spacing: 1px;
+	}
+	.court-player-name {
+		font-size: 13px;
+		line-height: 1.15;
+		letter-spacing: 0;
+	}
+	.court-player-meta,
+	.court-strengths,
+	.court-fit,
+	.court-production {
+		font-size: 10px;
+		color: #bdc8d8;
+	}
+	.court-contract {
+		font-size: 11px;
+		color: #f0d6a6;
+	}
+	.depth-candidate {
+		border-radius: 3px;
+		padding: 11px;
+		border-color: var(--fr-line);
+		background: var(--fr-surface);
+	}
+	.depth-candidate-identity > a {
+		font-size: 15px;
+	}
+	.depth-candidate-heading {
+		gap: 10px;
+	}
+	.depth-fit-report {
+		font-size: 12px;
+	}
+	.coach-area {
+		background: var(--fr-paper);
+		border: 1px solid var(--fr-line);
+		border-radius: 3px;
+	}
+	#trade-proposal {
+		border-top: 3px solid var(--fr-accent);
+		margin-bottom: 14px !important;
+		> .card-body {
+			padding: 12px 14px;
+		}
+		.alert {
+			padding: 8px 10px;
+			font-size: 12px;
+			line-height: 1.4;
+		}
+		h2 {
+			font-size: 17px;
+		}
+	}
+	.owner-trade-view {
+		padding-block: 7px;
+		border-block: 1px solid var(--fr-line);
+		summary {
+			font-size: 12px;
+		}
+	}
+	.ownership-office {
+		padding: 16px 18px;
+		border-radius: 4px;
+	}
+	.ownership-heading h2 {
+		font-size: 23px;
+		letter-spacing: 0;
+	}
+	.ownership-letter {
+		font-family: Inter, sans-serif;
+		font-size: 12px;
+		line-height: 1.8;
+		margin-block: 16px;
+	}
+	.ownership-plan {
+		gap: 20px;
+		h3 {
+			font-size: 16px;
+		}
+		li {
+			font-size: 13px;
+		}
+	}
+	.ownership-objective {
+		padding-block: 8px;
+		> strong {
+			font-size: 15px;
+		}
+	}
+	.chronicle-heading h2,
+	.chronicle-lede h2 {
+		letter-spacing: 0;
+	}
+	.chronicle-season-list button {
+		border-radius: 3px;
+	}
+	&[data-clubhouse-page="news"] .card {
+		height: 100%;
+		border-radius: 4px;
+		.card-header {
+			background: var(--fr-paper);
+		}
+	}
+	&[data-clubhouse-page="schedule"] .table {
+		font-size: 13px;
+	}
+	&[data-clubhouse-page="teamFinances"] .table-responsive,
+	&[data-clubhouse-page="leagueFinances"] .table-responsive {
+		background: var(--fr-surface);
+	}
+	.form-text {
+		font-size: 12px;
+		color: var(--fr-muted);
+	}
+	fieldset {
+		border-color: var(--fr-line);
+	}
+	legend {
+		font-size: 18px;
+		font-weight: 500;
+	}
+	.accordion {
+		--bs-accordion-bg: var(--fr-surface);
+		--bs-accordion-color: var(--fr-ink);
+		--bs-accordion-border-color: var(--fr-line);
+		--bs-accordion-btn-color: var(--fr-ink);
+		--bs-accordion-active-bg: var(--fr-soft);
+		--bs-accordion-active-color: var(--fr-ink);
+	}
+}
+@media (max-width: 575px) {
+	.franchise-ui .data-workspace {
+		padding-inline: 5px;
+	}
+	.franchise-ui .clubhouse-player-dossier .player-bio {
+		padding: 10px;
+	}
+	.franchise-ui .clubhouse-player-dossier .player-picture {
+		width: 78px;
+		height: 120px;
+		margin-right: 8px;
+	}
+	.franchise-ui .clubhouse-player-attributes {
+		padding: 10px;
+	}
+	.franchise-ui .ownership-office {
+		padding: 12px;
+	}
+}

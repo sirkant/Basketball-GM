@@ -581,7 +581,7 @@ export const DataTable = <Type extends MetadataType = undefined>({
 				}}
 				stickyCols={state.stickyCols}
 			/>
-			<div className={className} style={style}>
+			<div className={clsx("data-workspace", className)} style={style}>
 				<div
 					className={clsx({
 						"d-inline-block mw-100": nonfluid,

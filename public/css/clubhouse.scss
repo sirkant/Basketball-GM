@@ -448,6 +448,9 @@
 		font-size: 13px;
 	}
 	.navbar.fixed-top {
+		background: #1a1d25 !important;
+		border-color: #37323f;
+		font-size: 13px;
 		.clubhouse-search {
 			align-items: center;
 			gap: 9px;
@@ -460,9 +463,6 @@
 			min-width: 240px;
 			text-align: left;
 		}
-		background: #1a1d25 !important;
-		border-color: #37323f;
-		font-size: 13px;
 	}
 	.navbar.fixed-top .nav-link,
 	.navbar.fixed-top .navbar-brand,
