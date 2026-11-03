@@ -1,3 +1,5 @@
+import { useState } from "react";
+import LeagueChronicle from "../components/LeagueChronicle.tsx";
 import { DataTable } from "../components/DataTable/index.tsx";
 import { MoreLinks } from "../components/MoreLinks.tsx";
 import useTitleBar from "../hooks/useTitleBar.tsx";
@@ -96,8 +98,7 @@ const formatTeam = (
 	};
 };
 
-const HistoryAll = ({ awards, seasons }: View<"historyAll">) => {
-	useTitleBar({ title: "League History" });
+const HistoryTable = ({ awards, seasons }: View<"historyAll">) => {
 	const { userTid } = useLocal(["userTid"]);
 
 	const cols = getCols([
@@ -153,8 +154,6 @@ const HistoryAll = ({ awards, seasons }: View<"historyAll">) => {
 
 	return (
 		<>
-			<MoreLinks type="league" page="history_all" />
-
 			<DataTable
 				cols={cols}
 				defaultSort={[0, "desc"]}
@@ -167,4 +166,45 @@ const HistoryAll = ({ awards, seasons }: View<"historyAll">) => {
 	);
 };
 
+const HistoryAll = (props: View<"historyAll">) => {
+	useTitleBar({ title: "League History" });
+	const [layout, setLayout] = useState<"chronicle" | "table">("chronicle");
+	return (
+		<>
+			<MoreLinks type="league" page="history_all" />
+			{__SPORT === "basketball" ? (
+				<div
+					className="chronicle-view-switch"
+					role="group"
+					aria-label="History view"
+				>
+					<button
+						type="button"
+						aria-pressed={layout === "chronicle"}
+						onClick={() => setLayout("chronicle")}
+					>
+						League chronicle
+					</button>
+					<button
+						type="button"
+						aria-pressed={layout === "table"}
+						onClick={() => setLayout("table")}
+					>
+						Full archive table
+					</button>
+				</div>
+			) : null}
+			{__SPORT === "basketball" ? (
+				<>
+					<div hidden={layout !== "chronicle"}>
+						<LeagueChronicle seasons={props.seasons} />
+					</div>
+					{layout === "table" ? <HistoryTable {...props} /> : null}
+				</>
+			) : (
+				<HistoryTable {...props} />
+			)}
+		</>
+	);
+};
 export default HistoryAll;
