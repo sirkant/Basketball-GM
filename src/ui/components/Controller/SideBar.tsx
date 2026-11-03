@@ -1,6 +1,8 @@
 import clsx from "clsx";
 import { memo, type ReactNode, useCallback, useEffect, useState } from "react";
-import { helpers } from "../../util/helpers.ts";
+import { getText, makeAnchorProps } from "../../util/menuLink.ts";
+export { getText, makeAnchorProps } from "../../util/menuLink.ts";
+import ClubhouseNavigation from "./ClubhouseNavigation.tsx";
 import { localActions, useLocal } from "../../util/local.ts";
 import type {
 	MenuItemLink,
@@ -12,16 +14,6 @@ import { AnimatePresence, m } from "framer-motion";
 import { VIDEO_ADS, VIDEO_AD_PADDING } from "../../../common/constants.ts";
 import { menuItems } from "../../util/menuItems.tsx";
 import { safeLocalStorage } from "../../util/safeLocalStorage.ts";
-
-export const getText = (
-	text: MenuItemLink["text"],
-): Exclude<ReactNode, null | undefined | number | boolean> => {
-	if (typeof text === "object" && "side" in text) {
-		return text.side;
-	}
-
-	return text;
-};
 
 const MenuGroup = ({
 	children,
@@ -67,52 +59,6 @@ const MenuGroup = ({
 			</AnimatePresence>
 		</>
 	);
-};
-
-export const makeAnchorProps = (
-	menuItem: MenuItemLink,
-	onMenuItemClick: () => void,
-	closeBeforeOnClickResolves?: boolean,
-): {
-	onClick: () => void;
-	href?: string;
-	target?: string;
-} => {
-	let href;
-	let target;
-
-	if (typeof menuItem.path === "string") {
-		href = menuItem.path;
-
-		if (menuItem.path.startsWith("http")) {
-			target = "_blank";
-		}
-	} else if (menuItem.path !== undefined) {
-		href = helpers.leagueUrl(menuItem.path);
-	}
-
-	const onClick = async () => {
-		if (menuItem.onClick) {
-			if (closeBeforeOnClickResolves) {
-				onMenuItemClick();
-			}
-
-			// Don't close menu if response is false
-			const response = await menuItem.onClick();
-
-			if (response !== false && !closeBeforeOnClickResolves) {
-				onMenuItemClick();
-			}
-		} else {
-			onMenuItemClick();
-		}
-	};
-
-	return {
-		onClick,
-		href,
-		target,
-	};
 };
 
 const MenuItem = ({
@@ -344,23 +290,35 @@ export const SideBar = memo(({ pageID, pathname }: Props) => {
 							: undefined
 					}
 				>
-					{menuItems.map((menuItem, i) => (
-						<MenuItem
-							godMode={godMode}
-							key={i}
-							lid={lid}
-							menuItem={menuItem}
-							onMenuItemClick={() => {
-								// Only on mobile, close menu on click
+					{__SPORT === "basketball" && lid !== undefined ? (
+						<ClubhouseNavigation
+							pageID={pageID}
+							pathname={pathname}
+							onNavigate={() => {
 								if (window.innerWidth < 1200) {
 									localActions.setSidebarOpen(false);
 								}
 							}}
-							pageID={pageID}
-							pathname={pathname}
-							root
 						/>
-					))}
+					) : (
+						menuItems.map((menuItem, i) => (
+							<MenuItem
+								godMode={godMode}
+								key={i}
+								lid={lid}
+								menuItem={menuItem}
+								onMenuItemClick={() => {
+									// Only on mobile, close menu on click
+									if (window.innerWidth < 1200) {
+										localActions.setSidebarOpen(false);
+									}
+								}}
+								pageID={pageID}
+								pathname={pathname}
+								root
+							/>
+						))
+					)}
 				</div>
 			</nav>
 		</>

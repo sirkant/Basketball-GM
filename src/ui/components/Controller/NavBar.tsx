@@ -135,16 +135,29 @@ export const NavBar = ({ updating }: { updating: boolean }) => {
 				) : null}
 				{inLeague ? <PhaseStatusBlock /> : null}
 				<div className="flex-grow-1" />
-				<div className="d-none d-sm-flex">
-					<DropdownLinks
-						godMode={godMode}
-						inLeague={inLeague}
-						lid={lid}
-						menuItems={menuItems.filter(
-							(menuItem) => !menuItem.commandPaletteOnly,
-						)}
-					/>
-				</div>
+				{__SPORT === "basketball" && inLeague ? (
+					<button
+						type="button"
+						className="clubhouse-search d-none d-sm-flex"
+						onClick={() =>
+							window.dispatchEvent(new Event("open-command-palette"))
+						}
+					>
+						<span className="glyphicon glyphicon-search" aria-hidden="true" />
+						Search players, teams & commands
+					</button>
+				) : (
+					<div className="d-none d-sm-flex">
+						<DropdownLinks
+							godMode={godMode}
+							inLeague={inLeague}
+							lid={lid}
+							menuItems={menuItems.filter(
+								(menuItem) => !menuItem.commandPaletteOnly,
+							)}
+						/>
+					</div>
+				)}
 				<Nav id="top-user-block" navbar>
 					<Nav.Item>{userBlock}</Nav.Item>
 				</Nav>
