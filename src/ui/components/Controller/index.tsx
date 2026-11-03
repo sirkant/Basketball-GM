@@ -95,7 +95,10 @@ export const Controller = () => {
 	}, [scrollToTopCount]);
 
 	return (
-		<div className={__SPORT === "basketball" ? "franchise-ui" : undefined}>
+		<div
+			className={__SPORT === "basketball" ? "franchise-ui" : undefined}
+			data-clubhouse-page={__SPORT === "basketball" ? sidebarPageID : undefined}
+		>
 			<LazyMotion strict features={loadFramerMotionFeatures}>
 				<NavBar updating={updating} />
 				<div className="h-100 d-flex">

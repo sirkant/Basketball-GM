@@ -53,6 +53,11 @@ const KEYBOARD_SHORTCUT_KEYS_OTHER = ["up", "down"] as const;
 
 const useCommandPalette = () => {
 	const [show, setShow] = useState(false);
+	useEffect(() => {
+		const open = () => setShow(true);
+		window.addEventListener("open-command-palette", open);
+		return () => window.removeEventListener("open-command-palette", open);
+	}, []);
 
 	useKeyboardShortcuts({
 		category: "commandPallete",

@@ -1,0 +1,681 @@
+// Self-hosted fonts. See public/fonts/clubhouse/*-OFL.txt.
+@font-face {
+	font-family: "Barlow Semi Condensed";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url(/fonts/clubhouse/barlow-semi-condensed-400-latin-ext.woff2)
+		format("woff2");
+	unicode-range:
+		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+		U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+		U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+	font-family: "Barlow Semi Condensed";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url(/fonts/clubhouse/barlow-semi-condensed-400-latin.woff2)
+		format("woff2");
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+		U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+		U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Barlow Semi Condensed";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url(/fonts/clubhouse/barlow-semi-condensed-500-latin-ext.woff2)
+		format("woff2");
+	unicode-range:
+		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+		U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+		U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+	font-family: "Barlow Semi Condensed";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url(/fonts/clubhouse/barlow-semi-condensed-500-latin.woff2)
+		format("woff2");
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+		U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+		U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Barlow Semi Condensed";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url(/fonts/clubhouse/barlow-semi-condensed-600-latin-ext.woff2)
+		format("woff2");
+	unicode-range:
+		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+		U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+		U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+	font-family: "Barlow Semi Condensed";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url(/fonts/clubhouse/barlow-semi-condensed-600-latin.woff2)
+		format("woff2");
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+		U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+		U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+	font-family: "Inter";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url(/fonts/clubhouse/inter-latin-ext.woff2) format("woff2");
+	unicode-range:
+		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+		U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+		U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+	font-family: "Inter";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url(/fonts/clubhouse/inter-latin.woff2) format("woff2");
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+		U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+		U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Inter";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url(/fonts/clubhouse/inter-latin-ext.woff2) format("woff2");
+	unicode-range:
+		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+		U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+		U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+	font-family: "Inter";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url(/fonts/clubhouse/inter-latin.woff2) format("woff2");
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+		U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+		U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Inter";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url(/fonts/clubhouse/inter-latin-ext.woff2) format("woff2");
+	unicode-range:
+		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+		U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+		U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+	font-family: "Inter";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url(/fonts/clubhouse/inter-latin.woff2) format("woff2");
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+		U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+		U+2215, U+FEFF, U+FFFD;
+}
+
+.franchise-ui {
+	--fr-paper: #edf0f3;
+	--fr-surface: #fff;
+	--fr-ink: #202b38;
+	--fr-muted: #536276;
+	--fr-line: #d1d9e2;
+	--fr-soft: #e9e4f0;
+	--fr-accent: #735a91;
+	--clubhouse-gold: #8a632d;
+	--bs-body-color: var(--fr-ink);
+	--bs-body-bg: var(--fr-paper);
+	--bs-secondary-color: var(--fr-muted);
+	--bs-tertiary-color: var(--fr-muted);
+	--bs-border-color: var(--fr-line);
+	--bs-secondary-bg: var(--fr-soft);
+	--bs-tertiary-bg: var(--fr-surface);
+	--bs-emphasis-color: var(--fr-ink);
+	--bs-link-color: #75598f;
+	--bs-link-hover-color: #543870;
+	@if $black == #fff {
+		--fr-paper: #171b21;
+		--fr-surface: #20262e;
+		--fr-ink: #e6ecf3;
+		--fr-muted: #a7b4c5;
+		--fr-line: #35404b;
+		--fr-soft: #302d3d;
+		--fr-accent: #c2a8e6;
+		--clubhouse-gold: #d9bb82;
+		--bs-link-color: #d2b68b;
+		--bs-link-hover-color: #f0d2a5;
+	}
+	font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+	font-size: 14px;
+	line-height: 1.35;
+	background: var(--fr-paper);
+	color: var(--fr-ink);
+	font-variant-numeric: tabular-nums;
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	input,
+	select,
+	button,
+	textarea,
+	.btn,
+	.form-control,
+	.form-select,
+	.table {
+		font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+	}
+	h1 {
+		font-size: 26px;
+		font-weight: 500;
+		letter-spacing: 0;
+	}
+	h2,
+	.h2 {
+		font-size: 21px;
+		font-weight: 500;
+		letter-spacing: 0;
+	}
+	h3,
+	.h3 {
+		font-size: 18px;
+		font-weight: 500;
+	}
+	h4,
+	.h4 {
+		font-size: 16px;
+		font-weight: 500;
+	}
+	.small,
+	small {
+		font-size: 12px;
+	}
+	.text-body-secondary,
+	.text-secondary {
+		color: var(--fr-muted) !important;
+	}
+	.text-body {
+		color: var(--fr-ink) !important;
+	}
+	.text-body-emphasis {
+		color: var(--fr-ink) !important;
+	}
+	.bg-body,
+	.bg-white,
+	.bg-light {
+		background-color: var(--fr-surface) !important;
+	}
+	.bg-body-tertiary,
+	.bg-body-secondary {
+		background-color: var(--fr-soft) !important;
+	}
+	a {
+		color: var(--bs-link-color);
+		text-decoration: none;
+	}
+	a:hover {
+		color: var(--bs-link-hover-color);
+		text-decoration: underline;
+	}
+	#actual-actual-content {
+		padding: 4px 8px 24px;
+	}
+	.title-bar {
+		min-height: 48px;
+		padding: 8px 16px;
+		background: var(--fr-surface);
+		border-bottom: 1px solid var(--fr-line);
+	}
+	.title-bar h1 {
+		font-size: 24px;
+		font-weight: 500;
+		letter-spacing: 0;
+		color: var(--fr-ink);
+	}
+	.form-control,
+	.form-select,
+	.input-group-text {
+		font-size: 14px;
+		border-radius: 3px;
+		border-color: var(--fr-line);
+		background-color: var(--fr-surface);
+		color: var(--fr-ink);
+	}
+	.form-control::placeholder {
+		color: var(--fr-muted);
+		opacity: 1;
+	}
+	.form-control:focus,
+	.form-select:focus {
+		background: var(--fr-surface);
+		color: var(--fr-ink);
+		border-color: var(--fr-accent);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--fr-accent) 22%, transparent);
+	}
+	.btn {
+		font-size: 14px;
+		border-radius: 3px;
+		padding: 5px 10px;
+	}
+	.btn-sm {
+		font-size: 12px;
+		padding: 3px 7px;
+	}
+	.btn-primary {
+		--bs-btn-bg: #d4b47b;
+		--bs-btn-border-color: #d4b47b;
+		--bs-btn-color: #241d23;
+		--bs-btn-hover-bg: #e3c68e;
+		--bs-btn-hover-border-color: #e3c68e;
+		--bs-btn-hover-color: #241d23;
+		--bs-btn-active-bg: #c3a16b;
+		--bs-btn-active-border-color: #c3a16b;
+		--bs-btn-active-color: #241d23;
+		background: #d4b47b;
+		border-color: #d4b47b;
+		color: #241d23;
+	}
+	.btn-primary:hover,
+	.btn-primary:focus-visible,
+	.btn-primary:active {
+		background: #e3c68e;
+		border-color: #e3c68e;
+		color: #241d23;
+	}
+	.btn-light,
+	.btn-light-bordered,
+	.btn-secondary {
+		--bs-btn-bg: var(--fr-soft);
+		--bs-btn-color: var(--fr-ink);
+		--bs-btn-border-color: var(--fr-line);
+		--bs-btn-hover-bg: var(--fr-surface);
+		--bs-btn-hover-color: var(--fr-ink);
+		background: var(--fr-soft);
+		border-color: var(--fr-line);
+		color: var(--fr-ink);
+	}
+	.btn-outline-secondary {
+		--bs-btn-color: var(--fr-muted);
+		--bs-btn-border-color: var(--fr-line);
+		--bs-btn-hover-bg: var(--fr-soft);
+		--bs-btn-hover-color: var(--fr-ink);
+	}
+	.card,
+	.modal-content,
+	.dropdown-menu,
+	.popover,
+	.list-group-item {
+		background: var(--fr-surface);
+		color: var(--fr-ink);
+		border-color: var(--fr-line);
+		border-radius: 3px;
+	}
+	.card-header,
+	.modal-header,
+	.modal-footer,
+	.popover-header {
+		background: var(--fr-soft);
+		color: var(--fr-ink);
+		border-color: var(--fr-line);
+		padding: 8px 11px;
+	}
+	.card-body {
+		padding: 11px;
+	}
+	.dropdown-item {
+		color: var(--fr-ink);
+		font-size: 14px;
+	}
+	.dropdown-item:hover,
+	.dropdown-item:focus,
+	.list-group-item-action:hover {
+		color: var(--fr-ink);
+		background: var(--fr-soft);
+	}
+	.dropdown-item.active {
+		background: #493b59;
+		color: #f8e8cb;
+	}
+	.nav-tabs {
+		border-color: var(--fr-line);
+	}
+	.nav-tabs .nav-link {
+		border-radius: 0;
+		color: var(--fr-muted);
+		font-size: 13px;
+		padding: 7px 11px;
+	}
+	.nav-tabs .nav-link.active {
+		color: var(--fr-ink);
+		background: var(--fr-surface);
+		border-color: var(--fr-line);
+		border-bottom-color: var(--fr-surface);
+	}
+	.table {
+		--bs-table-color: var(--fr-ink);
+		--bs-table-bg: var(--fr-surface);
+		--bs-table-border-color: var(--fr-line);
+		--bs-table-striped-color: var(--fr-ink);
+		--bs-table-striped-bg: color-mix(
+			in srgb,
+			var(--fr-surface) 93%,
+			var(--fr-ink)
+		);
+		--bs-table-hover-color: var(--fr-ink);
+		--bs-table-hover-bg: var(--fr-soft);
+		font-size: 13px;
+		line-height: 1.25;
+		color: var(--fr-ink);
+		margin-bottom: 10px;
+	}
+	.table > :not(caption) > * > * {
+		padding: 5px 7px;
+		color: var(
+			--bs-table-color-state,
+			var(--bs-table-color-type, var(--bs-table-color))
+		);
+		background-color: var(--bs-table-bg);
+		border-color: var(--fr-line);
+	}
+	.table thead th {
+		font-size: 12px;
+		font-weight: 500;
+		color: var(--fr-muted);
+		vertical-align: bottom;
+	}
+	.table-sm > :not(caption) > * > * {
+		padding: 4px 6px;
+	}
+	.table-info {
+		--bs-table-bg: var(--fr-soft);
+		--bs-table-color: var(--fr-ink);
+		--bs-table-striped-bg: var(--fr-soft);
+		--bs-table-striped-color: var(--fr-ink);
+		--bs-table-hover-bg: var(--fr-soft);
+		--bs-table-hover-color: var(--fr-ink);
+	}
+	.table-responsive,
+	.table-responsive-xxl {
+		border-color: var(--fr-line);
+	}
+	.table th,
+	.table td {
+		font-variant-numeric: tabular-nums;
+	}
+	.table a {
+		color: inherit;
+	}
+	.table a:hover {
+		color: var(--bs-link-hover-color);
+	}
+	.pagination {
+		--bs-pagination-bg: var(--fr-surface);
+		--bs-pagination-color: var(--fr-ink);
+		--bs-pagination-border-color: var(--fr-line);
+		--bs-pagination-hover-bg: var(--fr-soft);
+		--bs-pagination-hover-color: var(--fr-ink);
+		--bs-pagination-disabled-bg: var(--fr-paper);
+		--bs-pagination-disabled-color: var(--fr-muted);
+		--bs-pagination-active-bg: #493b59;
+		--bs-pagination-active-border-color: #79678c;
+		font-size: 13px;
+	}
+	.navbar.fixed-top {
+		.clubhouse-search {
+			align-items: center;
+			gap: 9px;
+			background: #242a33;
+			border: 1px solid #3c4452;
+			color: #b8c3d1;
+			border-radius: 3px;
+			padding: 7px 12px;
+			margin-inline: 12px;
+			min-width: 240px;
+			text-align: left;
+		}
+		background: #1a1d25 !important;
+		border-color: #37323f;
+		font-size: 13px;
+	}
+	.navbar.fixed-top .nav-link,
+	.navbar.fixed-top .navbar-brand,
+	.navbar.fixed-top .navbar-brand a {
+		color: #e2dfe8;
+	}
+	.navbar.fixed-top .nav-link:hover {
+		background: #302b3b;
+		color: #fff;
+	}
+	.navbar.fixed-top .dropdown-menu .nav-link {
+		color: var(--fr-ink);
+	}
+	.sidebar,
+	.sidebar-inner {
+		background: #161a20 !important;
+	}
+	.sidebar-inner {
+		padding-top: 0;
+		border-color: #35323d;
+	}
+	.sidebar-inner .nav-link.active {
+		background: #40344f;
+		color: #f7e9d0;
+		box-shadow: inset 2px 0 #d9bb82;
+	}
+	.clubhouse-navigation {
+		color: #d3d8e1;
+		padding-bottom: 20px;
+	}
+	.clubhouse-brand {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		padding: 16px 8px;
+		border-bottom: 1px solid #35323d;
+		background: linear-gradient(145deg, #2d2439, #191c24);
+		color: #eee6dd;
+		text-decoration: none;
+	}
+	.clubhouse-brand:hover {
+		color: #fff0d6;
+		text-decoration: none;
+	}
+	.clubhouse-brand img {
+		width: 44px;
+		height: 50px;
+		object-fit: contain;
+		flex-shrink: 0;
+	}
+	.clubhouse-brand div {
+		min-width: 0;
+	}
+	.clubhouse-brand strong {
+		display: block;
+		font-size: 14px;
+		font-weight: 500;
+		line-height: 1.1;
+	}
+	.clubhouse-brand span {
+		display: block;
+		font-size: 17px;
+		font-weight: 600;
+		color: #d9bb82;
+		line-height: 1.1;
+	}
+	.clubhouse-brand small {
+		display: block;
+		margin-top: 5px;
+		font-size: 9px;
+		color: #b4a2c5;
+		letter-spacing: 0.04em;
+	}
+	.clubhouse-primary-nav {
+		padding-top: 7px;
+	}
+	.clubhouse-primary-link {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		width: 100%;
+		min-height: 33px;
+		padding: 8px 9px;
+		border: 0;
+		border-left: 2px solid transparent;
+		background: transparent;
+		color: #d3d8e1;
+		font-size: 13px;
+		font-weight: 400;
+		line-height: 1.2;
+		text-align: left;
+		text-decoration: none;
+	}
+	.clubhouse-primary-link:hover {
+		background: #2d2937;
+		color: #f2e9db;
+		text-decoration: none;
+	}
+	.clubhouse-primary-link.active {
+		background: #40344f;
+		color: #f7e9d0;
+		border-left-color: #d9bb82;
+	}
+	.clubhouse-menu-icon {
+		display: inline-block;
+		width: 14px;
+		height: 14px;
+		flex-shrink: 0;
+		background-color: #bdb2cb;
+		mask: var(--clubhouse-icon) center / contain no-repeat;
+	}
+	.clubhouse-expand {
+		margin-left: auto;
+		color: #a79ab9;
+		font-size: 12px;
+	}
+	.clubhouse-nav-label {
+		display: block;
+		padding: 18px 11px 6px;
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		color: #938ba1;
+	}
+	.clubhouse-submenu {
+		border-left: 1px solid #4e425a;
+		margin: 0 9px 5px 17px;
+		padding: 4px 0;
+		background: #1d1f28;
+	}
+	.clubhouse-sub-link {
+		display: block;
+		color: #b9c1cf;
+		font-size: 12px;
+		padding: 6px 10px;
+		line-height: 1.2;
+	}
+	.clubhouse-sub-link:hover {
+		background: #302a3c;
+		color: #f0e3ce;
+		text-decoration: none;
+	}
+	.clubhouse-sub-link.active {
+		color: #e1c897;
+		background: #302a3c;
+	}
+	.basketball-kicker {
+		color: var(--clubhouse-gold);
+	}
+	.finance-context {
+		margin-bottom: 10px;
+		padding-block: 7px;
+	}
+	.basketball-clubbar {
+		padding-block: 10px;
+	}
+	.ownership-heading h2 {
+		font-size: 24px;
+	}
+	.ownership-letter {
+		font-size: 15px;
+	}
+	.ownership-plan h3 {
+		font-size: 18px;
+	}
+	.owner-trade-view {
+		font-size: 13px;
+	}
+}
+@media (min-width: 1200px) {
+	.franchise-ui .sidebar-open {
+		width: 178px;
+	}
+	.franchise-ui .sidebar-inner {
+		width: 178px;
+		left: -178px;
+	}
+	.franchise-ui .sidebar-open .sidebar-inner {
+		left: 0;
+	}
+}
+@media (max-width: 1199px) {
+	.franchise-ui .sidebar-inner {
+		width: 220px;
+		left: -220px;
+	}
+	.franchise-ui .sidebar-open .sidebar-inner {
+		left: 0;
+	}
+	.franchise-ui .clubhouse-primary-link {
+		min-height: 40px;
+		font-size: 15px;
+	}
+	.franchise-ui .clubhouse-sub-link {
+		min-height: 35px;
+		font-size: 14px;
+	}
+}
+@media (max-width: 575px) {
+	.franchise-ui {
+		font-size: 15px;
+	}
+	.franchise-ui .form-control,
+	.franchise-ui .form-select {
+		font-size: 16px;
+		min-height: 38px;
+	}
+	.franchise-ui .btn {
+		min-height: 36px;
+	}
+	.franchise-ui .table {
+		font-size: 13px;
+	}
+	.franchise-ui #actual-actual-content {
+		padding-inline: 0;
+	}
+}
