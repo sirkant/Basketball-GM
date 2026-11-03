@@ -197,6 +197,17 @@ try {
 					capture.warnings.push(`Page overflow at ${width}px`);
 				}
 				if (width === 1440 || mobileRoutes.has(item.id)) {
+					// Trigger the same lazy portrait loading as a human scrolling the
+					// page before taking a complete-page review image.
+					const height = await page.evaluate(
+						() => document.documentElement.scrollHeight,
+					);
+					for (let top = 0; top < height; top += 850) {
+						await page.evaluate((y) => window.scrollTo(0, y), top);
+						await page.waitForTimeout(40);
+					}
+					await page.evaluate(() => window.scrollTo(0, 0));
+					await page.waitForTimeout(100);
 					const file = `${item.id}-${width}.png`;
 					await page.screenshot({
 						path: path.join(output, file),
