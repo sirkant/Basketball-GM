@@ -2,11 +2,28 @@ import clsx from "clsx";
 import useTitleBar from "../hooks/useTitleBar.tsx";
 import { helpers } from "../util/helpers.ts";
 import type { View } from "../../common/types.ts";
+import { ClubhouseMessages } from "../components/ClubhouseMessages.tsx";
 
 const Inbox = ({ anyUnread, messages }: View<"inbox">) => {
 	useTitleBar({
 		title: "Inbox",
 	});
+	if (__SPORT === "basketball") {
+		return (
+			<section className="clubhouse-inbox-page">
+				<header>
+					<span className="clubhouse-eyebrow">THE FRONT OFFICE</span>
+					<h2>Your correspondence</h2>
+					<p>
+						{anyUnread
+							? "A response is required. Open your unread correspondence before continuing."
+							: "All caught up. Your decisions and the owner's feedback are collected here."}
+					</p>
+				</header>
+				<ClubhouseMessages messages={messages} />
+			</section>
+		);
+	}
 	return (
 		<>
 			{anyUnread ? (

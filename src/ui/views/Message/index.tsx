@@ -3,8 +3,9 @@ import { SafeHtml } from "../../components/SafeHtml.tsx";
 import useTitleBar from "../../hooks/useTitleBar.tsx";
 import { helpers } from "../../util/helpers.ts";
 import type { View } from "../../../common/types.ts";
+import { ClubhouseMessages } from "../../components/ClubhouseMessages.tsx";
 
-const Message = ({ message }: View<"message">) => {
+const Message = ({ message, messageSummaries }: View<"message">) => {
 	const title = message?.subject ?? "Message";
 	useTitleBar({
 		title,
@@ -19,8 +20,12 @@ const Message = ({ message }: View<"message">) => {
 		);
 	}
 
-	return (
-		<>
+	const body = (
+		<article
+			className={
+				__SPORT === "basketball" ? "clubhouse-message-reader" : undefined
+			}
+		>
 			<p>
 				<b>From: {message.from}</b>, {message.year}
 			</p>
@@ -41,7 +46,25 @@ const Message = ({ message }: View<"message">) => {
 				</button>{" "}
 				· <a href={helpers.leagueUrl(["inbox"])}>Inbox</a>
 			</div>
-		</>
+		</article>
+	);
+	return __SPORT === "basketball" ? (
+		<div className="clubhouse-correspondence">
+			<aside>
+				<header>
+					<h2>Correspondence</h2>
+					<a href={helpers.leagueUrl(["inbox"])}>Full inbox ↗</a>
+				</header>
+				<ClubhouseMessages
+					messages={messageSummaries}
+					activeMid={message.mid}
+					compact
+				/>
+			</aside>
+			{body}
+		</div>
+	) : (
+		body
 	);
 };
 

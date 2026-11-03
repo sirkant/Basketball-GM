@@ -9,43 +9,45 @@ import TeamStats from "./TeamStats.tsx";
 import type { View } from "../../../common/types.ts";
 import Headlines from "./Headlines.tsx";
 import { useLocal } from "../../util/local.ts";
+import ClubhouseDashboard from "./ClubhouseDashboard.tsx";
 
-const LeagueDashboard = ({
-	att,
-	cash,
-	financialStatus,
-	confOrAllTeams,
-	events,
-	leagueLeaders,
-	lost,
-	maxPlayoffSeed,
-	maxPlayoffSeedNoPlayIn,
-	messages,
-	name,
-	numGamesToWinSeries,
-	numPlayersOnCourt,
-	otl,
-	payroll,
-	playoffRoundsWon,
-	playoffsByConf,
-	pointsFormula,
-	profit,
-	rank,
-	region,
-	revenue,
-	roundsWonText,
-	series,
-	seriesTitle,
-	showPlayoffSeries,
-	starters,
-	startersStats,
-	teamLeaders,
-	teamStats,
-	teams,
-	tied,
-	usePts,
-	won,
-}: View<"leagueDashboard">) => {
+const LeagueDashboard = (props: View<"leagueDashboard">) => {
+	const {
+		att,
+		cash,
+		financialStatus,
+		confOrAllTeams,
+		events,
+		leagueLeaders,
+		lost,
+		maxPlayoffSeed,
+		maxPlayoffSeedNoPlayIn,
+		messages,
+		name,
+		numGamesToWinSeries,
+		numPlayersOnCourt,
+		otl,
+		payroll,
+		playoffRoundsWon,
+		playoffsByConf,
+		pointsFormula,
+		profit,
+		rank,
+		region,
+		revenue,
+		roundsWonText,
+		series,
+		seriesTitle,
+		showPlayoffSeries,
+		starters,
+		startersStats,
+		teamLeaders,
+		teamStats,
+		teams,
+		tied,
+		usePts,
+		won,
+	} = props;
 	useTitleBar({
 		title: `${region} ${name} ${__SPORT === "basketball" ? "· Front office" : "Dashboard"}`,
 	});
@@ -53,6 +55,9 @@ const LeagueDashboard = ({
 	const { luxuryPayroll, salaryCap, salaryCapType, season, userTid } = useLocal(
 		["luxuryPayroll", "salaryCap", "salaryCapType", "season", "userTid"],
 	);
+	if (__SPORT === "basketball") {
+		return <ClubhouseDashboard {...props} />;
+	}
 
 	return (
 		<>

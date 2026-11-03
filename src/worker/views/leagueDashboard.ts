@@ -15,7 +15,9 @@ import { ensureOwnerMandate } from "../core/finances/ownership.ts";
 
 const updateInbox = async ({ updateEvents }: ViewArgs) => {
 	if (updateEvents.has("firstRun") || updateEvents.has("newPhase")) {
-		const messages = await idb.merged.messages.getAll({ limit: 2 });
+		const messages = await idb.merged.messages.getAll({
+			limit: __SPORT === "basketball" ? 10 : 2,
+		});
 		messages.reverse();
 		return {
 			messages: messages.map((message) => ({
@@ -23,6 +25,8 @@ const updateInbox = async ({ updateEvents }: ViewArgs) => {
 				read: message.read,
 				year: message.year,
 				from: message.from,
+				subject: message.subject,
+				text: message.text,
 			})),
 		};
 	}
@@ -298,6 +302,8 @@ const updatePlayers = async ({ updateEvents }: ViewArgs) => {
 						"watch",
 						"jerseyNumber",
 						"awards",
+						"face",
+						"imgURL",
 					],
 					ratings: ["ovr", "pot", "dovr", "dpot", "skills", "pos"],
 					stats: [...startersStats, ...leaderStats, "yearsWithTeam"],
@@ -647,6 +653,17 @@ export default defineView({
 			{},
 			await updateTeams(args),
 			await updateNewsFeed(args),
+			__SPORT === "basketball"
+				? {
+						upcomingGames: (await season.getSchedule())
+							.filter(
+								(game) =>
+									game.homeTid === g.get("userTid") ||
+									game.awayTid === g.get("userTid"),
+							)
+							.slice(0, 7),
+					}
+				: { upcomingGames: [] },
 		);
 		const part3 = Object.assign(
 			{},
