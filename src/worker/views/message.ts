@@ -131,6 +131,19 @@ export default defineView({
 
 			return {
 				message: augmentedMessage,
+				messageSummaries:
+					__SPORT === "basketball"
+						? (await idb.merged.messages.getAll({ limit: 50 }))
+								.reverse()
+								.map((m) => ({
+									mid: m.mid,
+									from: m.from,
+									year: m.year,
+									read: m.read,
+									subject: m.subject,
+									text: m.text,
+								}))
+						: [],
 			};
 		}
 	},

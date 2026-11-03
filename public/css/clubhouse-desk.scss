@@ -1,0 +1,525 @@
+.franchise-ui {
+	.clubhouse-desk-inbox .clubhouse-message-list {
+		max-height: 560px;
+		overflow-y: auto;
+	}
+	.clubhouse-lead-story {
+		position: relative;
+		isolation: isolate;
+	}
+	.clubhouse-story-crest {
+		position: absolute;
+		width: 100px;
+		height: 100px;
+		object-fit: contain;
+		right: 16px;
+		top: 42px;
+		opacity: 0.35;
+		z-index: -1;
+	}
+	.clubhouse-eyebrow {
+		display: block;
+		color: var(--clubhouse-gold);
+		font-size: 10px;
+		font-weight: 600;
+		letter-spacing: 1.6px;
+	}
+	.clubhouse-desk-heading {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		margin: 5px 0 14px;
+		h2 {
+			margin: 3px 0 0;
+			font-size: 26px;
+		}
+	}
+	.clubhouse-record {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		strong {
+			font-size: 30px;
+			font-weight: 500;
+		}
+		span {
+			max-width: 120px;
+			color: var(--fr-muted);
+		}
+	}
+	.clubhouse-desk-grid {
+		display: grid;
+		grid-template-columns: minmax(210px, 0.98fr) minmax(260px, 1.25fr) minmax(
+				230px,
+				1fr
+			) minmax(210px, 0.9fr);
+		gap: 12px;
+		align-items: start;
+	}
+	.clubhouse-panel {
+		min-width: 0;
+		background: var(--fr-surface);
+		border: 1px solid var(--fr-line);
+		border-radius: 4px;
+		overflow: hidden;
+		> header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			min-height: 35px;
+			padding: 8px 11px;
+			border-bottom: 1px solid var(--fr-line);
+			h2 {
+				font-size: 14px;
+				font-weight: 600;
+				margin: 0;
+			}
+			a {
+				color: var(--fr-muted);
+			}
+		}
+	}
+	.clubhouse-panel-footer {
+		display: block;
+		font-size: 12px;
+		padding: 10px 12px;
+		border-top: 1px solid var(--fr-line);
+	}
+	.clubhouse-desk-context,
+	.clubhouse-desk-editorial {
+		display: grid;
+		gap: 12px;
+		min-width: 0;
+	}
+	.clubhouse-message-filters {
+		display: flex;
+		gap: 5px;
+		padding: 9px 10px;
+		border-bottom: 1px solid var(--fr-line);
+		button {
+			border: 1px solid var(--fr-line);
+			border-radius: 3px;
+			color: var(--fr-muted);
+			background: transparent;
+			padding: 3px 8px;
+			font-size: 12px;
+			&[aria-pressed="true"] {
+				background: var(--fr-soft);
+				color: var(--fr-ink);
+				border-color: var(--fr-accent);
+			}
+			span {
+				margin-left: 4px;
+				opacity: 0.8;
+			}
+		}
+	}
+	.clubhouse-message {
+		display: block;
+		position: relative;
+		padding: 11px 12px;
+		border-bottom: 1px solid var(--fr-line);
+		color: var(--fr-ink);
+		&:last-child {
+			border-bottom: 0;
+		}
+		&:hover {
+			background: var(--fr-soft);
+			color: var(--fr-ink);
+			text-decoration: none;
+		}
+		strong {
+			display: block;
+			margin-block: 4px;
+			font-size: 14px;
+			line-height: 1.25;
+			font-weight: 500;
+		}
+		&.is-unread {
+			border-left: 3px solid var(--clubhouse-gold);
+			padding-left: 9px;
+			strong {
+				font-weight: 600;
+			}
+		}
+		&.is-selected {
+			background: var(--fr-soft);
+		}
+	}
+	.clubhouse-message-meta {
+		display: flex;
+		gap: 8px;
+		justify-content: space-between;
+		color: var(--fr-muted);
+		font-size: 11px;
+	}
+	.clubhouse-message-preview {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+		font-size: 12px;
+		color: var(--fr-muted);
+		line-height: 1.45;
+	}
+	.clubhouse-empty {
+		padding: 14px 12px;
+		margin: 0;
+		font-size: 13px;
+		color: var(--fr-muted);
+	}
+	.clubhouse-editorial-news {
+		.card {
+			border: 0;
+			border-radius: 0;
+			background: transparent;
+		}
+		.card-header {
+			background: transparent;
+		}
+		.badge-news {
+			font-size: 10px;
+		}
+	}
+	.clubhouse-lead-story {
+		background: linear-gradient(140deg, var(--fr-soft), var(--fr-surface));
+		border-bottom: 1px solid var(--fr-line);
+		> .card > .d-flex:last-child {
+			min-height: 155px;
+			align-items: end;
+		}
+		.card > .d-flex:last-child > .flex-shrink-0 {
+			width: 105px !important;
+			height: 155px !important;
+			align-self: end;
+		}
+		.card > .d-flex:last-child > .p-2 {
+			padding: 14px 12px !important;
+			font-size: 17px;
+			line-height: 1.35;
+			font-weight: 500;
+		}
+	}
+	.clubhouse-short-story {
+		border-bottom: 1px solid var(--fr-line);
+		&:last-child {
+			border-bottom: 0;
+		}
+		.card > .d-flex:last-child > .flex-shrink-0 {
+			height: 68px !important;
+			width: 47px !important;
+		}
+		.card > .d-flex:last-child > .p-2 {
+			font-size: 13px;
+			line-height: 1.35;
+		}
+	}
+	.clubhouse-season-opening {
+		min-height: 200px;
+		padding: 24px 15px;
+		background: linear-gradient(135deg, var(--fr-soft), transparent);
+		img {
+			float: right;
+			width: 85px;
+			max-height: 90px;
+			object-fit: contain;
+		}
+		h3 {
+			margin-top: 10px;
+			font-size: 23px;
+		}
+		p {
+			color: var(--fr-muted);
+			max-width: 190px;
+		}
+	}
+	.clubhouse-fixture-list > a {
+		display: grid;
+		grid-template-columns: 1fr 24px 1fr auto;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 11px;
+		border-bottom: 1px solid var(--fr-line);
+		color: var(--fr-ink);
+		&:last-child {
+			border: 0;
+		}
+		span {
+			color: var(--fr-muted);
+			font-size: 12px;
+		}
+		img {
+			width: 21px;
+			height: 21px;
+			object-fit: contain;
+		}
+	}
+	.clubhouse-desk-standings {
+		td,
+		th {
+			padding: 6px 7px;
+			vertical-align: middle;
+		}
+		td:not(:nth-child(2)),
+		th:not(:nth-child(2)) {
+			text-align: right;
+			white-space: nowrap;
+		}
+		td:first-child {
+			color: var(--fr-muted);
+		}
+		tr.separator {
+			border-bottom: 1px solid var(--fr-accent);
+		}
+	}
+	.clubhouse-table-team {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		min-height: 22px;
+		color: inherit;
+		img {
+			width: 23px;
+			height: 23px;
+			object-fit: contain;
+		}
+		span {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 160px;
+			white-space: nowrap;
+		}
+	}
+	.clubhouse-opponent {
+		display: flex;
+		align-items: center;
+		gap: 11px;
+		padding: 14px 11px;
+		> img {
+			width: 50px;
+			height: 50px;
+			object-fit: contain;
+		}
+		strong {
+			display: block;
+			font-size: 16px;
+			margin-top: 5px;
+		}
+	}
+	.clubhouse-finance-ledger {
+		margin: 0;
+		padding: 5px 11px;
+		> div {
+			display: flex;
+			justify-content: space-between;
+			gap: 10px;
+			padding: 7px 0;
+			border-bottom: 1px solid var(--fr-line);
+			&:last-child {
+				border: 0;
+			}
+		}
+		dt {
+			font-weight: 400;
+			color: var(--fr-muted);
+		}
+		dd {
+			margin: 0;
+			font-weight: 600;
+		}
+	}
+	.clubhouse-desk-context .finance-context {
+		border: 0;
+		border-top: 1px solid var(--fr-line);
+		border-radius: 0;
+		margin: 0;
+		padding: 9px 11px;
+		.finance-context-line {
+			font-size: 12px;
+			gap: 5px;
+		}
+		.finance-context-line > span:first-child {
+			display: none;
+		}
+		.finance-context-warning {
+			font-size: 11px;
+			line-height: 1.4;
+		}
+	}
+	.clubhouse-core-list > a {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 6px 11px;
+		color: var(--fr-ink);
+		border-bottom: 1px solid var(--fr-line);
+		&:last-child {
+			border: 0;
+		}
+		> div:last-child {
+			min-width: 0;
+		}
+		strong {
+			display: block;
+			font-size: 14px;
+			font-weight: 500;
+		}
+		span {
+			display: block;
+			color: var(--fr-muted);
+			font-size: 11px;
+		}
+	}
+	.clubhouse-core-portrait {
+		flex-shrink: 0;
+		width: 46px;
+		height: 58px;
+		overflow: hidden;
+		background: linear-gradient(145deg, var(--fr-soft), transparent);
+	}
+	.clubhouse-desk-detail {
+		display: grid;
+		grid-template-columns: minmax(0, 2.5fr) minmax(220px, 1fr);
+		gap: 12px;
+		margin-top: 14px;
+		.clubhouse-panel > :not(header) {
+			margin-inline: 10px;
+		}
+		.clubhouse-panel > h2 {
+			font-size: 14px;
+			margin-top: 10px;
+		}
+		.clubhouse-panel > .table-responsive {
+			margin: 0;
+		}
+	}
+	.clubhouse-inbox-page {
+		max-width: 1100px;
+		border: 1px solid var(--fr-line);
+		background: var(--fr-surface);
+		border-radius: 4px;
+		> header {
+			padding: 20px;
+			border-bottom: 1px solid var(--fr-line);
+			h2 {
+				margin-block: 5px 8px;
+			}
+			p {
+				color: var(--fr-muted);
+				margin: 0;
+			}
+		}
+		.clubhouse-message {
+			padding: 14px 20px;
+		}
+	}
+	.clubhouse-correspondence {
+		display: grid;
+		grid-template-columns: 300px minmax(0, 900px);
+		gap: 14px;
+		align-items: start;
+		> aside {
+			background: var(--fr-surface);
+			border: 1px solid var(--fr-line);
+			border-radius: 4px;
+			> header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 12px;
+				border-bottom: 1px solid var(--fr-line);
+				h2 {
+					font-size: 15px;
+					margin: 0;
+				}
+			}
+		}
+	}
+	.clubhouse-message-reader {
+		padding: 25px 30px;
+		background: var(--fr-surface);
+		border: 1px solid var(--fr-line);
+		border-top: 3px solid var(--fr-accent);
+		border-radius: 4px;
+		font-family: Inter, sans-serif;
+		font-size: 13px;
+		line-height: 1.85;
+		min-width: 0;
+		> p:first-child {
+			color: var(--fr-muted);
+			padding-bottom: 12px;
+			border-bottom: 1px solid var(--fr-line);
+		}
+		h2,
+		h3 {
+			margin-top: 20px;
+		}
+		table {
+			max-width: 100%;
+		}
+	}
+}
+@media (max-width: 1399px) {
+	.franchise-ui .clubhouse-desk-grid {
+		grid-template-columns: minmax(210px, 1fr) minmax(260px, 1.3fr) minmax(
+				220px,
+				1fr
+			);
+	}
+	.franchise-ui .clubhouse-desk-context {
+		grid-column: 1 / -1;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+@media (max-width: 899px) {
+	.franchise-ui .clubhouse-desk-grid {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	}
+	.franchise-ui .clubhouse-desk-standings {
+		grid-column: 1;
+	}
+	.franchise-ui .clubhouse-desk-context {
+		grid-column: 2;
+		grid-row: 2;
+		grid-template-columns: 1fr;
+	}
+	.franchise-ui .clubhouse-desk-detail {
+		grid-template-columns: 1fr;
+	}
+	.franchise-ui .clubhouse-correspondence {
+		grid-template-columns: 230px minmax(0, 1fr);
+	}
+}
+@media (max-width: 575px) {
+	.franchise-ui .clubhouse-desk-grid,
+	.franchise-ui .clubhouse-desk-context,
+	.franchise-ui .clubhouse-correspondence {
+		display: flex;
+		flex-direction: column;
+	}
+	.franchise-ui .clubhouse-desk-grid > *,
+	.franchise-ui .clubhouse-desk-context > *,
+	.franchise-ui .clubhouse-correspondence > * {
+		width: 100%;
+	}
+	.franchise-ui .clubhouse-desk-inbox .clubhouse-message-list {
+		max-height: 330px;
+		overflow-y: auto;
+	}
+	.franchise-ui .clubhouse-correspondence > aside .clubhouse-message-list {
+		max-height: 200px;
+		overflow-y: auto;
+	}
+	.franchise-ui .clubhouse-message-reader {
+		padding: 16px;
+	}
+	.franchise-ui .clubhouse-desk-heading {
+		align-items: start;
+	}
+	.franchise-ui .clubhouse-record {
+		flex-direction: column;
+		gap: 0;
+		align-items: end;
+	}
+}
