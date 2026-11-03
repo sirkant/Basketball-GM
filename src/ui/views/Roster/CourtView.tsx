@@ -1,3 +1,5 @@
+import { PHASE } from "../../../common/constants.ts";
+import CoachReport from "./CoachReport.tsx";
 import { useRef, useState } from "react";
 import {
 	assignCourtSlots,
@@ -10,7 +12,7 @@ import {
 } from "../../../common/basketballPositions.ts";
 import type { View } from "../../../common/types.ts";
 import { PlayerPicture } from "../../components/PlayerPicture.tsx";
-import { Contract } from "../../components/contract.tsx";
+import { Contract, ContractSchedule } from "../../components/contract.tsx";
 import { helpers } from "../../util/helpers.ts";
 import { useLocal } from "../../util/local.ts";
 
@@ -26,12 +28,35 @@ const roleTasks: Record<CourtPosition, string> = {
 const CourtView = ({
 	players,
 	positionProfiles,
+	coachReport,
 	editable,
 	onMakeStarter,
-}: Pick<View<"roster">, "players" | "positionProfiles" | "editable"> & {
+}: Pick<
+	View<"roster">,
+	"players" | "positionProfiles" | "editable" | "coachReport"
+> & {
 	onMakeStarter: (starterPid: number, benchPid: number) => Promise<void>;
 }) => {
-	const { challengeNoRatings } = useLocal(["challengeNoRatings"]);
+	const { challengeNoRatings, season, phase, salaryCap, salaryCapType } =
+		useLocal([
+			"challengeNoRatings",
+			"season",
+			"phase",
+			"salaryCap",
+			"salaryCapType",
+		]);
+	const contractYear = season + (phase > PHASE.PLAYOFFS ? 1 : 0);
+	const duration = (p: RosterPlayer) =>
+		p.contract.exp < contractYear
+			? "Renewal pending"
+			: `${p.contract.exp - contractYear + 1} yr${p.contract.exp === contractYear ? " · Expiring" : " left"}`;
+	const production = (p: RosterPlayer) =>
+		p.stats.gp > 0
+			? `${helpers.roundStat(p.stats.pts, "pts")} PTS · ${helpers.roundStat(p.stats.trb, "trb")} REB · ${helpers.roundStat(p.stats.ast, "ast")} AST`
+			: "No games played";
+	const starterSalary = players
+		.slice(0, 5)
+		.reduce((sum, p) => sum + p.contract.amount, 0);
 	const [selected, setSelected] = useState<CourtPosition>("PG");
 	const [search, setSearch] = useState("");
 	const [pending, setPending] = useState(false);
@@ -134,12 +159,24 @@ const CourtView = ({
 									<span className="court-position">{role}</span>
 									{p ? (
 										<>
-											<span className="court-portrait" aria-hidden="true">
-												<PlayerPicture face={p.face} imgURL={p.imgURL} />
-											</span>
 											<span className="court-player-name">
-												{p.firstNameShort} {p.lastName}
+												{p.firstName} {p.lastName}
 											</span>
+											<span className="court-player-meta">
+												Age {p.age}
+												{!challengeNoRatings ? ` · ${p.ratings.ovr} OVR` : ""}
+											</span>
+											<span className="court-contract">
+												<Contract p={p} />
+												<span>{duration(p)}</span>
+											</span>
+											{profile ? (
+												<span className="court-strengths">
+													{profile.strengths.join(" · ") ||
+														"No standout role strengths"}
+												</span>
+											) : null}
+											<span className="court-production">{production(p)}</span>
 											<span className="court-fit">
 												{profile ? FIT_LABELS[profile.fit] : p.ratings.pos}
 												{p.injury.gamesRemaining > 0
@@ -155,6 +192,12 @@ const CourtView = ({
 						})}
 					</div>
 					<p className="court-coaching-note">
+						<strong>
+							Starting five: {helpers.formatCurrency(starterSalary, "M")}
+						</strong>{" "}
+						{salaryCapType !== "none" && salaryCap > 0
+							? `· ${(((starterSalary * 1000) / salaryCap) * 100).toFixed(1)}% of salary cap. `
+							: ""}
 						Your selected starters, arranged by projected role. The coach
 						adjusts for injuries, fatigue and lineup balance during games.
 					</p>
@@ -235,6 +278,41 @@ const CourtView = ({
 												: "Unscouted"}
 									</span>
 								</div>
+								<div className="depth-player-intel">
+									<div className="depth-contract">
+										<strong>
+											<Contract p={p} />
+										</strong>
+										<span>
+											{duration(p)}
+											{salaryCapType !== "none" && salaryCap > 0
+												? ` · ${(((p.contract.amount * 1000) / salaryCap) * 100).toFixed(1)}% of cap`
+												: ""}
+										</span>
+									</div>
+									<div className="depth-production">
+										<strong>{production(p)}</strong>
+										<span>
+											{p.stats.gp > 0
+												? `${p.stats.gp} GP · ${helpers.roundStat(p.stats.min, "min")} MIN per game`
+												: "Production appears after the first game"}
+										</span>
+									</div>
+								</div>
+								{profile ? (
+									<p className="depth-strengths">
+										<strong>Brings:</strong>{" "}
+										{profile.strengths.join(" · ") ||
+											"No standout scouted attributes for this role"}
+										{profile.limitations.length ? (
+											<span>
+												<strong>Cover:</strong>{" "}
+												{profile.limitations.join(" · ")}
+											</span>
+										) : null}
+									</p>
+								) : null}
+
 								<div className="depth-candidate-footer">
 									<span>
 										{starter?.pid === p.pid
@@ -279,7 +357,7 @@ const CourtView = ({
 								<details className="depth-fit-report">
 									<summary>Player & fit report</summary>
 									<div className="depth-fit-report-body">
-										<Contract p={p} />
+										<ContractSchedule p={p} />
 										{profile ? (
 											<>
 												<p>
@@ -328,6 +406,9 @@ const CourtView = ({
 					) : null}
 				</div>
 			</div>
+			{coachReport && !challengeNoRatings ? (
+				<CoachReport report={coachReport} />
+			) : null}
 			<details className="position-method">
 				<summary>How positional fit works</summary>
 				<p>

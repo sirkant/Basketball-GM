@@ -1,3 +1,7 @@
+import {
+	getCoachReport,
+	type CoachReport,
+} from "../../common/basketballCoach.ts";
 import { PHASE, POSITIONS } from "../../common/constants.ts";
 import {
 	getPositionProfiles,
@@ -270,6 +274,7 @@ export default defineView({
 			let luxuryTaxAmount: number | undefined;
 			let minPayrollAmount: number | undefined;
 			let positionProfiles: PositionProfiles | undefined;
+			let coachReport: CoachReport | undefined;
 
 			if (inputs.season === g.get("season")) {
 				const schedule = await season.getSchedule();
@@ -320,6 +325,40 @@ export default defineView({
 							) as RoleAttributes;
 							return [p.pid, getPositionProfiles(scouted, r.pos)];
 						}),
+					);
+				}
+
+				if (__SPORT === "basketball" && !g.get("challengeNoRatings")) {
+					const activeTeams = (await idb.cache.teams.getAll()).filter(
+						(t) => !t.disabled,
+					);
+					const activePlayers = await idb.cache.players.indexGetAll(
+						"playersByTid",
+						[0, Infinity],
+					);
+					coachReport = getCoachReport(
+						activeTeams.map((t) => ({
+							tid: t.tid,
+							players: activePlayers
+								.filter((p) => p.tid === t.tid)
+								.map((p) => {
+									const r = p.ratings.at(-1)! as BasketballRatings;
+									return {
+										pid: p.pid,
+										rosterOrder: p.rosterOrder,
+										injured: p.injury.gamesRemaining > 0,
+										ratings: Object.fromEntries(
+											ROLE_ATTRIBUTES.map((key) => [
+												key,
+												key === "hgt"
+													? r[key]
+													: player.fuzzRating(r[key], r.fuzz),
+											]),
+										) as RoleAttributes,
+									};
+								}),
+						})),
+						inputs.tid,
 					);
 				}
 
@@ -443,6 +482,7 @@ export default defineView({
 				playoffsByConf,
 				players: addFirstNameShort(players),
 				positionProfiles,
+				coachReport,
 				season: inputs.season,
 				showSpectatorWarning:
 					inputs.season === g.get("season") &&
