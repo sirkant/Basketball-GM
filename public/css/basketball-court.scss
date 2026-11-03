@@ -764,3 +764,328 @@
 	font-size: 9px;
 	color: #dedfe3;
 }
+
+.chronicle-view-switch {
+	display: flex;
+	gap: 20px;
+	border-bottom: 1px solid var(--fr-line);
+	margin-bottom: 26px;
+	button {
+		padding: 10px 0;
+		border: 0;
+		border-bottom: 2px solid transparent;
+		background: transparent;
+		color: var(--fr-muted);
+		font-size: 13px;
+		&[aria-pressed="true"] {
+			border-bottom-color: var(--fr-accent);
+			color: var(--fr-ink);
+			font-weight: 650;
+		}
+	}
+}
+.league-chronicle {
+	color: var(--fr-ink);
+	padding-bottom: 30px;
+}
+.chronicle-heading {
+	display: flex;
+	justify-content: space-between;
+	align-items: end;
+	gap: 20px;
+	margin-bottom: 24px;
+	p,
+	> a {
+		font-size: 12px;
+		color: var(--fr-muted);
+		margin: 6px 0 0;
+	}
+}
+.chronicle-filters {
+	display: flex;
+	align-items: end;
+	gap: 16px;
+	padding-block: 16px;
+	border-block: 1px solid var(--fr-line);
+	margin-bottom: 26px;
+	label {
+		font-size: 11px;
+		color: var(--fr-muted);
+	}
+	label:first-child {
+		flex: 1;
+	}
+	.form-control,
+	.form-select {
+		font-size: 12px;
+		margin-top: 6px;
+		min-height: 38px;
+	}
+	.chronicle-your-finals {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 38px;
+		color: var(--fr-ink);
+	}
+}
+.chronicle-workspace {
+	display: grid;
+	grid-template-columns: 150px minmax(0, 1fr);
+	gap: 30px;
+	align-items: start;
+}
+.chronicle-eyebrow {
+	font-size: 10px;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--fr-muted);
+}
+.chronicle-season-list {
+	display: grid;
+	margin-top: 10px;
+	button {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 8px;
+		padding: 9px 10px;
+		border: 0;
+		border-left: 2px solid transparent;
+		background: transparent;
+		color: var(--fr-ink);
+		text-align: left;
+	}
+	strong {
+		font-size: 16px;
+		font-variant-numeric: tabular-nums;
+		font-weight: 500;
+	}
+	span {
+		font-size: 10px;
+		color: var(--fr-muted);
+	}
+	button[aria-pressed="true"] {
+		border-color: var(--fr-accent);
+		background: var(--fr-soft);
+		strong {
+			font-weight: 750;
+		}
+	}
+	button:hover {
+		background: var(--fr-soft);
+	}
+}
+.chronicle-paging {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+	margin-top: 14px;
+	font-size: 11px;
+	color: var(--fr-muted);
+	button {
+		min-height: 36px;
+		min-width: 32px;
+		border: 1px solid var(--fr-line);
+		background: var(--fr-surface);
+		color: var(--fr-ink);
+	}
+	button:disabled {
+		opacity: 0.35;
+	}
+}
+.chronicle-chapter {
+	min-width: 0;
+	border-top: 3px solid var(--fr-accent);
+}
+.chronicle-chapter-title {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	padding-top: 20px;
+	h2 {
+		font-size: clamp(26px, 3vw, 38px);
+		font-weight: 650;
+		letter-spacing: -0.04em;
+		margin: 4px 0 0;
+	}
+}
+.chronicle-year {
+	font-size: clamp(46px, 6vw, 76px);
+	font-weight: 350;
+	letter-spacing: -0.07em;
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+}
+.chronicle-lede {
+	max-width: 70em;
+	font-size: 15px;
+	line-height: 1.7;
+	margin-block: 22px;
+}
+.chronicle-finalists {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	border-block: 1px solid var(--fr-line);
+}
+.chronicle-finalist {
+	display: flex;
+	flex-direction: column;
+	align-items: start;
+	gap: 8px;
+	padding: 22px 0;
+	min-width: 0;
+	&:first-child {
+		border-right: 1px solid var(--fr-line);
+		padding-right: 20px;
+	}
+	&:last-child {
+		padding-left: 24px;
+	}
+	> span:not(.chronicle-eyebrow),
+	> a:last-child {
+		font-size: 11px;
+		color: var(--fr-muted);
+	}
+	.chronicle-team-name {
+		font-size: 22px;
+		font-weight: 650;
+		line-height: 1.3;
+		letter-spacing: -0.025em;
+		color: var(--fr-ink);
+		overflow-wrap: anywhere;
+	}
+}
+.chronicle-season-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px 24px;
+	padding-block: 16px;
+	font-size: 12px;
+	border-bottom: 1px solid var(--fr-line);
+}
+.chronicle-honours {
+	margin-top: 26px;
+}
+.chronicle-section-heading {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 12px;
+	h4 {
+		font-size: 18px;
+		font-weight: 650;
+		letter-spacing: -0.02em;
+	}
+	span {
+		font-size: 11px;
+		color: var(--fr-muted);
+	}
+}
+.chronicle-awards {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0 26px;
+	section {
+		padding-block: 16px;
+		border-bottom: 1px solid var(--fr-line);
+		min-width: 0;
+	}
+	h5 {
+		font-size: 10px;
+		color: var(--fr-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+	}
+	a {
+		display: block;
+		font-size: 15px;
+		font-weight: 600;
+		color: var(--fr-ink);
+		overflow-wrap: anywhere;
+	}
+	span {
+		display: block;
+		font-size: 11px;
+		color: var(--fr-muted);
+		margin-top: 4px;
+	}
+	section > div + div {
+		margin-top: 14px;
+	}
+}
+.chronicle-empty {
+	padding: 40px 0;
+	h3 {
+		font-size: 24px;
+	}
+	p {
+		color: var(--fr-muted);
+		font-size: 13px;
+	}
+}
+@media (max-width: 767px) {
+	.chronicle-heading {
+		align-items: start;
+		flex-direction: column;
+		gap: 12px;
+	}
+	.chronicle-filters {
+		flex-wrap: wrap;
+		gap: 12px;
+		label:first-child {
+			flex-basis: 100%;
+		}
+		.chronicle-your-finals {
+			flex: 1;
+		}
+	}
+	.chronicle-workspace {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 24px;
+	}
+	.chronicle-season-list {
+		display: flex;
+		overflow-x: auto;
+		padding-bottom: 6px;
+		button {
+			flex: 0 0 auto;
+			flex-direction: column;
+			min-width: 64px;
+			border-left: 0;
+			border-bottom: 2px solid transparent;
+		}
+	}
+	.chronicle-paging {
+		justify-content: start;
+	}
+	.chronicle-chapter-title {
+		gap: 16px;
+	}
+	.chronicle-lede {
+		font-size: 14px;
+	}
+	.chronicle-finalist .chronicle-team-name {
+		font-size: 18px;
+	}
+	.chronicle-section-heading {
+		align-items: start;
+		flex-direction: column;
+		gap: 0;
+	}
+}
+@media (max-width: 400px) {
+	.chronicle-finalists,
+	.chronicle-awards {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.chronicle-finalist:first-child {
+		border-right: 0;
+		border-bottom: 1px solid var(--fr-line);
+		padding-right: 0;
+	}
+	.chronicle-finalist:last-child {
+		padding-left: 0;
+	}
+}

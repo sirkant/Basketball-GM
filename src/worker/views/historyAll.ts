@@ -227,6 +227,9 @@ export default defineView({
 					season,
 					runnerUp: undefined as FormattedTeam | undefined,
 					champ: undefined as FormattedTeam | undefined,
+					finalsScore: undefined as
+						| { champ: number; runnerUp: number }
+						| undefined,
 					awards,
 				});
 			}
@@ -273,6 +276,7 @@ export default defineView({
 
 						row.champ = formatTeamWrapper(champ, season);
 						row.runnerUp = formatTeamWrapper(runnerUp, season);
+						row.finalsScore = { champ: champ.won, runnerUp: runnerUp.won };
 					}
 				} else {
 					// This is for people with some missing playoffSeries data, either because it was deleted or because it never existed (like adding teamSeasons manually for past years)
