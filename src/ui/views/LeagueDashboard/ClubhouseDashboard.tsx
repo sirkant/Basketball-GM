@@ -96,10 +96,13 @@ const ClubhouseDashboard = (p: View<"leagueDashboard">) => {
 										i === 0 ? "clubhouse-lead-story" : "clubhouse-short-story"
 									}
 								>
-									{i === 0 && !event.p && club?.imgURL ? (
+									{i === 0 &&
+									!event.p &&
+									event.tid !== undefined &&
+									p.teams[event.tid]?.imgURL ? (
 										<img
 											className="clubhouse-story-crest"
-											src={club.imgURL}
+											src={p.teams[event.tid]!.imgURL}
 											alt=""
 										/>
 									) : null}

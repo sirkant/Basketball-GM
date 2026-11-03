@@ -492,7 +492,7 @@ const TopStuff = ({
 	const PLACEHOLDER = <div style={{ height: 2 }}></div>;
 
 	return (
-		<div className="mb-3">
+		<div className="mb-3 clubhouse-player-dossier">
 			<div className="d-sm-flex align-items-start">
 				<div className="player-bio">
 					<div className="d-flex">
@@ -683,7 +683,7 @@ const TopStuff = ({
 					) : null}
 				</div>
 
-				<div className="mt-3 mt-sm-0 text-nowrap overflow-auto small-scrollbar">
+				<div className="mt-3 mt-sm-0 text-nowrap overflow-auto small-scrollbar clubhouse-player-attributes">
 					{showRatingsOverview ? (
 						<RatingsOverview ratings={player.ratings} season={season} />
 					) : null}
