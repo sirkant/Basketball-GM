@@ -31,7 +31,7 @@ test("the polygon responds to each player's actual attributes rather than a fixe
 });
 test("custom roster extremes and invalid numbers stay inside the 0–100 plot", () => {
 	expect(
-		getBasketballRadar({ ...ratings(150), diq: NaN, reb: -20 }).map(
+		getBasketballRadar({ ...ratings(150), diq: Number.NaN, reb: -20 }).map(
 			(axis) => axis.value,
 		),
 	).toEqual([100, 100, 100, 0, 0, 100]);
