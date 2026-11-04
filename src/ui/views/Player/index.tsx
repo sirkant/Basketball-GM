@@ -96,7 +96,11 @@ const Player2 = ({
 	);
 
 	return (
-		<>
+		<div
+			className={
+				__SPORT === "basketball" ? "basketball-player-page" : undefined
+			}
+		>
 			<TopStuff
 				bestPos={bestPos}
 				currentSeason={currentSeason}
@@ -113,6 +117,20 @@ const Player2 = ({
 				willingToSign={willingToSign}
 			/>
 
+			<div
+				id="player-career-record"
+				className={
+					__SPORT === "basketball" ? "dossier-career-heading" : undefined
+				}
+			>
+				{__SPORT === "basketball" ? (
+					<>
+						<span className="dossier-eyebrow">THE COMPLETE RECORD</span>
+						<h2>Career, production & history</h2>
+						<p>Full statistics, ratings, contracts, awards and transactions.</p>
+					</>
+				) : null}
+			</div>
 			{statTables.map(({ name, onlyShowIf, stats, superCols }) => (
 				<StatsTable
 					awardsBySeason={awardsBySeason}
@@ -315,7 +333,7 @@ const Player2 = ({
 					</HideableSection>
 				</div>
 			</div>
-		</>
+		</div>
 	);
 };
 

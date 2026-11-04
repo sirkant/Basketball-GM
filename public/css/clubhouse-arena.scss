@@ -42,6 +42,10 @@
 	font-family: var(--arena-font);
 	font-size: 12px;
 	line-height: 1.45;
+	&.clubhouse-modal {
+		position: fixed;
+		isolation: auto;
+	}
 	.arena-titlebar {
 		position: relative;
 		background:
