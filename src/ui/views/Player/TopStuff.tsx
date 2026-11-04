@@ -487,7 +487,9 @@ const TopStuff = ({
 		</>
 	);
 
-	const showRatingsOverview = (!retired || season !== undefined) && showRatings;
+	const showRatingsOverview =
+		showRatings &&
+		(__SPORT === "basketball" || !retired || season !== undefined);
 
 	// Without this, vertical scrollbar shows if there are no jerseys, due to some weirdness with the negative marginTop values in RatingsOverview
 	const PLACEHOLDER = <div style={{ height: 2 }}></div>;

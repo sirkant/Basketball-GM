@@ -1,4 +1,55 @@
 .franchise-ui {
+	.dossier-radar {
+		margin: 0;
+		figcaption {
+			font-size: 9px;
+			color: var(--fr-muted);
+			letter-spacing: 0.5px;
+			span {
+				color: var(--arena-gold);
+				margin-left: 5px;
+			}
+		}
+	}
+	.dossier-radar-values {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 4px 9px;
+		margin: 0 0 9px;
+		> div {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			gap: 4px;
+		}
+		dt {
+			font-weight: 400;
+			font-size: 9px;
+			color: var(--fr-muted);
+		}
+		dd {
+			font-size: 11px;
+			color: var(--arena-gold);
+			margin: 0;
+		}
+	}
+	.dossier-radar-previous {
+		fill: none;
+		stroke: #a4bdc8;
+		stroke-width: 2;
+		stroke-dasharray: 5 4;
+	}
+	.dossier-radar-compare {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 9px;
+		color: var(--fr-muted);
+		cursor: pointer;
+		input {
+			accent-color: #d9b56c;
+		}
+	}
 	.basketball-player-page .player-stats-summary td:not(:first-child) {
 		color: var(--arena-gold);
 	}
