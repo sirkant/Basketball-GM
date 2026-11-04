@@ -5435,6 +5435,18 @@ const api = {
 	toolsMenu,
 	undoLog,
 	main: {
+		respondCoachRequest: async (arg: {
+			mid: number;
+			decision: "prioritize" | "decline";
+		}) =>
+			(await import("../core/team/coachBriefings.ts")).respondCoachRequest(arg),
+		requestCoachReport: async () => {
+			const mid = await (
+				await import("../core/team/coachBriefings.ts")
+			).ensureCoachBriefings({ manual: true });
+			await idb.cache.flush();
+			return mid;
+		},
 		acceptContractNegotiation,
 		addTeam,
 		advancedPlayerSearch,

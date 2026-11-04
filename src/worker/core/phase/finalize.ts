@@ -49,6 +49,8 @@ const finalize = async (
 		await ensureOwnerMandate();
 	}
 
+	await (await import("../team/coachBriefings.ts")).ensureCoachBriefings();
+
 	let saved = false;
 	if (phase === PHASE.PRESEASON) {
 		// Fill only in preseason, because not much changes before then

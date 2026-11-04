@@ -14,19 +14,27 @@ import { getFinancialStatus } from "../core/finances/nbaAprons.ts";
 import { ensureOwnerMandate } from "../core/finances/ownership.ts";
 
 const updateInbox = async ({ updateEvents }: ViewArgs) => {
-	if (updateEvents.has("firstRun") || updateEvents.has("newPhase")) {
+	const { visibleCoachMessage } =
+		await import("../core/team/coachBriefings.ts");
+	if (
+		updateEvents.has("firstRun") ||
+		updateEvents.has("newPhase") ||
+		updateEvents.has("gameSim") ||
+		updateEvents.has("playerMovement")
+	) {
 		const messages = await idb.merged.messages.getAll({
 			limit: __SPORT === "basketball" ? 10 : 2,
 		});
 		messages.reverse();
 		return {
-			messages: messages.map((message) => ({
+			messages: messages.map(visibleCoachMessage).map((message) => ({
 				mid: message.mid,
 				read: message.read,
 				year: message.year,
 				from: message.from,
 				subject: message.subject,
 				text: message.text,
+				advisory: message.advisory,
 			})),
 		};
 	}
@@ -642,6 +650,9 @@ export default defineView({
 	id: "leagueDashboard",
 	load: async (args) => {
 		await ensureOwnerMandate();
+		await (
+			await import("../core/team/coachBriefings.ts")
+		).ensureCoachBriefings();
 		// Woo TypeScript, gotta break this up into 3 parts or it just says fuck it and calls it any
 		const part1 = Object.assign(
 			{},

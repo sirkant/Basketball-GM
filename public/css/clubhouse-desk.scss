@@ -1,4 +1,49 @@
 .franchise-ui {
+	.coach-inbox-action {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 9px;
+		margin-top: 15px;
+		> span {
+			font-size: 11px;
+			color: var(--fr-muted);
+		}
+	}
+	.coach-message-context {
+		border: 1px solid var(--arena-border);
+		border-top: 2px solid var(--arena-gold);
+		background: #b59c5310;
+		padding: 15px;
+		margin-top: 20px;
+		font-family: var(--arena-font);
+		p {
+			font-size: 12px;
+			margin-block: 9px;
+		}
+		small {
+			display: block;
+			color: var(--fr-muted);
+			font-size: 10px;
+			margin-top: 10px;
+		}
+	}
+	.coach-request-target {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 6px;
+		padding-block: 9px;
+		border-block: 1px solid var(--arena-border);
+		strong {
+			color: var(--arena-gold);
+		}
+		span {
+			font-size: 11px;
+			color: var(--fr-muted);
+		}
+	}
 	.clubhouse-desk-inbox .clubhouse-message-list {
 		max-height: 560px;
 		overflow-y: auto;

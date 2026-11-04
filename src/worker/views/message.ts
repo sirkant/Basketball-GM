@@ -1,3 +1,4 @@
+import { isBlockingMessage } from "../../common/basketballBriefing.ts";
 import { idb } from "../db/index.ts";
 import { g, helpers, updatePlayMenu, updateStatus } from "../util/index.ts";
 import { defineView, keepType } from "../util/defineView.ts";
@@ -21,6 +22,8 @@ export default defineView({
 	processInputs,
 	keepPrevOutput,
 	load: async ({ inputs, updateEvents, prevOutput }) => {
+		const { visibleCoachMessage } =
+			await import("../core/team/coachBriefings.ts");
 		// Complexity of updating is to handle auto-read message, so inputs.mid is blank
 		if (
 			updateEvents.has("firstRun") ||
@@ -31,11 +34,12 @@ export default defineView({
 			let readThisPageview = false;
 
 			if (inputs.mid === undefined) {
-				const messages = (
-					await idb.merged.messages.getAll({ limit: 10 })
-				).reverse(); // First look for an unread message
+				const messages = (await idb.merged.messages.getAll()).reverse(); // First look for an unread message
 
-				for (const m of messages) {
+				for (const m of [
+					...messages.filter(isBlockingMessage),
+					...messages.filter((m) => !isBlockingMessage(m)),
+				]) {
 					if (!m.read) {
 						// https://stackoverflow.com/a/59923262/786644
 						const returnValue = {
@@ -71,6 +75,9 @@ export default defineView({
 				await updatePlayMenu();
 			}
 
+			if (message) {
+				message = visibleCoachMessage(message);
+			}
 			let augmentedMessage;
 			if (message) {
 				let augmentedOwnerMoods;
@@ -126,6 +133,11 @@ export default defineView({
 				augmentedMessage = {
 					...message,
 					ownerMoods: augmentedOwnerMoods,
+					coachFollowupMid: message.coach?.request?.supersededBy
+						? (await idb.merged.messages.getAll()).find(
+								(m) => m.coach?.key === message.coach?.request?.supersededBy,
+							)?.mid
+						: undefined,
 				};
 			}
 
@@ -135,6 +147,7 @@ export default defineView({
 					__SPORT === "basketball"
 						? (await idb.merged.messages.getAll({ limit: 50 }))
 								.reverse()
+								.map(visibleCoachMessage)
 								.map((m) => ({
 									mid: m.mid,
 									from: m.from,
@@ -142,6 +155,7 @@ export default defineView({
 									read: m.read,
 									subject: m.subject,
 									text: m.text,
+									advisory: m.advisory,
 								}))
 						: [],
 			};

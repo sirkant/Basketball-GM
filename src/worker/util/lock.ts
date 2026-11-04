@@ -1,3 +1,4 @@
+import { isBlockingMessage } from "../../common/basketballBriefing.ts";
 import { idb } from "../db/index.ts";
 import toUI from "./toUI.ts";
 import type { Locks } from "../../common/types.ts";
@@ -166,9 +167,9 @@ const canStartGames = () => {
  * @return {Promise.boolean}
  */
 const unreadMessage = async () => {
-	const messages = await idb.merged.messages.getAll({ limit: 10 });
+	const messages = await idb.merged.messages.getAll();
 
-	return messages.some((message) => !message.read);
+	return messages.some(isBlockingMessage);
 };
 
 export default {

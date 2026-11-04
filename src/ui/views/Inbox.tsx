@@ -3,6 +3,7 @@ import useTitleBar from "../hooks/useTitleBar.tsx";
 import { helpers } from "../util/helpers.ts";
 import type { View } from "../../common/types.ts";
 import { ClubhouseMessages } from "../components/ClubhouseMessages.tsx";
+import { AskCoach } from "../components/CoachInbox.tsx";
 
 const Inbox = ({ anyUnread, messages }: View<"inbox">) => {
 	useTitleBar({
@@ -17,8 +18,9 @@ const Inbox = ({ anyUnread, messages }: View<"inbox">) => {
 					<p>
 						{anyUnread
 							? "A response is required. Open your unread correspondence before continuing."
-							: "All caught up. Your decisions and the owner's feedback are collected here."}
+							: "Coach requests and playoff previews are advisory. Use the staff assessment to plan your next decision."}
 					</p>
+					<AskCoach />
 				</header>
 				<ClubhouseMessages messages={messages} />
 			</section>

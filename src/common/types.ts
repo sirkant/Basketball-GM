@@ -2,6 +2,7 @@ import * as z from "zod";
 import type { IsExact } from "conditional-type-checks";
 import type { FaceConfig } from "facesjs";
 import type { ReactNode } from "react";
+import type { CoachMemo } from "./basketballBriefing.ts";
 import type * as views from "../worker/views/index.ts";
 
 import {
@@ -962,6 +963,8 @@ export type OwnerMood = {
 };
 
 export type MessageWithoutKey = {
+	advisory?: boolean;
+	coach?: CoachMemo;
 	mid?: number;
 	from: string;
 	read: boolean;
