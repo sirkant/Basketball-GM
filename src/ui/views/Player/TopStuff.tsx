@@ -34,6 +34,7 @@ import {
 	useNegotiaionModal,
 } from "../../components/NegotiationModal.tsx";
 import { useLocal } from "../../util/local.ts";
+import { BasketballHero } from "./BasketballHero.tsx";
 
 const Relatives = ({
 	gender,
@@ -493,8 +494,26 @@ const TopStuff = ({
 
 	return (
 		<div className="mb-3 clubhouse-player-dossier">
+			{__SPORT === "basketball" ? (
+				<BasketballHero
+					player={player}
+					bestPos={bestPos}
+					teamColors={teamColors}
+					teamJersey={teamJersey}
+					teamName={teamName}
+					teamURL={teamURL}
+					currentSeason={currentSeason}
+					season={season}
+				/>
+			) : null}
 			<div className="d-sm-flex align-items-start">
-				<div className="player-bio">
+				<div className="player-bio" id="player-details">
+					{__SPORT === "basketball" ? (
+						<div className="dossier-panel-heading">
+							<span className="dossier-eyebrow">PERSONAL FILE</span>
+							<h3>Details & decisions</h3>
+						</div>
+					) : null}
 					<div className="d-flex">
 						<div
 							className="player-picture"
@@ -689,13 +708,20 @@ const TopStuff = ({
 					) : null}
 					{jerseyNumberInfos.length > 0 ? (
 						<div
-							className={clsx("d-flex flex-wrap", {
-								"mt-2": showRatingsOverview || player.awards.length > 0,
-							})}
+							className={clsx(
+								"d-flex flex-wrap",
+								__SPORT === "basketball" && "dossier-jersey-history",
+								{
+									"mt-2": showRatingsOverview || player.awards.length > 0,
+								},
+							)}
 							style={{
 								gap: "0.5em",
 							}}
 						>
+							{__SPORT === "basketball" ? (
+								<span className="dossier-eyebrow">JERSEY HISTORY</span>
+							) : null}
 							{jerseyNumberInfos.map((info, i) => {
 								let onClick;
 								let extraText;
@@ -732,6 +758,11 @@ const TopStuff = ({
 								}
 								return (
 									<JerseyNumber
+										className={
+											__SPORT === "basketball"
+												? `dossier-jersey-token ${info.retiredIndex >= 0 ? "is-retired" : ""}`
+												: undefined
+										}
 										key={i}
 										onClick={onClick}
 										extraText={extraText}

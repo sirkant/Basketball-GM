@@ -4,6 +4,7 @@ import { bySport } from "../../../common/sportFunctions.ts";
 import { ratingsGradientStyle } from "../../components/RatingsStatsPopover/ratingsGradientStyle.ts";
 import { RatingWithChange } from "../../components/RatingWithChange.tsx";
 import { type ReactNode } from "react";
+import { BasketballRatings } from "./BasketballRatings.tsx";
 
 export const RatingsOverview = ({
 	ratings,
@@ -24,6 +25,9 @@ export const RatingsOverview = ({
 	const lastSeason =
 		ratings.findLast((row) => row.season === currentSeason.season - 1) ??
 		currentSeason;
+	if (__SPORT === "basketball") {
+		return <BasketballRatings current={currentSeason} previous={lastSeason} />;
+	}
 
 	const columns = bySport<
 		Record<
