@@ -71,6 +71,15 @@
 				var dark = "dark-CSS_HASH_DARK";
 				var light = "light-CSS_HASH_LIGHT";
 				try {
+					// Introduce the requested basketball arena skin once. Settings can
+					// still select either appearance afterwards; league data is untouched.
+					if (
+						"SPORT" === "basketball" &&
+						localStorage.getItem("basketballArenaTheme") !== "1"
+					) {
+						localStorage.setItem("theme", "dark");
+						localStorage.setItem("basketballArenaTheme", "1");
+					}
 					var local = localStorage.getItem("theme");
 					if (local !== null) {
 						return local === "dark" ? "dark" : "light";

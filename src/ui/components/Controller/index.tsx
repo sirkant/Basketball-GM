@@ -49,7 +49,12 @@ const KeepPreviousRenderWhileUpdating = memo(
 export const Controller = () => {
 	const state = useViewData();
 
-	const { popup, showNagModal } = useLocal(["popup", "showNagModal"]);
+	const { popup, showNagModal, teamInfoCache, userTid } = useLocal([
+		"popup",
+		"showNagModal",
+		"teamInfoCache",
+		"userTid",
+	]);
 
 	const closeNagModal = useCallback(() => {
 		localActions.update({
@@ -99,13 +104,48 @@ export const Controller = () => {
 			className={__SPORT === "basketball" ? "franchise-ui" : undefined}
 			data-clubhouse-page={__SPORT === "basketball" ? sidebarPageID : undefined}
 		>
+			{__SPORT === "basketball" ? (
+				<div className="club-arena-backdrop" aria-hidden="true">
+					{inLeague &&
+					(teamInfoCache[userTid]?.imgURL ||
+						teamInfoCache[userTid]?.imgURLSmall) ? (
+						<img
+							className="club-arena-crest"
+							src={
+								teamInfoCache[userTid]!.imgURL ??
+								teamInfoCache[userTid]!.imgURLSmall
+							}
+							alt=""
+						/>
+					) : null}
+				</div>
+			) : null}
 			<LazyMotion strict features={loadFramerMotionFeatures}>
 				<NavBar updating={updating} />
 				<div className="h-100 d-flex">
 					<SideBar pageID={sidebarPageID} pathname={pathname} />
 					<div className="h-100 w-100 d-flex flex-column" style={minWidth0}>
 						{popup ? null : <LeagueTopBar />}
-						<TitleBar />
+						<div
+							className={
+								__SPORT === "basketball" ? "arena-titlebar" : undefined
+							}
+						>
+							<TitleBar />
+							{__SPORT === "basketball" &&
+							inLeague &&
+							(teamInfoCache[userTid]?.imgURL ||
+								teamInfoCache[userTid]?.imgURLSmall) ? (
+								<img
+									src={
+										teamInfoCache[userTid]!.imgURL ??
+										teamInfoCache[userTid]!.imgURLSmall
+									}
+									alt="Club crest"
+									className="arena-title-crest"
+								/>
+							) : null}
+						</div>
 						<div className="container-fluid position-relative mt-2 flex-grow-1 h-100">
 							<div className="d-flex" style={minHeight100}>
 								<div className="w-100 d-flex flex-column" style={minWidth0}>

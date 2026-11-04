@@ -1,0 +1,312 @@
+// GT America is used only when installed locally. Inter is the bundled fallback.
+@font-face {
+	font-family: "Clubhouse GT";
+	src:
+		local("GT America Standard Regular"), local("GT-America-Standard-Regular");
+	font-weight: 400;
+}
+@font-face {
+	font-family: "Clubhouse GT";
+	src: local("GT America Standard Medium"), local("GT-America-Standard-Medium");
+	font-weight: 500;
+}
+@font-face {
+	font-family: "Clubhouse GT";
+	src: local("GT America Standard Bold"), local("GT-America-Standard-Bold");
+	font-weight: 600 900;
+}
+.franchise-ui {
+	--arena-font: "Clubhouse GT", Inter, "Helvetica Neue", Arial, sans-serif;
+	--arena-gold: #8b6324;
+	--arena-panel: #fffffff2;
+	--arena-panel-soft: #f4f0e9f2;
+	--arena-border: #c9bda9;
+	@if $black == #fff {
+		--arena-gold: #e5c16e;
+		--arena-panel: #111416eb;
+		--arena-panel-soft: #1d201fea;
+		--arena-border: #b89b5a42;
+		--fr-paper: #0c0e10;
+		--fr-surface: var(--arena-panel);
+		--fr-soft: #302a1c;
+		--fr-accent: #d3ad59;
+		--fr-line: #b89b5a42;
+		--fr-ink: #efeee9;
+		--fr-muted: #b5b4ae;
+		--clubhouse-gold: #e5c16e;
+		--bs-link-color: #e5c16e;
+		--bs-link-hover-color: #ffe4a6;
+	}
+	position: relative;
+	isolation: isolate;
+	font-family: var(--arena-font);
+	font-size: 12px;
+	line-height: 1.45;
+	.arena-titlebar {
+		position: relative;
+		background:
+			linear-gradient(90deg, #0d1013e8 10%, #0d101382 65%, #0d101352),
+			url(/img/clubhouse/arena-night.webp) center 62% / cover;
+		border-bottom: 1px solid #b89b5a66;
+		.title-bar {
+			background: transparent;
+			min-height: 86px;
+			border: 0;
+			padding-right: 112px;
+			color: #f0eee8;
+			h1 {
+				color: #f0eee8;
+			}
+		}
+	}
+	.arena-title-crest {
+		position: absolute;
+		right: 22px;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 70px;
+		height: 72px;
+		object-fit: contain;
+		filter: drop-shadow(0 4px 8px #0008);
+		pointer-events: none;
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	input,
+	select,
+	button,
+	textarea,
+	.btn,
+	.form-control,
+	.form-select,
+	.table,
+	.clubhouse-message-reader,
+	.ownership-letter {
+		font-family: var(--arena-font);
+	}
+	h1,
+	.title-bar h1 {
+		font-size: 21px;
+		font-weight: 600;
+		letter-spacing: -0.4px;
+	}
+	h2,
+	.h2 {
+		font-size: 17px;
+		font-weight: 600;
+	}
+	h3,
+	.h3 {
+		font-size: 15px;
+		font-weight: 600;
+	}
+	.table,
+	.form-control,
+	.form-select,
+	.btn,
+	.dropdown-menu {
+		font-size: 12px;
+	}
+	.table td,
+	.table th {
+		padding: 6px 7px;
+	}
+	.table {
+		--bs-table-bg: var(--arena-panel);
+		--bs-table-striped-bg: #b9a47709;
+		--bs-table-hover-bg: #b9a47718;
+	}
+	.table td[data-numeric="true"] {
+		color: var(--arena-gold);
+		font-variant-numeric: tabular-nums;
+		font-weight: 500;
+	}
+	.club-arena-backdrop {
+		position: fixed;
+		inset: 52px 0 0;
+		z-index: -1;
+		background:
+			linear-gradient(90deg, #090b0d88, #090b0d44 65%, #090b0d77),
+			url(/img/clubhouse/arena-night.webp) center 65% / cover no-repeat;
+		pointer-events: none;
+	}
+	.club-arena-crest {
+		position: absolute;
+		left: 60%;
+		top: 49%;
+		width: clamp(130px, 23vw, 330px);
+		max-height: 320px;
+		object-fit: contain;
+		transform: translate(-50%, -50%) rotate(-15deg) scaleY(0.66);
+		opacity: 0.36;
+		filter: grayscale(0.85) sepia(0.35);
+	}
+	.sidebar-inner {
+		background: #0d1013f5 !important;
+		border-color: #af8b424d;
+	}
+	.clubhouse-brand {
+		background: #191c1dd9;
+		border-bottom-color: #af8b424d;
+		padding-block: 15px;
+	}
+	.clubhouse-brand strong {
+		font-family: var(--arena-font);
+		font-size: 15px;
+		line-height: 1.15;
+	}
+	.clubhouse-brand img {
+		width: 42px;
+		height: 48px;
+	}
+	.clubhouse-primary-link {
+		font-size: 11px;
+		min-height: 35px;
+		color: #c7c7c2;
+	}
+	.clubhouse-primary-link.active {
+		background: #8a6c293d;
+		border-left-color: #e4bf6d;
+		color: #f0cf89;
+	}
+	.clubhouse-sub-link {
+		font-size: 11px;
+		padding-block: 7px;
+		color: #b8b9b4;
+	}
+	.clubhouse-sub-link.active {
+		background: #8a6c2929;
+		color: #e4bf6d;
+	}
+	.navbar.fixed-top {
+		background: #0e1114f5 !important;
+		border-bottom: 1px solid #a1864745;
+	}
+	.navbar.fixed-top .clubhouse-search {
+		background: #1b1e1f;
+		border-color: #78673e66;
+		color: #c7c6bf;
+		font-size: 11px;
+	}
+	.title-bar {
+		background: var(--arena-panel);
+		border-bottom-color: var(--arena-border);
+		min-height: 45px;
+	}
+	.clubhouse-panel,
+	.data-workspace,
+	.card,
+	.clubhouse-inbox-page,
+	.clubhouse-correspondence > aside,
+	.clubhouse-message-reader,
+	.ownership-office {
+		background: var(--arena-panel);
+		border-color: var(--arena-border);
+		border-radius: 2px;
+		box-shadow: 0 5px 20px #00000018;
+	}
+	.clubhouse-panel > header {
+		background: #9d824807;
+		min-height: 34px;
+		border-color: var(--arena-border);
+		h2 {
+			font-size: 12px;
+			letter-spacing: 0.2px;
+		}
+	}
+	.clubhouse-panel .table {
+		--bs-table-bg: transparent;
+	}
+	.clubhouse-desk-heading {
+		padding: 14px 14px 15px;
+		background: #0d101382;
+		border-top: 2px solid #c29c51;
+		h2 {
+			font-size: 24px;
+		}
+	}
+	.clubhouse-record strong,
+	.clubhouse-finance-ledger dd,
+	.coach-area strong {
+		color: var(--arena-gold);
+	}
+	.clubhouse-message {
+		padding-block: 12px;
+		strong {
+			font-size: 12px;
+		}
+	}
+	.clubhouse-message-meta,
+	.clubhouse-message-preview {
+		font-size: 10px;
+	}
+	.clubhouse-core-list strong {
+		font-size: 12px;
+	}
+	.clubhouse-core-list span {
+		font-size: 10px;
+	}
+	.clubhouse-lead-story {
+		background: #131617a6;
+	}
+	.clubhouse-lead-story .card > .d-flex:last-child > .p-2 {
+		font-size: 16px;
+	}
+	.clubhouse-short-story .card > .d-flex:last-child > .p-2 {
+		font-size: 11px;
+	}
+	.finance-context {
+		background: var(--arena-panel);
+		padding: 8px 10px;
+		border-color: var(--arena-border);
+		font-size: 11px;
+	}
+	.btn-primary {
+		background: #cfad63;
+		border-color: #e7ca88;
+		color: #171710;
+	}
+	.btn-light-bordered,
+	.btn-secondary {
+		background: var(--arena-panel-soft);
+		border-color: var(--arena-border);
+		color: var(--fr-ink);
+	}
+	.nav-tabs .nav-link.active {
+		border-top: 2px solid var(--arena-gold);
+	}
+	.basketball-halfcourt {
+		background: #171a1bd9;
+		border-color: #6e674f;
+	}
+}
+@media (min-width: 1200px) {
+	.franchise-ui .club-arena-backdrop {
+		left: 178px;
+	}
+}
+@media (max-width: 575px) {
+	.franchise-ui {
+		font-size: 13px;
+	}
+	.franchise-ui .clubhouse-primary-link {
+		font-size: 13px;
+		min-height: 42px;
+	}
+	.franchise-ui .clubhouse-sub-link {
+		font-size: 12px;
+	}
+	.franchise-ui .club-arena-crest {
+		left: 55%;
+		width: 55vw;
+	}
+	.franchise-ui .form-control,
+	.franchise-ui .form-select {
+		font-size: 16px;
+	}
+}
