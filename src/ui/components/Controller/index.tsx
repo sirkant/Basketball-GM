@@ -15,6 +15,7 @@ import { TitleBar } from "./TitleBar.tsx";
 import { useViewData } from "../../util/viewManager.tsx";
 import api from "../../api/index.ts";
 import { ErrorBoundary } from "../ErrorBoundary.tsx";
+import { ClubhouseSectionNav } from "./ClubhouseSectionNav.tsx";
 
 const loadFramerMotionFeatures = () =>
 	import("../../util/framerMotionFeatures.ts").then((res) => res.default);
@@ -146,6 +147,7 @@ export const Controller = () => {
 								/>
 							) : null}
 						</div>
+						<ClubhouseSectionNav pageID={sidebarPageID} />
 						<div className="container-fluid position-relative mt-2 flex-grow-1 h-100">
 							<div className="d-flex" style={minHeight100}>
 								<div className="w-100 d-flex flex-column" style={minWidth0}>
