@@ -4,6 +4,7 @@ import useTitleBar from "../../hooks/useTitleBar.tsx";
 import { helpers } from "../../util/helpers.ts";
 import type { View } from "../../../common/types.ts";
 import { ClubhouseMessages } from "../../components/ClubhouseMessages.tsx";
+import { CoachMessageContext } from "../../components/CoachInbox.tsx";
 
 const Message = ({ message, messageSummaries }: View<"message">) => {
 	const title = message?.subject ?? "Message";
@@ -31,6 +32,9 @@ const Message = ({ message, messageSummaries }: View<"message">) => {
 			</p>
 
 			<SafeHtml dirty={message.text} />
+			{__SPORT === "basketball" ? (
+				<CoachMessageContext message={message} />
+			) : null}
 
 			{message.ownerMoods && message.ownerMoods.length > 2 ? (
 				<OwnerMoodsChart ownerMoods={message.ownerMoods} />

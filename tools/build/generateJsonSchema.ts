@@ -1699,6 +1699,31 @@ export const generateJsonSchema = (sport: Sport | "test") => {
 						subject: {
 							type: "string",
 						},
+						advisory: { type: "boolean" },
+						coach: {
+							type: "object",
+							properties: {
+								kind: { enum: ["roster", "playoff"] },
+								key: { type: "string" },
+								gamesPlayed: { type: "number" },
+								fingerprint: { type: "string" },
+								opponentTid: { type: "integer" },
+								gid: { type: "integer" },
+								request: {
+									type: "object",
+									properties: {
+										area: { enum: ["tp", "reb", "diq", "pss", "ins"] },
+										label: { type: "string" },
+										baselineRank: { type: "number" },
+										targetRank: { type: "number" },
+										decision: { enum: ["prioritize", "decline"] },
+										reviewedRank: { type: "number" },
+										resolved: { type: "boolean" },
+										supersededBy: { type: "string" },
+									},
+								},
+							},
+						},
 						ownerMoods: {
 							type: "array",
 							items: {

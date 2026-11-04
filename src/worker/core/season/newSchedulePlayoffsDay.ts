@@ -115,6 +115,9 @@ const newSchedulePlayoffsDay = async (): Promise<boolean> => {
 		if (tids.length > 0) {
 			await idb.cache.playoffSeries.put(playoffSeries);
 			await setSchedule(tids);
+			await (
+				await import("../team/coachBriefings.ts")
+			).ensureCoachBriefings({ playoffOnly: true });
 			return false;
 		} else {
 			// playIn is over, so proceed to next round
@@ -183,6 +186,9 @@ const newSchedulePlayoffsDay = async (): Promise<boolean> => {
 		}
 
 		await setSchedule(tids);
+		await (
+			await import("../team/coachBriefings.ts")
+		).ensureCoachBriefings({ playoffOnly: true });
 		return false;
 	}
 

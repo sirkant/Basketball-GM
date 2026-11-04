@@ -87,6 +87,8 @@ const play = async (
 			newPhaseCalled = true;
 		}
 
+		await (await import("../team/coachBriefings.ts")).ensureCoachBriefings();
+
 		if (!local.autoPlayUntil && !newPhaseCalled) {
 			await updateStatus("Saving...");
 			await idb.cache.flush();

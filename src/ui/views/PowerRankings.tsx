@@ -58,7 +58,9 @@ const PowerRankings = ({
 		userTid,
 	} = useLocal(["challengeNoRatings", "season", "userTid"]);
 
-	const [showHealthy, setShowHealthy] = useState(true);
+	const [showHealthy, setShowHealthy] = useState(
+		window.location.hash !== "#current",
+	);
 	const actualShowHealthy = showHealthy || currentSeason !== season;
 
 	const [otherKeys, otherKeysTitle, otherKeysPrefix] = bySport({

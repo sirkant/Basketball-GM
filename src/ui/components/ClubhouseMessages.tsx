@@ -9,6 +9,7 @@ type MessageSummary = {
 	read: boolean;
 	subject?: string;
 	text: string;
+	advisory?: boolean;
 };
 
 export const ClubhouseMessages = ({
@@ -20,9 +21,14 @@ export const ClubhouseMessages = ({
 	activeMid?: number;
 	compact?: boolean;
 }) => {
-	const [unreadOnly, setUnreadOnly] = useState(false);
+	const [filter, setFilter] = useState<"all" | "unread" | "coach">("all");
 	const unread = messages.filter((m) => !m.read).length;
-	const visible = unreadOnly ? messages.filter((m) => !m.read) : messages;
+	const visible =
+		filter === "unread"
+			? messages.filter((m) => !m.read)
+			: filter === "coach"
+				? messages.filter((m) => m.advisory)
+				: messages;
 	return (
 		<div className={`clubhouse-messages ${compact ? "is-compact" : ""}`}>
 			<div
@@ -32,25 +38,34 @@ export const ClubhouseMessages = ({
 			>
 				<button
 					type="button"
-					aria-pressed={!unreadOnly}
-					onClick={() => setUnreadOnly(false)}
+					aria-pressed={filter === "all"}
+					onClick={() => setFilter("all")}
 				>
 					All <span>{messages.length}</span>
 				</button>
 				<button
 					type="button"
-					aria-pressed={unreadOnly}
-					onClick={() => setUnreadOnly(true)}
+					aria-pressed={filter === "unread"}
+					onClick={() => setFilter("unread")}
 				>
 					Unread <span>{unread}</span>
+				</button>
+				<button
+					type="button"
+					aria-pressed={filter === "coach"}
+					onClick={() => setFilter("coach")}
+				>
+					Coach <span>{messages.filter((m) => m.advisory).length}</span>
 				</button>
 			</div>
 			<div className="clubhouse-message-list">
 				{visible.length === 0 ? (
 					<p className="clubhouse-empty">
-						{unreadOnly
+						{filter === "unread"
 							? "You're up to date. No unread messages."
-							: "Your correspondence will appear here as the season develops."}
+							: filter === "coach"
+								? "Coach requests and matchup previews will appear here."
+								: "Your correspondence will appear here as the season develops."}
 					</p>
 				) : (
 					visible.map((m) => (
@@ -62,7 +77,10 @@ export const ClubhouseMessages = ({
 						>
 							<span className="clubhouse-message-meta">
 								<span>{m.from}</span>
-								<span>{m.year}</span>
+								<span>
+									{m.year}
+									{m.advisory ? " · COACH" : ""}
+								</span>
 							</span>
 							<strong>{m.subject || "Message from " + m.from}</strong>
 							<span className="clubhouse-message-preview">
