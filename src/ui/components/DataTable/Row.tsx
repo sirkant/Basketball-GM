@@ -132,6 +132,12 @@ const Row = ({
 					value !== null && Object.hasOwn(value, "value") ? value.value : value;
 
 				const props: any = {};
+				if (__SPORT === "basketball") {
+					props["data-numeric"] =
+						typeof actualValue === "number" ||
+						typeof value?.exportValue === "number" ||
+						typeof value?.sortValue === "number";
+				}
 
 				const highlightCol = highlightCols.includes(i);
 				if (value?.classNames) {
