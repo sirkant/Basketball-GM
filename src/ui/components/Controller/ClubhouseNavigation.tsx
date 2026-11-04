@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { Modal } from "../Modal.tsx";
 import type { CSSProperties } from "react";
 import type { MenuItemLink } from "../../../common/types.ts";
 import {
-	clubhouseGroups,
 	getClubhouseLinks,
 	menuPathKey,
 } from "../../util/clubhouseNavigation.ts";
@@ -23,7 +23,6 @@ const Icon = ({ name }: { name: string }) => (
 
 const ClubhouseNavigation = ({
 	pageID,
-	pathname,
 	onNavigate,
 }: {
 	pageID?: string;
@@ -37,17 +36,9 @@ const ClubhouseNavigation = ({
 		"season",
 	]);
 	const t = teamInfoCache[userTid];
-	const [opened, setOpened] = useState<Record<string, boolean>>({});
+	const [directoryOpen, setDirectoryOpen] = useState(false);
+	const [search, setSearch] = useState("");
 	const links = getClubhouseLinks(menuItems, godMode);
-	const assigned = new Set(["", "schedule", "news"]);
-	for (const group of clubhouseGroups) {
-		for (const key of group.keys) {
-			assigned.add(key);
-		}
-	}
-	const tools = links.filter(
-		(item) => !assigned.has(menuPathKey(item) ?? "action"),
-	);
 	const label = (item: MenuItemLink) => {
 		const key = menuPathKey(item);
 		return key === "team_finances"
@@ -60,44 +51,7 @@ const ClubhouseNavigation = ({
 						? "League chronicle"
 						: getText(item.text);
 	};
-	const renderLink = (item: MenuItemLink, index: number) => (
-		<a
-			key={index}
-			{...makeAnchorProps(item, onNavigate)}
-			className={`clubhouse-sub-link ${item.active?.(pageID, pathname) ? "active" : ""}`}
-			aria-current={item.active?.(pageID, pathname) ? "page" : undefined}
-		>
-			{label(item)}
-		</a>
-	);
-	const renderGroup = (name: string, icon: string, items: MenuItemLink[]) => {
-		if (!items.length) {
-			return null;
-		}
-		const active = items.some((item) => item.active?.(pageID, pathname));
-		const open = opened[name] ?? active;
-		return (
-			<div className="clubhouse-nav-group" key={name}>
-				<button
-					type="button"
-					className={`clubhouse-primary-link ${active ? "active" : ""}`}
-					aria-expanded={open}
-					onClick={() => setOpened((old) => ({ ...old, [name]: !open }))}
-				>
-					<Icon name={icon} />
-					<span>{name}</span>
-					<span className="clubhouse-expand" aria-hidden="true">
-						{open ? "−" : "+"}
-					</span>
-				</button>
-				{open ? (
-					<div className="clubhouse-submenu" aria-label={name}>
-						{items.map(renderLink)}
-					</div>
-				) : null}
-			</div>
-		);
-	};
+
 	return (
 		<div className="clubhouse-navigation">
 			<a
@@ -114,41 +68,98 @@ const ClubhouseNavigation = ({
 					<small>BASKETBALL OPERATIONS · {season}</small>
 				</div>
 			</a>
-			<div className="clubhouse-primary-nav">
+			<div className="clubhouse-primary-nav clubhouse-flat-nav">
 				{[
 					["", "Home", "house", "leagueDashboard"],
 					["inbox", "Inbox", "inbox", "inbox"],
 					["schedule", "Calendar", "calendar-days", "schedule"],
 					["news", "News", "book-open", "news"],
-				].map(([path, text, icon, id]) => (
-					<a
-						key={text}
-						href={helpers.leagueUrl(path ? [path] : [])}
-						onClick={onNavigate}
-						className={`clubhouse-primary-link ${pageID === id || (path === "inbox" && pageID === "message") ? "active" : ""}`}
-						aria-current={
-							pageID === id || (path === "inbox" && pageID === "message")
-								? "page"
-								: undefined
-						}
-					>
-						<Icon name={icon!} />
-						<span>{text}</span>
-					</a>
-				))}
-				<span className="clubhouse-nav-label">BASKETBALL</span>
-				{clubhouseGroups.map((group) =>
-					renderGroup(
-						group.name,
-						group.icon,
-						links.filter((item) =>
-							group.keys.includes(menuPathKey(item) ?? ""),
-						),
-					),
-				)}
-				<span className="clubhouse-nav-label">YOUR LEAGUE</span>
-				{renderGroup("Settings & tools", "settings-2", tools)}
+					["roster", "Squad", "users", "roster"],
+					["trade", "Trades", "arrow-left-right", "trade"],
+					["free_agents", "Free agents", "users", "freeAgents"],
+					["draft_scouting", "Scouting", "scan-search", "draftScouting"],
+					["draft", "Draft", "scan-search", "draft"],
+					[
+						"power_rankings",
+						"Power Rankings",
+						"chart-no-axes-combined",
+						"powerRankings",
+					],
+					["standings", "Standings", "trophy", "standings"],
+					["playoffs", "Playoffs", "trophy", "playoffs"],
+					["team_finances", "Finances & owner", "landmark", "teamFinances"],
+					[
+						"player_stats",
+						"Statistics",
+						"chart-no-axes-combined",
+						"playerStats",
+					],
+					["history_all", "History", "book-open", "historyAll"],
+					["settings", "Settings", "settings-2", "settings"],
+				].map(([path, text, icon, id]) => {
+					const active =
+						pageID === id || (path === "inbox" && pageID === "message");
+					return (
+						<a
+							key={text}
+							href={helpers.leagueUrl(path ? [path] : [])}
+							onClick={onNavigate}
+							className={`clubhouse-primary-link ${active ? "active" : ""}`}
+							aria-current={active ? "page" : undefined}
+						>
+							<Icon name={icon!} />
+							<span>{text}</span>
+						</a>
+					);
+				})}
+				<button
+					type="button"
+					className="clubhouse-primary-link"
+					onClick={() => setDirectoryOpen(true)}
+				>
+					<Icon name="settings-2" />
+					<span>All screens & tools</span>
+				</button>
 			</div>
+			<Modal
+				show={directoryOpen}
+				onHide={() => setDirectoryOpen(false)}
+				size="lg"
+			>
+				<Modal.Header closeButton>
+					<Modal.Title>All screens & tools</Modal.Title>
+				</Modal.Header>
+				<Modal.Body>
+					<input
+						type="search"
+						className="form-control mb-3"
+						aria-label="Find a screen"
+						placeholder="Find a screen or tool…"
+						value={search}
+						onChange={(event) => setSearch(event.target.value)}
+					/>
+					<div className="clubhouse-screen-directory">
+						{links
+							.filter((item) =>
+								`${String(label(item))} ${menuPathKey(item) ?? ""}`
+									.toLowerCase()
+									.includes(search.toLowerCase()),
+							)
+							.map((item, index) => (
+								<a
+									key={index}
+									{...makeAnchorProps(item, () => {
+										setDirectoryOpen(false);
+										onNavigate();
+									})}
+									className="clubhouse-directory-link"
+								>
+									{label(item)}
+								</a>
+							))}
+					</div>
+				</Modal.Body>
+			</Modal>
 		</div>
 	);
 };
