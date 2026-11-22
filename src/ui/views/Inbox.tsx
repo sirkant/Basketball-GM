@@ -13,13 +13,13 @@ const Inbox = ({ anyUnread, messages }: View<"inbox">) => {
 		return (
 			<section className="clubhouse-inbox-page">
 				<header>
-					<span className="clubhouse-eyebrow">THE FRONT OFFICE</span>
 					<h2>Your correspondence</h2>
-					<p>
-						{anyUnread
-							? "A response is required. Open your unread correspondence before continuing."
-							: "Coach requests and playoff previews are advisory. Use the staff assessment to plan your next decision."}
-					</p>
+					{anyUnread ? (
+						<div className="clubhouse-required-mail">
+							<strong>Read before continuing</strong>
+							<a href={helpers.leagueUrl(["message"])}>Open required message</a>
+						</div>
+					) : null}
 					<AskCoach />
 				</header>
 				<ClubhouseMessages messages={messages} />

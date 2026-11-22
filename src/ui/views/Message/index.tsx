@@ -23,6 +23,7 @@ const Message = ({ message, messageSummaries }: View<"message">) => {
 
 	const body = (
 		<article
+			aria-label={__SPORT === "basketball" ? title : undefined}
 			className={
 				__SPORT === "basketball" ? "clubhouse-message-reader" : undefined
 			}
@@ -54,6 +55,7 @@ const Message = ({ message, messageSummaries }: View<"message">) => {
 	);
 	return __SPORT === "basketball" ? (
 		<div className="clubhouse-correspondence">
+			{body}
 			<aside>
 				<header>
 					<h2>Correspondence</h2>
@@ -65,7 +67,6 @@ const Message = ({ message, messageSummaries }: View<"message">) => {
 					compact
 				/>
 			</aside>
-			{body}
 		</div>
 	) : (
 		body

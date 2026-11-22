@@ -45,8 +45,118 @@
 		}
 	}
 	.clubhouse-desk-inbox .clubhouse-message-list {
-		max-height: 560px;
+		max-height: 260px;
 		overflow-y: auto;
+	}
+	.clubhouse-skip-link:focus {
+		position: fixed;
+		z-index: 1100;
+		inset: 8px auto auto 8px;
+		padding: 10px 14px;
+		background: var(--fr-paper);
+		color: var(--fr-ink);
+		border: 2px solid var(--fr-accent);
+	}
+	.clubhouse-dashboard {
+		display: grid;
+		grid-template-columns: minmax(0, 1.65fr) minmax(265px, 1fr);
+		gap: 16px;
+		align-items: start;
+		margin-block: 8px 24px;
+	}
+	.clubhouse-matchday {
+		display: flex;
+		flex-direction: column;
+		align-self: stretch;
+		justify-content: space-between;
+		min-width: 0;
+		min-height: 196px;
+		color: #f7f2e8;
+		background:
+			linear-gradient(90deg, #101514f5, #141715b0),
+			url("/img/clubhouse/arena-night.webp") center 61% / cover;
+		border: 1px solid #8a7555;
+		border-radius: 10px;
+		overflow: hidden;
+		.clubhouse-record span,
+		.clubhouse-empty,
+		.clubhouse-opponent span {
+			color: #e3dac9;
+		}
+		.clubhouse-record strong,
+		.clubhouse-panel-footer {
+			color: #f3d693;
+		}
+		.clubhouse-opponent {
+			padding: 8px 18px 16px;
+			strong {
+				font-size: 20px;
+			}
+		}
+		> .clubhouse-empty {
+			padding-inline: 18px;
+		}
+		> .clubhouse-panel-footer {
+			border-color: #ecd09b47;
+			padding-inline: 18px;
+		}
+	}
+	.clubhouse-matchday-header {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 4px 18px;
+		padding: 14px 18px 2px;
+		h2 {
+			font-size: 24px;
+			margin: 0;
+		}
+	}
+	.clubhouse-matchday-series {
+		margin: 8px 18px 14px;
+		padding: 10px;
+		background: var(--fr-paper);
+		color: var(--fr-ink);
+		border-radius: 6px;
+	}
+	.clubhouse-required-mail {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 6px 14px;
+		padding: 10px 12px;
+		background: var(--fr-soft);
+		color: var(--fr-ink);
+		a {
+			color: var(--fr-accent);
+			font-weight: 600;
+		}
+	}
+	.clubhouse-desk-performance {
+		grid-column: 1 / -1;
+	}
+	.clubhouse-performance-stats {
+		padding: 12px;
+	}
+	.clubhouse-desk-rotation {
+		> h2,
+		> a {
+			display: block;
+			padding: 10px 12px;
+			margin: 0;
+		}
+		.clubhouse-core-list {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			border-bottom: 1px solid var(--fr-line);
+			> a {
+				min-width: 0;
+				border-bottom: 0;
+				overflow-wrap: anywhere;
+			}
+		}
 	}
 	.clubhouse-lead-story {
 		position: relative;
@@ -69,17 +179,6 @@
 		font-weight: 600;
 		letter-spacing: 1.6px;
 	}
-	.clubhouse-desk-heading {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 16px;
-		margin: 5px 0 14px;
-		h2 {
-			margin: 3px 0 0;
-			font-size: 26px;
-		}
-	}
 	.clubhouse-record {
 		display: flex;
 		align-items: center;
@@ -92,15 +191,6 @@
 			max-width: 120px;
 			color: var(--fr-muted);
 		}
-	}
-	.clubhouse-desk-grid {
-		display: grid;
-		grid-template-columns: minmax(210px, 0.98fr) minmax(260px, 1.25fr) minmax(
-				230px,
-				1fr
-			) minmax(210px, 0.9fr);
-		gap: 12px;
-		align-items: start;
 	}
 	.clubhouse-panel {
 		min-width: 0;
@@ -131,7 +221,6 @@
 		padding: 10px 12px;
 		border-top: 1px solid var(--fr-line);
 	}
-	.clubhouse-desk-context,
 	.clubhouse-desk-editorial {
 		display: grid;
 		gap: 12px;
@@ -374,7 +463,7 @@
 			font-weight: 600;
 		}
 	}
-	.clubhouse-desk-context .finance-context {
+	.clubhouse-desk-finances .finance-context {
 		border: 0;
 		border-top: 1px solid var(--fr-line);
 		border-radius: 0;
@@ -423,22 +512,6 @@
 		overflow: hidden;
 		background: linear-gradient(145deg, var(--fr-soft), transparent);
 	}
-	.clubhouse-desk-detail {
-		display: grid;
-		grid-template-columns: minmax(0, 2.5fr) minmax(220px, 1fr);
-		gap: 12px;
-		margin-top: 14px;
-		.clubhouse-panel > :not(header) {
-			margin-inline: 10px;
-		}
-		.clubhouse-panel > h2 {
-			font-size: 14px;
-			margin-top: 10px;
-		}
-		.clubhouse-panel > .table-responsive {
-			margin: 0;
-		}
-	}
 	.clubhouse-inbox-page {
 		max-width: 1100px;
 		border: 1px solid var(--fr-line);
@@ -461,7 +534,7 @@
 	}
 	.clubhouse-correspondence {
 		display: grid;
-		grid-template-columns: 300px minmax(0, 900px);
+		grid-template-columns: minmax(0, 900px) minmax(230px, 300px);
 		gap: 14px;
 		align-items: start;
 		> aside {
@@ -485,9 +558,7 @@
 		padding: 25px 30px;
 		background: var(--fr-surface);
 		border: 1px solid var(--fr-line);
-		border-top: 3px solid var(--fr-accent);
 		border-radius: 4px;
-		font-family: Inter, sans-serif;
 		font-size: 13px;
 		line-height: 1.85;
 		min-width: 0;
@@ -505,46 +576,27 @@
 		}
 	}
 }
-@media (max-width: 1399px) {
-	.franchise-ui .clubhouse-desk-grid {
-		grid-template-columns: minmax(210px, 1fr) minmax(260px, 1.3fr) minmax(
-				220px,
-				1fr
-			);
-	}
-	.franchise-ui .clubhouse-desk-context {
-		grid-column: 1 / -1;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+@media (max-width: 899px) {
+	.franchise-ui .clubhouse-correspondence {
+		grid-template-columns: minmax(0, 1fr) 230px;
 	}
 }
-@media (max-width: 899px) {
-	.franchise-ui .clubhouse-desk-grid {
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+@media (max-width: 767px) {
+	.franchise-ui .clubhouse-dashboard {
+		grid-template-columns: minmax(0, 1fr);
 	}
-	.franchise-ui .clubhouse-desk-standings {
-		grid-column: 1;
+	.franchise-ui .clubhouse-desk-rotation .clubhouse-core-list {
+		grid-template-columns: minmax(0, 1fr);
 	}
-	.franchise-ui .clubhouse-desk-context {
-		grid-column: 2;
-		grid-row: 2;
-		grid-template-columns: 1fr;
-	}
-	.franchise-ui .clubhouse-desk-detail {
-		grid-template-columns: 1fr;
-	}
-	.franchise-ui .clubhouse-correspondence {
-		grid-template-columns: 230px minmax(0, 1fr);
+	.franchise-ui .clubhouse-desk-rotation .clubhouse-core-list > a + a {
+		border-top: 1px solid var(--fr-line);
 	}
 }
 @media (max-width: 575px) {
-	.franchise-ui .clubhouse-desk-grid,
-	.franchise-ui .clubhouse-desk-context,
 	.franchise-ui .clubhouse-correspondence {
 		display: flex;
 		flex-direction: column;
 	}
-	.franchise-ui .clubhouse-desk-grid > *,
-	.franchise-ui .clubhouse-desk-context > *,
 	.franchise-ui .clubhouse-correspondence > * {
 		width: 100%;
 	}
@@ -558,9 +610,6 @@
 	}
 	.franchise-ui .clubhouse-message-reader {
 		padding: 16px;
-	}
-	.franchise-ui .clubhouse-desk-heading {
-		align-items: start;
 	}
 	.franchise-ui .clubhouse-record {
 		flex-direction: column;

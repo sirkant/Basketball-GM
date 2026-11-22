@@ -117,7 +117,7 @@ const Roster = ({
 	usePts,
 }: View<"roster">) => {
 	const [rosterView, setRosterView] = useLocalStorageState<
-		"court" | "overview" | "table"
+		"court" | "overview" | "table" | "compare"
 	>("basketball-roster-layout", { defaultValue: "court" });
 	const [sortedPids, setSortedPids] = useState<number[] | undefined>(undefined);
 	const [prevPlayers, setPrevPlayers] = useState(players);
@@ -170,12 +170,14 @@ const Roster = ({
 
 	const showMood = season === currentSeason;
 	const hasOverview = __SPORT === "basketball" && season === currentSeason;
+	const showComparison = hasOverview && rosterView === "compare";
+	const showTable = rosterView === "table" || showComparison;
 	const showCourt =
 		hasOverview &&
 		numPlayersOnCourt === 5 &&
-		rosterView !== "table" &&
+		!showTable &&
 		rosterView !== "overview";
-	const showOverview = hasOverview && rosterView !== "table" && !showCourt;
+	const showOverview = hasOverview && !showTable && !showCourt;
 	const showVisual = showCourt || showOverview;
 	const handleMakeStarter = async (starterPid: number, benchPid: number) => {
 		if (!editable) {
@@ -435,7 +437,7 @@ const Roster = ({
 			t={t}
 			tid={tid}
 			usePts={usePts}
-			showTableControls={!showVisual}
+			showTableControls={!showVisual && !showComparison}
 		/>
 	);
 
@@ -468,7 +470,6 @@ const Roster = ({
 			) : (
 				<ApronNotice status={financialStatus} />
 			)}
-			{!showVisual ? teamReport : null}
 
 			{showSpectatorWarning ? (
 				<p className="alert alert-danger d-inline-block">
@@ -478,8 +479,12 @@ const Roster = ({
 
 			{hasOverview ? (
 				<div className="roster-section-bar d-flex flex-wrap align-items-center gap-2 mb-3">
-					<h2 className="h4 mb-0 me-auto">Team rotation</h2>
-					<div className="btn-group" role="group" aria-label="Roster display">
+					<h2 className="h4 mb-0 me-auto">Squad</h2>
+					<div
+						className="roster-view-options"
+						role="group"
+						aria-label="Roster display"
+					>
 						{numPlayersOnCourt === 5 ? (
 							<button
 								type="button"
@@ -500,15 +505,24 @@ const Roster = ({
 						</button>
 						<button
 							type="button"
-							className={`btn btn-sm ${!showVisual ? "btn-primary" : "btn-light-bordered"}`}
-							aria-pressed={!showVisual}
+							className={`btn btn-sm ${!showVisual && !showComparison ? "btn-primary" : "btn-light-bordered"}`}
+							aria-pressed={!showVisual && !showComparison}
 							onClick={() => setRosterView("table")}
 						>
-							Lineup & full table
+							{editable ? "Edit lineup" : "Lineup"}
+						</button>
+						<button
+							type="button"
+							className={`btn btn-sm ${showComparison ? "btn-primary" : "btn-light-bordered"}`}
+							aria-pressed={showComparison}
+							onClick={() => setRosterView("compare")}
+						>
+							Compare players
 						</button>
 					</div>
 				</div>
 			) : null}
+			{!showVisual && !showComparison ? teamReport : null}
 			{showCourt ? (
 				<CourtView
 					key={tid}
@@ -529,9 +543,12 @@ const Roster = ({
 				/>
 			) : (
 				<DataTable
+					key={showComparison ? `comparison-${tid}-${season}` : "lineup"}
 					cols={cols}
 					defaultSort={bySport<SortBy | "disableSort">({
-						basketball: "disableSort",
+						basketball: showComparison
+							? [defaultSortCol, "asc"]
+							: "disableSort",
 						default: [defaultSortCol, "asc"],
 					})}
 					defaultStickyCols={
@@ -592,7 +609,11 @@ const Roster = ({
 													return metadata.pid;
 												})
 												.filter((pid) => {
-													if (playersByPid[pid].untradable) {
+													const player = playersByPid[pid];
+													if (!player) {
+														return false;
+													}
+													if (player.untradable) {
 														numUntradeable += 1;
 														return false;
 													}
@@ -605,6 +626,10 @@ const Roster = ({
 													type: "error",
 													text: `${numUntradeable} selected ${helpers.plural("player", numUntradeable)} ${helpers.plural("is", numUntradeable, "are")} currently untradeable!`,
 												});
+											}
+
+											if (pids.length === 0) {
+												return;
 											}
 
 											if (showTradeFor) {
@@ -629,12 +654,12 @@ const Roster = ({
 								] as BulkAction<"player">[])
 							: []),
 					]}
-					name="Roster"
+					name={showComparison ? "RosterComparison" : "Roster"}
 					rows={rows}
-					hideAllControls={editable}
+					hideAllControls={editable && !showComparison}
 					nonfluid
 					sortableRows={
-						editable
+						editable && !showComparison
 							? {
 									highlightHandle: ({ index }) => index < numPlayersOnCourt,
 									onChange: async ({ oldIndex, newIndex }) => {
@@ -658,7 +683,7 @@ const Roster = ({
 					}
 				/>
 			)}
-			{showVisual ? (
+			{showVisual || showComparison ? (
 				<details className="club-team-report">
 					<summary>Team report & coaching</summary>
 					{teamReport}

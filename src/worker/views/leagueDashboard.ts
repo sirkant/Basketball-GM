@@ -1,7 +1,7 @@
 import { PHASE, PLAYER } from "../../common/constants.ts";
 import { player, season, team } from "../core/index.ts";
 import { idb } from "../db/index.ts";
-import { g, helpers } from "../util/index.ts";
+import { g, helpers, lock } from "../util/index.ts";
 import type { Player } from "../../common/types.ts";
 import { defineView, type ViewArgs } from "../util/defineView.ts";
 import { processEvents } from "./news.ts";
@@ -27,6 +27,8 @@ const updateInbox = async ({ updateEvents }: ViewArgs) => {
 		});
 		messages.reverse();
 		return {
+			hasRequiredMessage:
+				__SPORT === "basketball" && (await lock.unreadMessage()),
 			messages: messages.map(visibleCoachMessage).map((message) => ({
 				mid: message.mid,
 				read: message.read,

@@ -8,6 +8,8 @@ The basketball client uses a shared Clubhouse visual system on every routed scre
 
 Detailed tables, column selection, filtering, export, roster alternatives and actions remain available. The briefing's rotation table includes contracts and production. The court view retains salary, duration, strengths and production; selecting a position exposes alternatives and the existing coach report. Artwork uses the league's existing team logos and player photos/faces. No stock or generated portrait is assigned to an unrelated player.
 
+Home puts the next game and required mail above the rotation and finances. Unplayed seasons show a performance empty state. The message reader comes first in its document order, with recent correspondence beside it on desktop and below it on mobile. Squad offers **Compare players** for sorting, filters, columns and export, and **Edit lineup** for drag-and-drop rotation changes.
+
 ## Reproduce the visual gallery
 
 Start the basketball production preview on port 3002, then run with Node 24 and Playwright's Chromium installed:
