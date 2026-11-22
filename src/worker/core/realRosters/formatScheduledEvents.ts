@@ -10,6 +10,7 @@ import { ALWAYS_WRAP } from "../league/loadGameAttributes.ts";
 import { wrapNewValueIfCurrentlyWrapped } from "../../util/g.ts";
 import { orderBy } from "../../../common/utils.ts";
 import { gameAttributeHasHistory } from "../../../common/gameAttributeHasHistory.ts";
+import { applyCurrentNbaBranding } from "./applyCurrentNbaBranding.ts";
 
 const processGameAttributes = (
 	events: any[],
@@ -416,6 +417,17 @@ const formatScheduledEvents = (
 		phase,
 		keepAllTeams,
 	);
+
+	if (__SPORT === "basketball") {
+		for (const team of initialTeams) {
+			if (!team.disabled) {
+				applyCurrentNbaBranding(team, season);
+			}
+			for (const row of team.seasons ?? []) {
+				applyCurrentNbaBranding(row, row.season);
+			}
+		}
+	}
 
 	if (onlyTeams) {
 		return {

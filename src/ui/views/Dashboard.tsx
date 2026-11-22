@@ -460,7 +460,12 @@ const Dashboard = ({ leagues }: View<"dashboard">) => {
 						>
 							New league
 							<br />
-							<span className="dashboard-top-link-small">» Real players</span>
+							<span className="dashboard-top-link-small">
+								»{" "}
+								{__SPORT === "basketball"
+									? "NBA teams & players"
+									: "Real players"}
+							</span>
 						</a>
 						<a
 							href="/new_league/random"

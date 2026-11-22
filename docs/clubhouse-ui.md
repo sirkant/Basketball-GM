@@ -10,6 +10,11 @@ Detailed tables, column selection, filtering, export, roster alternatives and ac
 
 Home puts the next game and required mail above the rotation and finances. Unplayed seasons show a performance empty state. The message reader comes first in its document order, with recent correspondence beside it on desktop and below it on mobile. Squad offers **Compare players** for sorting, filters, columns and export, and **Edit lineup** for drag-and-drop rotation changes.
 
+New real-roster leagues starting in 2026 or later use current NBA franchise names
+and [NBA team directory](https://www.nba.com/teams) marks served by the NBA CDN.
+The regular-season and playoff panel uses the archived
+[ESPN wordmark](https://commons.wikimedia.org/wiki/File:ESPN_wordmark.svg).
+
 ## Reproduce the visual gallery
 
 Start the basketball production preview on port 3002, then run with Node 24 and Playwright's Chromium installed:
