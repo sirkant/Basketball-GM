@@ -7,6 +7,7 @@ import {
 	getOwnerExpectations,
 } from "../../../common/nbaAprons.ts";
 import type { View } from "../../../common/types.ts";
+import { projectSalaries } from "../../../common/salaryPlanner.ts";
 import FinancialDetails from "./FinancialDetails.tsx";
 
 let root: Root | undefined;
@@ -38,6 +39,7 @@ const fixture = (): View<"trade">["summary"] => ({
 	ownerImpact: undefined,
 	warningAmount: undefined,
 	apronHardCap: undefined,
+	salaryPlan: undefined,
 	teams: [summaryTeam(1), summaryTeam(0)],
 	financialStatus: {
 		payroll: 200000,
@@ -98,4 +100,26 @@ test("does not show NBA financial rules for other cap modes", () => {
 	const summary = fixture();
 	summary.financialStatus = undefined;
 	expect(render(summary).textContent).toBe("");
+});
+
+test("keeps the salary comparison available in a hard-cap league", () => {
+	const summary = fixture();
+	summary.financialStatus = undefined;
+	summary.salaryPlan = projectSalaries(
+		[],
+		2026,
+		{ cap: 100_000 },
+		{
+			outgoing: [],
+			incoming: [{ pid: 1, amount: 20_000, exp: 2027 }],
+		},
+	);
+	const view = render(summary);
+	expect(view.innerText).toContain("Three-year salary impact");
+	expect(view.innerText).not.toContain("Before trade");
+	view.querySelector("summary")!.click();
+	expect(view.innerText).toContain("Before trade");
+	expect(view.innerText).toContain("After trade");
+	expect(view.innerText).toContain("+$20M");
+	expect(view.innerText).not.toContain("First apron");
 });

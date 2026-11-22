@@ -9,6 +9,7 @@ import {
 import { DataTable } from "../../components/DataTable/index.tsx";
 import { ApronNotice } from "../../components/ApronNotice.tsx";
 import { OwnershipBrief } from "../../components/OwnershipBrief.tsx";
+import { SalaryPlanner } from "../../components/SalaryPlanner.tsx";
 import { MoreLinks } from "../../components/MoreLinks.tsx";
 import useTitleBar from "../../hooks/useTitleBar.tsx";
 import { helpers } from "../../util/helpers.ts";
@@ -733,6 +734,7 @@ const TeamFinances = ({
 	autoTicketPrice,
 	barData,
 	financialStatus,
+	salaryPlan,
 	ownership,
 	contractTotals,
 	contracts,
@@ -869,6 +871,18 @@ const TeamFinances = ({
 				minPayrollAmount={minPayrollAmount}
 				payroll={payroll}
 			/>
+
+			{salaryPlan ? (
+				<section
+					className="border rounded p-3 my-3"
+					aria-labelledby="salary-planner"
+				>
+					<h2 id="salary-planner" className="h4 mb-2">
+						Three-year salary plan
+					</h2>
+					<SalaryPlanner plan={salaryPlan} />
+				</section>
+			) : null}
 
 			{budget ? null : (
 				<p className="text-danger">

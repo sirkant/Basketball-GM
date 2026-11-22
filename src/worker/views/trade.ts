@@ -9,6 +9,7 @@ import { ValueChangeCalculator } from "../core/team/ValueChangeCalculator.ts";
 import { defineView } from "../util/defineView.ts";
 import { getFinancialStatus } from "../core/finances/nbaAprons.ts";
 import { ownerTradeImpact } from "../core/finances/ownership.ts";
+import { getSalaryPlan } from "../core/finances/salaryPlanner.ts";
 
 const getSummaryTeam = (summary: TradeSummary, i: 0 | 1) => {
 	return {
@@ -17,8 +18,34 @@ const getSummaryTeam = (summary: TradeSummary, i: 0 | 1) => {
 	};
 };
 
+const getTradeSalaryPlan = async (tid: number, summary: TradeSummary) => {
+	if (
+		!summary.teams.some(
+			({ trade, picks }) => trade.length > 0 || picks.length > 0,
+		)
+	) {
+		return;
+	}
+
+	const [contracts, incoming] = await Promise.all([
+		team.getContracts(tid),
+		Promise.all(
+			summary.teams[1].trade.map(({ pid }) => idb.cache.players.get(pid)),
+		),
+	]);
+	return getSalaryPlan(contracts, {
+		outgoing: summary.teams[0].trade.map(({ pid }) => pid),
+		incoming: incoming
+			.filter((p) => p !== undefined)
+			.map(({ pid, contract }) => ({ pid, ...contract })),
+	});
+};
+
 // This relies on vars being populated, so it can't be called in parallel with updateTrade
-export const getSummary = async (teams: TradeTeams) => {
+export const getSummary = async (
+	teams: TradeTeams,
+	{ includeSalaryPlan = false }: { includeSalaryPlan?: boolean } = {},
+) => {
 	const summary = await trade.summary(teams);
 	const summary2 = {
 		enablePropose:
@@ -34,6 +61,10 @@ export const getSummary = async (teams: TradeTeams) => {
 			summary.teams[0].payrollAfterTrade * 1000,
 		),
 		apronHardCap: summary.teams[0].apronRule?.hardCap,
+		salaryPlan:
+			__SPORT === "basketball" && includeSalaryPlan
+				? await getTradeSalaryPlan(teams[0].tid, summary)
+				: undefined,
 		warningAmount: summary.warningAmount,
 		teams: [getSummaryTeam(summary, 0), getSummaryTeam(summary, 1)] as const,
 	};
@@ -203,7 +234,7 @@ export default defineView({
 			}),
 		);
 
-		const summary = await getSummary(teams); // Always run this, for multi team mode
+		const summary = await getSummary(teams, { includeSalaryPlan: true }); // Always run this, for multi team mode
 
 		let teams2: {
 			name: string;

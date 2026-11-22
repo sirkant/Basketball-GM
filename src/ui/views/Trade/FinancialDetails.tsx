@@ -2,8 +2,9 @@ import { ApronNotice } from "../../components/ApronNotice.tsx";
 import { helpers } from "../../util/helpers.ts";
 import type { View } from "../../../common/types.ts";
 import { TRADE_SALARY_TOLERANCE } from "../../../common/nbaAprons.ts";
+import { SalaryPlanner } from "../../components/SalaryPlanner.tsx";
 
-const FinancialDetails = ({ summary }: Pick<View<"trade">, "summary">) => {
+const FinancialRules = ({ summary }: Pick<View<"trade">, "summary">) => {
 	const status = summary.financialStatus;
 	if (!status) {
 		return null;
@@ -23,7 +24,7 @@ const FinancialDetails = ({ summary }: Pick<View<"trade">, "summary">) => {
 			: (status.state?.hardCap ?? summary.apronHardCap);
 
 	return (
-		<div className="border-top mt-3 pt-3">
+		<>
 			{danger ? (
 				<div className="text-danger fw-bold small mb-2" role="alert">
 					Owner's red line: this proposal leads to guaranteed dismissal at the
@@ -53,6 +54,34 @@ const FinancialDetails = ({ summary }: Pick<View<"trade">, "summary">) => {
 					<ApronNotice status={status} compact />
 				</div>
 			</details>
+		</>
+	);
+};
+
+const FinancialDetails = ({ summary }: Pick<View<"trade">, "summary">) => {
+	if (!summary.financialStatus && !summary.salaryPlan) {
+		return null;
+	}
+
+	return (
+		<div className="border-top mt-3 pt-3">
+			<FinancialRules summary={summary} />
+			{summary.salaryPlan ? (
+				<details className={summary.financialStatus ? "mt-2" : undefined}>
+					<summary className="small fw-semibold">
+						Three-year salary impact
+					</summary>
+					<div className="mt-2">
+						<SalaryPlanner plan={summary.salaryPlan} />
+						<a
+							className="small d-inline-block mt-2"
+							href={helpers.leagueUrl(["team_finances"])}
+						>
+							View team finances and contracts
+						</a>
+					</div>
+				</details>
+			) : null}
 		</div>
 	);
 };
