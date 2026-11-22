@@ -52,9 +52,19 @@ const SeasonCoverage = (p: View<"leagueDashboard">) => {
 			aria-labelledby="season-coverage-heading"
 		>
 			<header className="season-coverage-header">
-				<h2 id="season-coverage-heading">
-					{phase === PHASE.PLAYOFFS ? "Playoffs" : "Regular season"}
-				</h2>
+				<div className="season-coverage-title">
+					<span className="season-coverage-network">
+						<img
+							src="/img/clubhouse/espn-wordmark.svg"
+							alt="ESPN"
+							width="62"
+							height="16"
+						/>
+					</span>
+					<h2 id="season-coverage-heading">
+						{phase === PHASE.PLAYOFFS ? "Playoffs" : "Regular season"}
+					</h2>
+				</div>
 				<a href={helpers.leagueUrl(["schedule"])}>Schedule</a>
 			</header>
 			{next ? (

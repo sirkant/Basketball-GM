@@ -164,6 +164,23 @@
 		padding: 18px 12px;
 		text-align: center;
 	}
+	.season-coverage-title {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 6px 10px;
+	}
+	.season-coverage-network {
+		display: inline-flex;
+		align-items: center;
+		padding: 4px 6px;
+		border-radius: 3px;
+		background: #fff;
+		img {
+			display: block;
+			object-fit: contain;
+		}
+	}
 	.season-coverage-team {
 		display: grid;
 		justify-items: center;
