@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import FinancialDetails from "./FinancialDetails.tsx";
 import { PHASE } from "../../../common/constants.ts";
+import { tradeNegotiationKey } from "../../../common/tradeNegotiation.ts";
+import type { TradeNegotiationFeedback } from "../../../worker/core/trade/makeItWorkTrade.ts";
 import useTitleBar from "../../hooks/useTitleBar.tsx";
 import { helpers } from "../../util/helpers.ts";
 import { toWorker } from "../../util/toWorker.ts";
@@ -8,6 +10,7 @@ import { useLocal } from "../../util/local.ts";
 import AssetSelector from "./AssetSelector.tsx";
 import Buttons from "./Buttons.tsx";
 import type { TradeClearType } from "./Buttons.tsx";
+import NegotiationFeedback from "./NegotiationFeedback.tsx";
 import Summary from "./Summary.tsx";
 import type { TradeTeams, View } from "../../../common/types.ts";
 import clsx from "clsx";
@@ -52,10 +55,20 @@ const Trade = (props: View<"trade">) => {
 	const [state, setState] = useState({
 		accepted: false,
 		asking: false,
+		feedback: null as TradeNegotiationFeedback | null,
 		forceTrade: false,
 		message: null as string | null,
-		prevTeams: undefined as TradeTeams | undefined,
 	});
+	const asking = useRef(false);
+
+	const clearFeedback = () => {
+		setState((prevState) => ({
+			...prevState,
+			accepted: false,
+			feedback: null,
+			message: null,
+		}));
+	};
 
 	const handleChangeAsset: HandleToggle = async (
 		userOrOther: "other" | "user",
@@ -63,12 +76,10 @@ const Trade = (props: View<"trade">) => {
 		includeOrExclude: "include" | "exclude",
 		id: number,
 	) => {
-		setState((prevState) => ({
-			...prevState,
-			accepted: false,
-			message: null,
-			prevTeams: undefined,
-		}));
+		if (asking.current) {
+			return;
+		}
+		clearFeedback();
 		const ids = {
 			"user-pids": props.userPids,
 			"user-pids-excluded": props.userPidsExcluded,
@@ -86,7 +97,7 @@ const Trade = (props: View<"trade">) => {
 		if (ids[key].includes(id)) {
 			ids[key] = ids[key].filter((currId) => currId !== id);
 		} else {
-			ids[key].push(id);
+			ids[key] = [...ids[key], id];
 		}
 
 		const teams = [
@@ -114,6 +125,11 @@ const Trade = (props: View<"trade">) => {
 		playerOrPick: "pick" | "player",
 		draftRoundOnly?: number,
 	) => {
+		if (asking.current) {
+			return;
+		}
+		clearFeedback();
+
 		const ids = {
 			"user-pids": props.userPids,
 			"user-pids-excluded": props.userPidsExcluded,
@@ -162,12 +178,10 @@ const Trade = (props: View<"trade">) => {
 	};
 
 	const handleChangeTeam = async (tid: number) => {
-		setState((prevState) => ({
-			...prevState,
-			accepted: false,
-			message: null,
-			prevTeams: undefined,
-		}));
+		if (asking.current) {
+			return;
+		}
+		clearFeedback();
 
 		const teams: TradeTeams = [
 			{
@@ -190,56 +204,44 @@ const Trade = (props: View<"trade">) => {
 	};
 
 	const handleClickAsk = async () => {
-		let newPrevTeams = [
-			{
-				tid: userTid,
-				pids: props.userPids,
-				pidsExcluded: props.userPidsExcluded,
-				dpids: props.userDpids,
-				dpidsExcluded: props.userDpidsExcluded,
-			},
-			{
-				tid: props.otherTid,
-				pids: props.otherPids,
-				pidsExcluded: props.otherPidsExcluded,
-				dpids: props.otherDpids,
-				dpidsExcluded: props.otherDpidsExcluded,
-			},
-		] as TradeTeams | undefined;
-
+		if (asking.current) {
+			return;
+		}
+		asking.current = true;
 		setState((prevState) => ({
 			...prevState,
 			accepted: false,
 			asking: true,
+			feedback: null,
 			message: null,
-			prevTeams: undefined,
 		}));
 
-		const { changed, message } = await toWorker(
-			"main",
-			"tradeCounterOffer",
-			undefined,
-		);
-
-		if (!changed) {
-			newPrevTeams = undefined;
+		try {
+			const result = await toWorker("main", "tradeCounterOffer", undefined);
+			setState((prevState) => ({
+				...prevState,
+				feedback: result.status === "stale" ? null : result,
+				message:
+					result.status === "stale"
+						? "The offer changed during the search. Ask again for the current offer."
+						: null,
+			}));
+		} catch {
+			setState((prevState) => ({
+				...prevState,
+				message: "GM feedback is unavailable. Try asking again.",
+			}));
+		} finally {
+			asking.current = false;
+			setState((prevState) => ({ ...prevState, asking: false }));
 		}
-
-		setState((prevState) => ({
-			...prevState,
-			asking: false,
-			message,
-			prevTeams: newPrevTeams,
-		}));
 	};
 
 	const handleClickClear = async (type: TradeClearType) => {
-		setState((prevState) => ({
-			...prevState,
-			accepted: false,
-			message: null,
-			prevTeams: undefined,
-		}));
+		if (asking.current) {
+			return;
+		}
+		clearFeedback();
 		await toWorker("main", "clearTrade", type);
 	};
 
@@ -276,6 +278,9 @@ const Trade = (props: View<"trade">) => {
 	} = props;
 
 	const handleClickPropose = async () => {
+		if (asking.current) {
+			return;
+		}
 		const { accepted, message, undoKey } = await toWorker(
 			"main",
 			"proposeTrade",
@@ -285,8 +290,8 @@ const Trade = (props: View<"trade">) => {
 		setState((prevState) => ({
 			...prevState,
 			accepted,
+			feedback: null,
 			message,
-			prevTeams: undefined,
 		}));
 
 		if (undoKey !== undefined) {
@@ -316,11 +321,8 @@ const Trade = (props: View<"trade">) => {
 		title: "Trade",
 	});
 
-	if (resetMessage && state.message !== null) {
-		setState((state) => ({
-			...state,
-			message: null,
-		}));
+	if (resetMessage && (state.message !== null || state.feedback !== null)) {
+		clearFeedback();
 	}
 
 	const {
@@ -361,6 +363,35 @@ const Trade = (props: View<"trade">) => {
 		? `${otherTeam.region} ${otherTeam.name}`
 		: "Other team";
 	const teamNames = [otherTeamName, userTeamName] as [string, string];
+	const currentOffer: TradeTeams = [
+		{
+			tid: userTid,
+			pids: userPids,
+			dpids: userDpids,
+			pidsExcluded: props.userPidsExcluded,
+			dpidsExcluded: props.userDpidsExcluded,
+		},
+		{
+			tid: otherTid,
+			pids: otherPids,
+			dpids: otherDpids,
+			pidsExcluded: props.otherPidsExcluded,
+			dpidsExcluded: props.otherDpidsExcluded,
+		},
+	];
+	const feedback =
+		state.feedback?.offerKey === tradeNegotiationKey(currentOffer)
+			? state.feedback
+			: null;
+	const previousTeams =
+		feedback?.status === "counteroffer" ? feedback.previousTeams : undefined;
+	const handleUndoCounteroffer = async () => {
+		if (asking.current || !previousTeams) {
+			return;
+		}
+		await toWorker("main", "updateTrade", previousTeams);
+		clearFeedback();
+	};
 
 	return (
 		<>
@@ -368,7 +399,7 @@ const Trade = (props: View<"trade">) => {
 				<div className="btn-group">
 					<button
 						className="btn btn-light-bordered btn-xs"
-						disabled={otherTeamIndex <= 0}
+						disabled={state.asking || otherTeamIndex <= 0}
 						onClick={() => {
 							handleChangeTeam(teams[otherTeamIndex - 1]!.tid);
 						}}
@@ -378,7 +409,7 @@ const Trade = (props: View<"trade">) => {
 					</button>
 					<button
 						className="btn btn-light-bordered btn-xs"
-						disabled={otherTeamIndex >= teams.length - 1}
+						disabled={state.asking || otherTeamIndex >= teams.length - 1}
 						onClick={() => {
 							handleChangeTeam(teams[otherTeamIndex + 1]!.tid);
 						}}
@@ -390,6 +421,7 @@ const Trade = (props: View<"trade">) => {
 				<select
 					aria-label="Trading partner"
 					className="form-select select-team flex-shrink-1"
+					disabled={state.asking}
 					value={otherTid}
 					onChange={(event) => {
 						handleChangeTeam(Number.parseInt(event.currentTarget.value));
@@ -435,11 +467,13 @@ const Trade = (props: View<"trade">) => {
 							{numAssets} assets selected
 						</span>
 					</div>
-					<Summary
-						handleToggle={handleChangeAsset}
-						prevTeams={state.prevTeams}
-						summary={summary}
-					/>
+					<fieldset disabled={state.asking}>
+						<Summary
+							handleToggle={handleChangeAsset}
+							prevTeams={previousTeams}
+							summary={summary}
+						/>
+					</fieldset>
 					{summary.ownerImpact && !state.accepted ? (
 						<details className="owner-trade-view">
 							<summary
@@ -472,6 +506,22 @@ const Trade = (props: View<"trade">) => {
 							<strong>Cannot propose:</strong> {summary.warning}
 						</div>
 					) : null}
+					{feedback ? (
+						<NegotiationFeedback
+							feedback={feedback}
+							hasExclusions={currentOffer.some(
+								(offer) =>
+									offer.pidsExcluded.length > 0 ||
+									offer.dpidsExcluded.length > 0,
+							)}
+							onUndo={handleUndoCounteroffer}
+							otherTeamName={otherTeamName}
+							otherPicks={otherPicks}
+							otherRoster={otherRoster}
+							userPicks={userPicks}
+							userRoster={userRoster}
+						/>
+					) : null}
 					{state.message ? (
 						<div
 							className={clsx(
@@ -481,34 +531,16 @@ const Trade = (props: View<"trade">) => {
 									"mt-2": summary.warning,
 								},
 							)}
+							role="status"
 						>
 							{state.message}
-							{state.prevTeams ? (
-								<div className="mt-1 text-end">
-									<button
-										className="btn btn-secondary btn-sm"
-										onClick={async () => {
-											if (state.prevTeams) {
-												await toWorker("main", "updateTrade", state.prevTeams);
-												setState((prevState) => ({
-													...prevState,
-													message: null,
-													prevTeams: undefined,
-												}));
-											}
-										}}
-									>
-										Undo
-									</button>
-								</div>
-							) : null}
 						</div>
 					) : null}
 
 					<div
 						className={clsx({
 							"trade-extra-margin-bottom": multiTeamMode,
-							"mt-3": summary.warning || state.message,
+							"mt-3": summary.warning || state.message || feedback,
 						})}
 					>
 						{!noTradingAllowed ? (
@@ -566,16 +598,18 @@ const Trade = (props: View<"trade">) => {
 					<a href="#trade-proposal" className="small d-inline-block mb-2">
 						Review offer ({numAssets} assets)
 					</a>
-					<AssetSelector
-						challengeNoRatings={challengeNoRatings}
-						handleBulk={handleBulk}
-						handleToggle={handleChangeAsset}
-						numDraftRounds={numDraftRounds}
-						picks={userPicks}
-						roster={userRoster}
-						stats={stats}
-						userOrOther="user"
-					/>
+					<fieldset disabled={state.asking}>
+						<AssetSelector
+							challengeNoRatings={challengeNoRatings}
+							handleBulk={handleBulk}
+							handleToggle={handleChangeAsset}
+							numDraftRounds={numDraftRounds}
+							picks={userPicks}
+							roster={userRoster}
+							stats={stats}
+							userOrOther="user"
+						/>
+					</fieldset>
 				</section>
 				<section
 					className="col-12 col-xl-6"
@@ -586,16 +620,18 @@ const Trade = (props: View<"trade">) => {
 					<a href="#trade-proposal" className="small d-inline-block mb-2">
 						Review offer ({numAssets} assets)
 					</a>
-					<AssetSelector
-						challengeNoRatings={challengeNoRatings}
-						handleBulk={handleBulk}
-						handleToggle={handleChangeAsset}
-						numDraftRounds={numDraftRounds}
-						picks={otherPicks}
-						roster={otherRoster}
-						stats={stats}
-						userOrOther="other"
-					/>
+					<fieldset disabled={state.asking}>
+						<AssetSelector
+							challengeNoRatings={challengeNoRatings}
+							handleBulk={handleBulk}
+							handleToggle={handleChangeAsset}
+							numDraftRounds={numDraftRounds}
+							picks={otherPicks}
+							roster={otherRoster}
+							stats={stats}
+							userOrOther="other"
+						/>
+					</fieldset>
 				</section>
 			</div>
 		</>
