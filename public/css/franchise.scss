@@ -370,23 +370,20 @@
 	background: var(--fr-surface);
 	border-color: var(--fr-line);
 }
-.squad-column-head,
 .squad-player-main {
 	display: grid;
-	grid-template-columns: minmax(270px, 1.3fr) minmax(210px, 1fr) minmax(
-			180px,
-			0.8fr
-		);
-	gap: 24px;
+	grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 0.8fr) 4rem;
+	gap: 16px;
 	align-items: center;
-	padding: 8px 18px;
+	padding: 8px 16px 0;
 }
-.squad-column-head {
-	font-size: 11px;
-	text-transform: uppercase;
-	letter-spacing: 0.13em;
-	color: var(--fr-muted);
-	padding-bottom: 9px;
+.squad-group {
+	margin-top: 16px;
+	> h3 {
+		margin-bottom: 6px;
+		font-size: 1rem;
+		font-weight: 700;
+	}
 }
 .squad-list {
 	border: 1px solid var(--fr-line);
@@ -400,29 +397,26 @@
 	&:hover {
 		background: var(--fr-soft);
 	}
-	&.squad-starter {
-		border-left: 3px solid var(--fr-accent);
-	}
 }
 .squad-identity {
 	display: flex;
 	align-items: center;
-	gap: 14px;
+	gap: 8px;
 	min-width: 0;
 }
 .squad-order {
-	font-size: 11px;
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
 	color: var(--fr-muted);
 	width: 16px;
 	flex-shrink: 0;
 }
 .squad-portrait {
 	flex-shrink: 0;
-	width: 48px;
-	height: 62px;
+	width: 32px;
+	height: 40px;
 	overflow: hidden;
 	background: var(--fr-soft);
-	border-bottom: 2px solid var(--fr-line);
 }
 .squad-name {
 	min-width: 0;
@@ -434,62 +428,59 @@
 	}
 }
 .squad-role {
-	font-size: 11px;
-	font-weight: 600;
-	margin-bottom: 5px;
-	color: var(--fr-accent);
-	span {
-		font-weight: 400;
-		color: var(--fr-muted);
-	}
+	font-size: 12px;
+	font-weight: 400;
+	color: var(--fr-muted);
 }
-.squad-ratings {
-	display: flex;
-	gap: 20px;
-	> div {
-		display: flex;
-		align-items: baseline;
-		gap: 7px;
-	}
-	span {
-		font-size: 11px;
-		color: var(--fr-muted);
-		letter-spacing: 0.08em;
-	}
-	strong {
-		font-size: 24px;
-		letter-spacing: -0.04em;
-	}
-}
+.squad-ratings,
 .squad-production {
-	font-size: 11px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 8px;
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
 	color: var(--fr-muted);
 	strong {
-		font-size: 12px;
 		color: var(--fr-ink);
-		margin-left: 5px;
-		&:first-child {
-			margin-left: 0;
-		}
-	}
-	> span {
-		display: inline-block;
 	}
 }
 .squad-salary {
 	font-size: 15px;
 	font-weight: 600;
+	font-variant-numeric: tabular-nums;
 }
 .squad-availability {
 	color: var(--fr-muted);
-	font-size: 11px;
-	margin-top: 5px;
+	font-size: 12px;
+}
+.squad-start {
+	justify-self: end;
+	min-width: 56px;
+}
+.squad-swap {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: end;
+	gap: 8px;
+	margin: 8px 16px;
+	padding: 8px;
+	border: 1px solid var(--fr-line);
+	background: var(--fr-soft);
+}
+.squad-swap-choice {
+	flex: 0 1 17rem;
+	min-width: 0;
+	font-size: 12px;
+	font-weight: 600;
+	select {
+		margin-top: 4px;
+	}
 }
 .squad-player-details {
-	padding: 0 18px 8px 99px;
+	padding: 0 16px 6px 80px;
 	> summary {
 		color: var(--fr-muted);
-		font-size: 11px;
+		font-size: 12px;
 		width: fit-content;
 	}
 }
@@ -503,10 +494,12 @@
 		margin-left: auto;
 	}
 }
-.squad-footnote {
-	margin-top: 12px;
+.squad-notice {
+	margin: 8px 0;
 	color: var(--fr-muted);
-	font-size: 11px;
+	&:empty {
+		margin: 0;
+	}
 }
 .squad-empty {
 	padding: 30px;
@@ -527,20 +520,41 @@
 			font-size: 24px;
 		}
 	}
-	.squad-column-head {
-		display: none;
-	}
+}
+@media (max-width: 767px) {
 	.squad-player-main {
-		grid-template-columns: minmax(0, 1fr) minmax(160px, 0.6fr);
-		gap: 12px;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 0.62fr);
+		grid-template-areas: "identity contract" "performance action";
+		gap: 4px 12px;
+		padding-inline: 12px;
+	}
+	.squad-identity {
+		grid-area: identity;
 	}
 	.squad-performance {
-		grid-column: 1;
-		padding-left: 78px;
+		grid-area: performance;
 	}
 	.squad-contract {
-		grid-column: 2;
-		grid-row: 1 / 3;
+		grid-area: contract;
+	}
+	.squad-start {
+		grid-area: action;
+	}
+	.franchise-ui .squad-view {
+		.squad-start,
+		.squad-swap .form-select,
+		.squad-swap > button,
+		.squad-search,
+		.squad-filter {
+			min-height: 44px;
+		}
+	}
+	.squad-player-details {
+		padding: 0 12px;
+	}
+	.squad-player-details > summary {
+		display: list-item;
+		padding-block: 8px;
 	}
 }
 @media (max-width: 575px) {
@@ -595,31 +609,9 @@
 	}
 	.squad-search {
 		width: 100%;
-		min-height: 38px;
-	}
-	.squad-player-main {
-		grid-template-columns: minmax(0, 1fr);
-		padding: 12px;
 	}
 	.squad-name {
 		font-size: 14px;
-	}
-	.squad-order {
-		display: none;
-	}
-	.squad-performance {
-		padding-left: 62px;
-	}
-	.squad-contract {
-		grid-column: 1;
-		grid-row: auto;
-		padding-left: 62px;
-	}
-	.squad-player-details {
-		padding-left: 74px;
-	}
-	.squad-player-details > summary {
-		padding-block: 8px;
 	}
 	.squad-player-expanded > div:last-child {
 		margin-left: 0;

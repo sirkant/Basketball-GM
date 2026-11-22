@@ -538,6 +538,8 @@ const Roster = ({
 					players={playersSorted}
 					numPlayersOnCourt={numPlayersOnCourt}
 					season={season}
+					editable={editable}
+					onMakeStarter={handleMakeStarter}
 					showTradeFor={showTradeFor}
 					showTradingBlock={showTradingBlock}
 				/>
