@@ -54,7 +54,7 @@ export const SalaryPlanner = ({ plan }: { plan: SalaryPlan }) => {
 	return (
 		<>
 			<div className="table-responsive">
-				<table className="table table-sm mb-2">
+				<table className="table table-sm small mb-2">
 					<caption className="visually-hidden">
 						{after
 							? "Three-year commitments before and after the trade"
@@ -108,7 +108,9 @@ export const SalaryPlanner = ({ plan }: { plan: SalaryPlan }) => {
 													<span className="text-nowrap font-monospace">
 														{currency(Math.abs(distance))}
 													</span>{" "}
-													{distance < 0 ? "over" : "below"}
+													<span className="d-block d-sm-inline">
+														{distance < 0 ? "over" : "below"}
+													</span>
 												</>
 											)}
 										</td>
