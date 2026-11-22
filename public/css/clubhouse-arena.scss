@@ -213,6 +213,24 @@
 		opacity: 0.36;
 		filter: grayscale(0.85) sepia(0.35);
 	}
+	&[data-clubhouse-page="leagueDashboard"],
+	&[data-clubhouse-page="roster"],
+	&[data-clubhouse-page="inbox"],
+	&[data-clubhouse-page="message"] {
+		.club-arena-backdrop {
+			background: var(--fr-paper);
+		}
+		.club-arena-crest {
+			display: none;
+		}
+		.arena-titlebar .title-bar {
+			min-height: 62px;
+		}
+		.arena-title-crest {
+			width: 46px;
+			height: 46px;
+		}
+	}
 	.sidebar-inner {
 		background: #0d1013f5 !important;
 		border-color: #af8b424d;
@@ -288,14 +306,6 @@
 	}
 	.clubhouse-panel .table {
 		--bs-table-bg: transparent;
-	}
-	.clubhouse-desk-heading {
-		padding: 14px 14px 15px;
-		background: #0d101382;
-		border-top: 2px solid #c29c51;
-		h2 {
-			font-size: 24px;
-		}
 	}
 	.clubhouse-record strong,
 	.clubhouse-finance-ledger dd,

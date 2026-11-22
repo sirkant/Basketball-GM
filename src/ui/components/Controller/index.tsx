@@ -122,6 +122,14 @@ export const Controller = () => {
 				</div>
 			) : null}
 			<LazyMotion strict features={loadFramerMotionFeatures}>
+				{__SPORT === "basketball" ? (
+					<a
+						className="clubhouse-skip-link visually-hidden-focusable"
+						href="#actual-actual-content"
+					>
+						Skip to main content
+					</a>
+				) : null}
 				<NavBar updating={updating} />
 				<div className="h-100 d-flex">
 					<SideBar pageID={sidebarPageID} pathname={pathname} />
@@ -152,7 +160,11 @@ export const Controller = () => {
 							<div className="d-flex" style={minHeight100}>
 								<div className="w-100 d-flex flex-column" style={minWidth0}>
 									<Header />
-									<main id="actual-actual-content" className="clearfix">
+									<main
+										id="actual-actual-content"
+										className="clearfix"
+										tabIndex={__SPORT === "basketball" ? -1 : undefined}
+									>
 										<ErrorBoundary key={idLoaded}>
 											{Component ? (
 												<KeepPreviousRenderWhileUpdating updating={updating}>
