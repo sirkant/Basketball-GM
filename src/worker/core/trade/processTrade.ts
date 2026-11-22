@@ -19,17 +19,12 @@ import {
 import { getTeammateJerseyNumbers } from "../player/genJerseyNumber.ts";
 import { recomputeLocalUITeamOvrs } from "../../util/recomputeLocalUITeamOvrs.ts";
 import summary from "./summary.ts";
-import { getApronTradeRule } from "../../../common/nbaAprons.ts";
 import {
 	ownerTradeImpact,
 	recordOwnerTrade,
 	undoOwnerTrade,
 } from "../finances/ownership.ts";
-import {
-	apronsEnabled,
-	currentApronState,
-	saveApronState,
-} from "../finances/nbaAprons.ts";
+import { apronsEnabled, saveApronState } from "../finances/nbaAprons.ts";
 
 const processTrade = async (
 	rawTeams: TradeTeams,
@@ -43,20 +38,10 @@ const processTrade = async (
 	if (apronsEnabled()) {
 		const s = await summary(rawTeams);
 		for (const i of [0, 1] as const) {
-			const j = i === 0 ? 1 : 0;
 			const t = await idb.cache.teams.get(tids[i]);
 			previousApronStates.set(tids[i], helpers.deepCopy(t?.apronState));
-			const rule = getApronTradeRule({
-				payrollAfter: s.teams[i].payrollAfterTrade * 1000,
-				outgoing: s.teams[i].total * 1000,
-				incoming: s.teams[j].total * 1000,
-				outgoingSalaries: s.teams[i].trade.map((p) => p.contract.amount * 1000),
-				incomingSalaries: s.teams[j].trade.map((p) => p.contract.amount * 1000),
-				salaryCap: g.get("salaryCap"),
-				taxLevel: g.get("luxuryPayroll"),
-				hardCap: currentApronState(t)?.hardCap,
-			});
-			if (!rule.error && rule.hardCap) {
+			const rule = s.teams[i].apronRule;
+			if (rule?.hardCap && !rule.error) {
 				await saveApronState(tids[i], { hardCap: rule.hardCap });
 			}
 		}

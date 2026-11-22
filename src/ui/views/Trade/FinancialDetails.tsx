@@ -33,7 +33,7 @@ const FinancialDetails = ({ summary }: Pick<View<"trade">, "summary">) => {
 			<div className="d-flex flex-wrap gap-3 small text-body-secondary mb-2">
 				<span>
 					{helpers.formatCurrency(TRADE_SALARY_TOLERANCE / 1000, "M")} salary
-					matching tolerance per team
+					matching tolerance per team, applied to the matching limit
 				</span>
 				{hardCap ? (
 					<span className="fw-semibold text-warning-emphasis">

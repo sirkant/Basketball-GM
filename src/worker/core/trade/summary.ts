@@ -9,7 +9,12 @@ import type {
 import { orderBy } from "../../../common/utils.ts";
 import isUntradable from "./isUntradable.ts";
 import { getApronTradeRule } from "../../../common/nbaAprons.ts";
-import { apronsEnabled, currentApronState } from "../finances/nbaAprons.ts";
+import { getContractSalary } from "../../../common/contractSalary.ts";
+import {
+	apronsEnabled,
+	currentApronState,
+	salaryYear,
+} from "../finances/nbaAprons.ts";
 
 const getTeamOvr = async (playersRaw: Player[]) => {
 	const players = await player.formatAll(playersRaw, {
@@ -33,6 +38,11 @@ const summary = async (teams: TradeTeams): Promise<TradeSummary> => {
 	const tids = [teams[0].tid, teams[1].tid] as const;
 	const pids = [teams[0].pids, teams[1].pids] as const;
 	const dpids = [teams[0].dpids, teams[1].dpids] as const;
+	const useAprons = apronsEnabled();
+	const tradeSalaryYear = salaryYear();
+	const salaries: [number[], number[]] = [[], []];
+	const totals = [0, 0] as [number, number];
+	const payrollAfter = [0, 0] as [number, number];
 	const s: TradeSummary = {
 		teams: [
 			{
@@ -80,11 +90,19 @@ const summary = async (teams: TradeTeams): Promise<TradeSummary> => {
 			showRookies: true,
 			showNoStats: true,
 		});
-		s.teams[i].trade = players;
-		s.teams[i].total = s.teams[i].trade.reduce(
-			(memo, p) => memo + p.contract.amount,
-			0,
+		if (useAprons) {
+			for (const p of players) {
+				p.contract.amount = getContractSalary(p.contract, tradeSalaryYear);
+			}
+		}
+		// Formatted player salaries are in millions. Return to the worker's
+		// thousand-dollar units without introducing fractional-dollar noise.
+		salaries[i] = players.map(
+			(p) => Math.round(p.contract.amount * 1_000_000) / 1000,
 		);
+		totals[i] = salaries[i].reduce((sum, amount) => sum + amount, 0);
+		s.teams[i].trade = players;
+		s.teams[i].total = totals[i] / 1000;
 
 		const picks = await idb.cache.draftPicks.indexGetAll(
 			"draftPicksByTid",
@@ -136,9 +154,10 @@ const summary = async (teams: TradeTeams): Promise<TradeSummary> => {
 			ratios[j] = 100;
 		}
 
-		s.teams[j].payrollBeforeTrade = (await team.getPayroll(tids[j])) / 1000;
-		s.teams[j].payrollAfterTrade =
-			s.teams[j].payrollBeforeTrade + s.teams[k].total - s.teams[j].total;
+		const payrollBefore = await team.getPayroll(tids[j]);
+		payrollAfter[j] = payrollBefore + totals[k] - totals[j];
+		s.teams[j].payrollBeforeTrade = payrollBefore / 1000;
+		s.teams[j].payrollAfterTrade = payrollAfter[j] / 1000;
 
 		if (s.teams[j].payrollAfterTrade > g.get("salaryCap") / 1000) {
 			overCap[j] = true;
@@ -149,7 +168,7 @@ const summary = async (teams: TradeTeams): Promise<TradeSummary> => {
 
 	const softCapCondition =
 		g.get("salaryCapType") === "soft" &&
-		!apronsEnabled() &&
+		!useAprons &&
 		((ratios[0] > softCapTradeSalaryMatch && overCap[0]) ||
 			(ratios[1] > softCapTradeSalaryMatch && overCap[1]));
 
@@ -183,20 +202,21 @@ const summary = async (teams: TradeTeams): Promise<TradeSummary> => {
 		s.warningAmount = amountOverCap;
 	}
 
-	if (apronsEnabled()) {
+	if (useAprons) {
 		for (const i of [0, 1] as const) {
 			const j = i === 0 ? 1 : 0;
 			const t = await idb.cache.teams.get(tids[i]);
 			const rule = getApronTradeRule({
-				payrollAfter: s.teams[i].payrollAfterTrade * 1000,
-				outgoing: s.teams[i].total * 1000,
-				incoming: s.teams[j].total * 1000,
-				outgoingSalaries: s.teams[i].trade.map((p) => p.contract.amount * 1000),
-				incomingSalaries: s.teams[j].trade.map((p) => p.contract.amount * 1000),
+				payrollAfter: payrollAfter[i],
+				outgoing: totals[i],
+				incoming: totals[j],
+				outgoingSalaries: salaries[i],
+				incomingSalaries: salaries[j],
 				salaryCap: g.get("salaryCap"),
 				taxLevel: g.get("luxuryPayroll"),
 				hardCap: currentApronState(t)?.hardCap,
 			});
+			s.teams[i].apronRule = rule;
 			if (rule.error) {
 				s.warning = `${s.teams[i].name}: ${rule.error}`;
 			}

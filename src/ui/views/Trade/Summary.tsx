@@ -313,6 +313,8 @@ const Summary = ({
 		<div className="row g-3 mb-3">
 			{summary.teams.map((t, i) => {
 				const userOrOther = i === 0 ? "other" : ("user" as const);
+				const incoming = summary.teams[t.other].total;
+				const salaryMatch = t.apronRule?.salaryMatch;
 
 				return (
 					<div key={i} className="col-12 col-md-6">
@@ -328,10 +330,21 @@ const Summary = ({
 							/>
 							<div className="border-top pt-2 mt-2 small">
 								<div>
-									Incoming{" "}
-									{helpers.formatCurrency(summary.teams[t.other].total, "M")} ·
-									Outgoing {helpers.formatCurrency(t.total, "M")}
+									Incoming {helpers.formatCurrency(incoming, "M")} · Outgoing{" "}
+									{helpers.formatCurrency(t.total, "M")}
 								</div>
+								{salaryMatch && (t.total > 0 || incoming > 0) ? (
+									<div>
+										Matching limit with allowance: $
+										{salaryMatch.maxIncomingDollars.toLocaleString("en-US")}
+										{salaryMatch.overByDollars > 0 ? (
+											<span className="text-danger-emphasis">
+												{" · $"}
+												{salaryMatch.overByDollars.toLocaleString("en-US")} over
+											</span>
+										) : null}
+									</div>
+								) : null}
 								<div>
 									Payroll {helpers.formatCurrency(t.payrollBeforeTrade, "M")} →{" "}
 									{helpers.formatCurrency(t.payrollAfterTrade, "M")}

@@ -49,8 +49,17 @@ export type ApronPickPenalty = {
 // never an allowance per player, and never extra room under an active hard cap.
 export const TRADE_SALARY_TOLERANCE = 1000;
 
+export type ApronTradeRule = {
+	error?: string;
+	hardCap?: 1 | 2;
+	salaryMatch?: {
+		maxIncomingDollars: number;
+		overByDollars: number;
+	};
+};
+
 export const getApronTradeRule = ({
-	payrollAfter,
+	payrollAfter: payrollAfterRaw,
 	outgoing,
 	incoming,
 	outgoingSalaries,
@@ -67,10 +76,11 @@ export const getApronTradeRule = ({
 	salaryCap: number;
 	taxLevel: number;
 	hardCap?: 1 | 2;
-}): { error?: string; hardCap?: 1 | 2 } => {
+}): ApronTradeRule => {
 	const levels = getApronLevels(salaryCap, taxLevel);
-	// Summaries pass through millions. Compare whole dollars to avoid rejecting
-	// trades exactly on the boundary due to binary floating-point noise.
+	// Compare amounts at dollar precision so salary arithmetic cannot move an
+	// exact threshold into a stricter band.
+	const payrollAfter = Math.round(payrollAfterRaw * 1000) / 1000;
 	const salaryIncrease = Math.round((incoming - outgoing) * 1000) / 1000;
 	if (
 		hardCap &&
@@ -80,12 +90,28 @@ export const getApronTradeRule = ({
 			error: `This trade exceeds your hard cap at the ${hardCap === 1 ? "first" : "second"} apron. Reduce incoming salary.`,
 		};
 	}
-	if (payrollAfter > levels.first && salaryIncrease > TRADE_SALARY_TOLERANCE) {
+	const matchWithTolerance = (limit: number) => {
+		const limitDollars = (limit + TRADE_SALARY_TOLERANCE) * 1000;
+		// Ignore float noise around whole dollars without rounding up a fraction.
+		const maxIncomingDollars = Math.floor(
+			limitDollars + Math.abs(limitDollars) * Number.EPSILON,
+		);
+		const overByDollars = Math.max(
+			0,
+			Math.round(incoming * 1000) - maxIncomingDollars,
+		);
+		return { maxIncomingDollars, overByDollars };
+	};
+	const firstApronMatch =
+		payrollAfter > levels.first ? matchWithTolerance(outgoing) : undefined;
+	if (firstApronMatch && firstApronMatch.overByDollars > 0) {
 		return {
-			error: `Above the first apron, incoming salary exceeds the game's $1M matching tolerance. Send at least $${Math.round((salaryIncrease - TRADE_SALARY_TOLERANCE) * 1000).toLocaleString("en-US")} more salary or reduce incoming salary.`,
+			error: `Above the first apron, incoming salary exceeds the game's $1M matching tolerance. Send at least $${firstApronMatch.overByDollars.toLocaleString("en-US")} more salary or reduce incoming salary.`,
+			salaryMatch: firstApronMatch,
 		};
 	}
-	const payrollBefore = payrollAfter - incoming + outgoing;
+	const payrollBefore =
+		Math.round((payrollAfter - salaryIncrease) * 1000) / 1000;
 	if (
 		payrollAfter <= salaryCap ||
 		(payrollBefore < salaryCap && payrollAfter <= salaryCap + 100)
@@ -127,27 +153,29 @@ export const getApronTradeRule = ({
 		return {
 			error:
 				"This trade combines outgoing salaries while leaving you above the second apron. Get below the second apron or match the incoming salary with one outgoing contract.",
+			salaryMatch: firstApronMatch,
 		};
 	}
-	if (payrollAfter > salaryCap && salaryIncrease > TRADE_SALARY_TOLERANCE) {
-		const scale = salaryCap / 136021;
-		const matching =
-			payrollAfter > taxLevel
-				? 1.25 * outgoing + 250
-				: outgoing <= 7500 * scale
-					? 2 * outgoing + 250
-					: outgoing <= 29000 * scale
-						? outgoing + 7500 * scale
-						: 1.25 * outgoing + 250;
-		if (incoming > matching) {
+	const scale = salaryCap / 136021;
+	const matching =
+		payrollAfter > taxLevel
+			? 1.25 * outgoing + 250
+			: outgoing <= 7500 * scale
+				? 2 * outgoing + 250
+				: outgoing <= 29000 * scale
+					? outgoing + 7500 * scale
+					: 1.25 * outgoing + 250;
+	const salaryMatch = firstApronMatch ?? matchWithTolerance(matching);
+	if (salaryIncrease > TRADE_SALARY_TOLERANCE) {
+		if (salaryMatch.overByDollars > 0) {
 			return {
-				error:
-					"Incoming salary exceeds the amount you can match. Send more salary or use cap space.",
+				error: `Incoming salary is $${salaryMatch.overByDollars.toLocaleString("en-US")} over the matching limit. Reduce incoming salary or adjust the outgoing package.`,
+				salaryMatch,
 			};
 		}
-		return { hardCap: 1 };
+		return { hardCap: 1, salaryMatch };
 	}
-	return aggregated ? { hardCap: 2 } : {};
+	return aggregated ? { hardCap: 2, salaryMatch } : { salaryMatch };
 };
 
 export type OwnerPriority = "winning" | "profit" | "lowPayroll" | "balanced";

@@ -8,19 +8,11 @@ import { orderBy } from "../../common/utils.ts";
 import { ValueChangeCalculator } from "../core/team/ValueChangeCalculator.ts";
 import { defineView } from "../util/defineView.ts";
 import { getFinancialStatus } from "../core/finances/nbaAprons.ts";
-import { getApronTradeRule } from "../../common/nbaAprons.ts";
 import { ownerTradeImpact } from "../core/finances/ownership.ts";
 
 const getSummaryTeam = (summary: TradeSummary, i: 0 | 1) => {
 	return {
-		name: summary.teams[i].name,
-		ovrAfter: summary.teams[i].ovrAfter,
-		ovrBefore: summary.teams[i].ovrBefore,
-		payrollAfterTrade: summary.teams[i].payrollAfterTrade,
-		payrollBeforeTrade: summary.teams[i].payrollBeforeTrade,
-		total: summary.teams[i].total,
-		trade: summary.teams[i].trade,
-		picks: summary.teams[i].picks,
+		...summary.teams[i],
 		other: i === 0 ? (1 as const) : (0 as const), // Index of other team
 	};
 };
@@ -41,19 +33,7 @@ export const getSummary = async (teams: TradeTeams) => {
 			teams[0].tid,
 			summary.teams[0].payrollAfterTrade * 1000,
 		),
-		apronHardCap: getApronTradeRule({
-			payrollAfter: summary.teams[0].payrollAfterTrade * 1000,
-			outgoing: summary.teams[0].total * 1000,
-			incoming: summary.teams[1].total * 1000,
-			outgoingSalaries: summary.teams[0].trade.map(
-				(p) => p.contract.amount * 1000,
-			),
-			incomingSalaries: summary.teams[1].trade.map(
-				(p) => p.contract.amount * 1000,
-			),
-			salaryCap: g.get("salaryCap"),
-			taxLevel: g.get("luxuryPayroll"),
-		}).hardCap,
+		apronHardCap: summary.teams[0].apronRule?.hardCap,
 		warningAmount: summary.warningAmount,
 		teams: [getSummaryTeam(summary, 0), getSummaryTeam(summary, 1)] as const,
 	};

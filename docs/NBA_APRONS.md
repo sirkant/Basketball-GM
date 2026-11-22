@@ -8,8 +8,10 @@ existing financial rules.
 
 - First and second apron thresholds scale with the cap. Their offsets above the
   league's configured tax line use the official 2026-27 NBA system levels.
-- Trades have a $1M matching tolerance per team and operation, including above
-  the first apron. This is an explicit gameplay rule, not an NBA CBA allowance.
+- Trades have one inclusive $1M matching tolerance per team and operation. Add it
+  to the applicable matching maximum below the first apron or to outgoing salary
+  above the first apron. Expanded matching still activates a first-apron hard cap.
+  This is a POBO gameplay rule.
   It does not relax apron thresholds, taxes, active hard caps or pick restrictions.
   Second-apron independent salary matching shares the same single $1M allowance;
   the allowance never multiplies with the number of players in the package.

@@ -1,5 +1,8 @@
 import { PHASE } from "../../../common/constants.ts";
-import { getRemainingContractCost } from "../../../common/contractSalary.ts";
+import {
+	getContractSalary,
+	getRemainingContractCost,
+} from "../../../common/contractSalary.ts";
 import { draft, player, team, trade } from "../index.ts";
 import { idb } from "../../db/index.ts";
 import { g, helpers, local } from "../../util/index.ts";
@@ -1240,33 +1243,38 @@ export class ValueChangeCalculator {
 		if (apronsEnabled() && (pidsAdd.length > 0 || pidsRemove.length > 0)) {
 			const players = await idb.cache.players.indexGetAll("playersByTid", tid);
 			const payroll = await team.getPayroll(tid);
-			let after = payroll;
+			const tradeSalaryYear = salaryYear();
 			const outgoingSalaries: number[] = [];
 			const incomingSalaries: number[] = [];
 			for (const p of players) {
 				if (pidsRemove.includes(p.pid)) {
-					outgoingSalaries.push(p.contract.amount);
-					after -= p.contract.amount;
+					outgoingSalaries.push(getContractSalary(p.contract, tradeSalaryYear));
 				}
 			}
 			for (const pid of pidsAdd) {
 				const p = await idb.cache.players.get(pid);
 				if (p) {
-					incomingSalaries.push(p.contract.amount);
-					after += p.contract.amount;
+					incomingSalaries.push(getContractSalary(p.contract, tradeSalaryYear));
 				}
 			}
+			const outgoing = outgoingSalaries.reduce((a, b) => a + b, 0);
+			const incoming = incomingSalaries.reduce((a, b) => a + b, 0);
+			const after = payroll + incoming - outgoing;
+			const activeHardCap = currentApronState(t)?.hardCap;
 			const rule = getApronTradeRule({
 				payrollAfter: after,
-				outgoing: outgoingSalaries.reduce((a, b) => a + b, 0),
-				incoming: incomingSalaries.reduce((a, b) => a + b, 0),
+				outgoing,
+				incoming,
 				outgoingSalaries,
 				incomingSalaries,
 				salaryCap: g.get("salaryCap"),
 				taxLevel: g.get("luxuryPayroll"),
-				hardCap: currentApronState(t)?.hardCap,
+				hardCap: activeHardCap,
 			});
-			const hardCap = currentApronState(t)?.hardCap ?? rule.hardCap;
+			const hardCap =
+				activeHardCap === 1 || rule.hardCap === 1
+					? 1
+					: (activeHardCap ?? rule.hardCap);
 			const levels = getApronLevels(g.get("salaryCap"), g.get("luxuryPayroll"));
 			const reserve =
 				Math.max(
@@ -1279,7 +1287,8 @@ export class ValueChangeCalculator {
 			if (
 				rule.error ||
 				(hardCap &&
-					after + reserve > (hardCap === 1 ? levels.first : levels.second))
+					Math.round((after + reserve) * 1000) / 1000 >
+						(hardCap === 1 ? levels.first : levels.second))
 			) {
 				return -100000;
 			}
