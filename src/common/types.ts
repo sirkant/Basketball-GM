@@ -2320,6 +2320,7 @@ export type TradePickValues = {
 	default: number[];
 };
 type TradeSummaryTeam = {
+	apronRule?: import("./nbaAprons.ts").ApronTradeRule;
 	name: string;
 	ovrAfter: number;
 	ovrBefore: number;

@@ -8,4 +8,9 @@ Basketball asset selectors use searchable player cards with portraits, position,
 
 The existing league remains in the browser's storage; this feature introduces no save migration or changes to the trade AI. The salary-tolerance rule is isolated in PR #7.
 
+The proposed exchange shows each team's matching maximum with the $1M allowance
+and any dollar amount over that maximum. The salary-matching check and the
+opponent's valuation are separate. Existing hard caps and pick restrictions
+can still block a proposal that meets the salary-matching maximum.
+
 Validation: 611 tests passed, 12 skipped; ESLint and TypeScript; production build. Chromium production checks cover $1M matching with both teams above the apron, rejection one dollar beyond tolerance, visible receiving cards, collapsed reports, player search, pick addition/removal, counteroffer exclusions, saved proposals, the detailed table, mobile overflow, critical owner feedback and hidden ratings. Browser component tests verify that disclosures do not hide hard caps or the owner's red line.

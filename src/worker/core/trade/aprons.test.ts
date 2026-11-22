@@ -60,6 +60,60 @@ test("same aggregation is rejected when it leaves the team above the second apro
 	expect((await trade.summary(proposal)).warning).toContain("second apron");
 });
 
+test("expanded matching uses a shared $1M allowance in the summary and at execution", async () => {
+	const salaries = [178750, 8000, 15000, 11250];
+	for (const [pid, amount] of salaries.entries()) {
+		const p = (await idb.cache.players.get(pid))!;
+		p.contract.amount = amount;
+		await idb.cache.players.put(p);
+	}
+	proposal[0].pids = [1];
+
+	expect((await trade.summary(proposal)).warning).toBeNull();
+	const undo = await processTrade(proposal, undefined);
+	expect(await team.getPayroll(0)).toBe(205000);
+	expect((await idb.cache.teams.get(0))?.apronState?.hardCap).toBe(1);
+	expect(await undo()).toBe(true);
+	expect(await team.getPayroll(0)).toBe(201750);
+	expect((await idb.cache.teams.get(0))?.apronState).toBeUndefined();
+});
+
+test("an offer at exactly the first apron uses the expanded matching formula", async () => {
+	const salaries = [191510, 1004, 15000, 2505];
+	for (const [pid, amount] of salaries.entries()) {
+		const p = (await idb.cache.players.get(pid))!;
+		p.contract.amount = amount;
+		await idb.cache.players.put(p);
+	}
+	proposal[0].pids = [1];
+
+	const result = await trade.summary(proposal);
+	expect(result.warning).toBeNull();
+	expect(result.teams[0].payrollAfterTrade).toBe(209.015);
+	expect(result.teams[0].apronRule?.hardCap).toBe(1);
+});
+
+test("the actual annual salary determines whether a trade breaches a hard cap", async () => {
+	const salaries = [182500, 8000, 15000, 11250];
+	for (const [pid, amount] of salaries.entries()) {
+		const p = (await idb.cache.players.get(pid))!;
+		p.contract.amount = amount;
+		if (pid === 3) {
+			p.contract.schedule = [{ season: g.get("season"), amount: 12000 }];
+		}
+		await idb.cache.players.put(p);
+	}
+	proposal[0].pids = [1];
+	const t = (await idb.cache.teams.get(0))!;
+	t.apronState = { season: g.get("season"), hardCap: 1 };
+	await idb.cache.teams.put(t);
+
+	const result = await trade.summary(proposal);
+	expect(result.warning).toContain("hard cap");
+	expect(result.teams[0].payrollAfterTrade).toBe(209.5);
+	expect(result.teams[1].trade[0]?.contract.amount).toBe(12);
+});
+
 test("frozen picks cannot be traded even in a salary-neutral deal", async () => {
 	const t = (await idb.cache.teams.get(0))!;
 	t.apronPickPenalties = [

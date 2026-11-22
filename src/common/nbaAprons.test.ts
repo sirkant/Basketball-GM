@@ -6,7 +6,9 @@ import {
 } from "./nbaAprons.ts";
 
 const base = { salaryCap: 164961, taxLevel: 200428 };
-const trade = (changes: Partial<Parameters<typeof getApronTradeRule>[0]>) =>
+const evaluateTrade = (
+	changes: Partial<Parameters<typeof getApronTradeRule>[0]>,
+) =>
 	getApronTradeRule({
 		...base,
 		payrollAfter: 210000,
@@ -15,6 +17,12 @@ const trade = (changes: Partial<Parameters<typeof getApronTradeRule>[0]>) =>
 		outgoingSalaries: [20000],
 		...changes,
 	});
+
+const trade = (changes: Parameters<typeof evaluateTrade>[0]) => {
+	const rule = evaluateTrade(changes);
+	delete rule.salaryMatch;
+	return rule;
+};
 
 test("2026-27 NBA apron levels", () => {
 	expect(getApronLevels(base.salaryCap, base.taxLevel).first).toBe(209015);
@@ -98,6 +106,48 @@ describe("trade restrictions", () => {
 	});
 	test("small differences below the apron do not activate expanded-matching hard caps", () => {
 		expect(trade({ payrollAfter: 190000, incoming: 21000 })).toEqual({});
+	});
+
+	test("expanded matching allows exactly $1M above the formula", () => {
+		const offer = {
+			payrollAfter: 205000,
+			outgoing: 8000,
+			outgoingSalaries: [8000],
+		};
+		expect(evaluateTrade({ ...offer, incoming: 11250 })).toEqual({
+			hardCap: 1,
+			salaryMatch: { maxIncomingDollars: 11250000, overByDollars: 0 },
+		});
+		const tooHigh = evaluateTrade({ ...offer, incoming: 11250.001 });
+		expect(tooHigh.error).toContain("$1 over the matching limit");
+		expect(tooHigh.salaryMatch?.overByDollars).toBe(1);
+	});
+
+	test("the same allowance applies below the tax line across the whole package", () => {
+		const offer = {
+			payrollAfter: 185000,
+			outgoing: 6000,
+			outgoingSalaries: [3000, 3000],
+			incomingSalaries: [7000, 6500],
+			incoming: 13500,
+		};
+		const result = evaluateTrade(offer);
+		expect(result.error).toBeDefined();
+		expect(result.salaryMatch).toEqual({
+			maxIncomingDollars: 13250000,
+			overByDollars: 250000,
+		});
+	});
+
+	test("a fractional-dollar formula never rounds the legal maximum up", () => {
+		const result = evaluateTrade({
+			payrollAfter: 205000,
+			outgoing: 1000.003,
+			outgoingSalaries: [1000.003],
+			incoming: 2500.004,
+		});
+		expect(result.error).toContain("$1 over the matching limit");
+		expect(result.salaryMatch?.maxIncomingDollars).toBe(2500003);
 	});
 	test("matching salary remains legal above second apron", () => {
 		expect(trade({ payrollAfter: 230000 })).toEqual({});
