@@ -12,6 +12,9 @@ import { orderTeams } from "../util/orderTeams.ts";
 import { getNumericStat } from "../../common/statValue.ts";
 import { getFinancialStatus } from "../core/finances/nbaAprons.ts";
 import { ensureOwnerMandate } from "../core/finances/ownership.ts";
+import { getClubhouseResults } from "../../common/clubhouseResults.ts";
+import { helpers as commonHelpers } from "../../common/helpers.ts";
+import { getProcessedGames } from "../util/getProcessedGames.ts";
 
 const updateInbox = async ({ updateEvents }: ViewArgs) => {
 	const { visibleCoachMessage } =
@@ -648,6 +651,50 @@ const updateNewsFeed = async ({ updateEvents }: ViewArgs) => {
 	}
 };
 
+const updateBasketballCoverage = async () => {
+	if (__SPORT !== "basketball") {
+		return { upcomingGames: [], recentResults: [], opponentRecord: undefined };
+	}
+	const tid = g.get("userTid");
+	const phase = g.get("phase");
+	const neutralSite = g.get("neutralSite");
+	const upcomingGames = (await season.getSchedule())
+		.filter((game) => game.homeTid === tid || game.awayTid === tid)
+		.slice(0, 7)
+		.map((game) => ({
+			...game,
+			neutralSite:
+				game.forceWin === undefined &&
+				phase === PHASE.PLAYOFFS &&
+				(neutralSite === "playoffs" ||
+					(neutralSite === "finals" && game.finals)),
+		}));
+	if (phase < PHASE.REGULAR_SEASON || phase > PHASE.PLAYOFFS) {
+		return { upcomingGames, recentResults: [], opponentRecord: undefined };
+	}
+	const year = g.get("season");
+	const next = upcomingGames[0];
+	const opponentTid = next
+		? next.homeTid === tid
+			? next.awayTid
+			: next.homeTid
+		: undefined;
+	const [games, opponent] = await Promise.all([
+		getProcessedGames({ tid, season: year }),
+		opponentTid === undefined
+			? undefined
+			: idb.cache.teamSeasons.indexGet("teamSeasonsBySeasonTid", [
+					year,
+					opponentTid,
+				]),
+	]);
+	return {
+		upcomingGames,
+		recentResults: getClubhouseResults(games, tid),
+		opponentRecord: opponent ? commonHelpers.formatRecord(opponent) : undefined,
+	};
+};
+
 export default defineView({
 	id: "leagueDashboard",
 	load: async (args) => {
@@ -666,17 +713,7 @@ export default defineView({
 			{},
 			await updateTeams(args),
 			await updateNewsFeed(args),
-			__SPORT === "basketball"
-				? {
-						upcomingGames: (await season.getSchedule())
-							.filter(
-								(game) =>
-									game.homeTid === g.get("userTid") ||
-									game.awayTid === g.get("userTid"),
-							)
-							.slice(0, 7),
-					}
-				: { upcomingGames: [] },
+			await updateBasketballCoverage(),
 		);
 		const part3 = Object.assign(
 			{},
