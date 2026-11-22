@@ -120,6 +120,150 @@
 		color: var(--fr-ink);
 		border-radius: 6px;
 	}
+	.season-coverage {
+		min-width: 0;
+		border: 1px solid #455773;
+		border-radius: 8px;
+		overflow: hidden;
+		background: #142238;
+		color: #f4f7fc;
+		font-variant-numeric: tabular-nums;
+		a {
+			color: #e3edff;
+		}
+		a:focus-visible {
+			outline: 2px solid #f7ae60;
+			outline-offset: 2px;
+		}
+		h2,
+		h3 {
+			margin: 0;
+			color: inherit;
+		}
+	}
+	.season-coverage-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 12px;
+		padding: 8px 16px;
+		background: #203453;
+		h2 {
+			font-size: 16px;
+		}
+		a {
+			padding: 6px 0;
+			font-weight: 600;
+		}
+	}
+	.season-coverage-fixture {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+		align-items: center;
+		gap: 12px;
+		padding: 18px 12px;
+		text-align: center;
+	}
+	.season-coverage-team {
+		display: grid;
+		justify-items: center;
+		gap: 2px;
+		min-width: 0;
+		overflow-wrap: anywhere;
+		img {
+			width: 52px;
+			height: 52px;
+			object-fit: contain;
+			margin-bottom: 4px;
+		}
+		strong {
+			font-size: 16px;
+			line-height: 1.15;
+		}
+	}
+	.season-coverage-venue {
+		display: grid;
+		gap: 3px;
+		min-width: 38px;
+		strong {
+			font-size: 19px;
+			font-style: italic;
+			color: #f4a0a7;
+		}
+	}
+	.season-coverage-team span,
+	.season-coverage-venue span,
+	.season-coverage-leader span {
+		color: #b6c7df;
+	}
+	.season-coverage-empty {
+		padding: 18px 16px;
+		margin: 0;
+	}
+	.season-coverage-results {
+		border-top: 1px solid #455773;
+		background: #101c2e;
+	}
+	.season-coverage-final,
+	.season-coverage-form {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		padding: 10px 16px;
+		gap: 6px 16px;
+	}
+	.season-coverage-final h3,
+	.season-coverage-form h3 {
+		font-size: 12px;
+		font-weight: 600;
+	}
+	.season-coverage-score {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 6px;
+		min-height: 28px;
+		> strong {
+			font-size: 24px;
+			line-height: 1.2;
+		}
+	}
+	.season-coverage-leader {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 3px 6px;
+		span {
+			flex-basis: 100%;
+		}
+	}
+	.season-coverage-form {
+		border-top: 1px solid #455773;
+		ol {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 4px 12px;
+			list-style: none;
+			padding: 0;
+			margin: 0;
+		}
+		a {
+			display: inline-flex;
+			min-height: 24px;
+			align-items: center;
+			gap: 3px;
+		}
+	}
+	.season-coverage [data-outcome="W"] {
+		color: #83e4b6;
+	}
+	.season-coverage [data-outcome="L"] {
+		color: #f4a0a7;
+	}
+	.season-coverage .clubhouse-matchday-series a {
+		color: var(--fr-accent);
+	}
 	.clubhouse-required-mail {
 		display: flex;
 		align-items: baseline;

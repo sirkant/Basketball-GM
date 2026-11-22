@@ -6,7 +6,8 @@ import { ClubhouseMessages } from "../../components/ClubhouseMessages.tsx";
 import { FinancialStrip } from "../../components/FinancialStrip.tsx";
 import { PlayerPicture } from "../../components/PlayerPicture.tsx";
 import { NewsBlock } from "../../components/NewsBlock.tsx";
-import { PlayoffMatchup } from "../../components/PlayoffMatchup.tsx";
+import { PHASE } from "../../../common/constants.ts";
+import SeasonCoverage from "./SeasonCoverage.tsx";
 import StartingLineup from "./StartingLineup.tsx";
 import TeamStats from "./TeamStats.tsx";
 import Leaders from "./Leaders.tsx";
@@ -41,12 +42,14 @@ const Panel = ({
 );
 
 const ClubhouseDashboard = (p: View<"leagueDashboard">) => {
-	const { season, userTid, teamInfoCache, challengeNoRatings } = useLocal([
-		"season",
-		"userTid",
-		"teamInfoCache",
-		"challengeNoRatings",
-	]);
+	const { season, userTid, teamInfoCache, challengeNoRatings, phase } =
+		useLocal([
+			"season",
+			"userTid",
+			"teamInfoCache",
+			"challengeNoRatings",
+			"phase",
+		]);
 	const money = (amount: number) => helpers.formatCurrency(amount / 1000, "M");
 	const club = teamInfoCache[userTid];
 	const next = p.upcomingGames[0];
@@ -57,64 +60,56 @@ const ClubhouseDashboard = (p: View<"leagueDashboard">) => {
 	const gamesPlayed = p.won + p.lost + p.tied + p.otl;
 	return (
 		<div className="clubhouse-dashboard">
-			<section
-				className="clubhouse-matchday"
-				aria-labelledby="clubhouse-next-game"
-			>
-				<div className="clubhouse-matchday-header">
-					<h2 id="clubhouse-next-game">Next on court</h2>
-					<div className="clubhouse-record">
-						<strong>
-							{p.won}–{p.lost}
-							{p.tied > 0 ? "–" + p.tied : ""}
-							{p.otl > 0 ? "–" + p.otl : ""}
-						</strong>
-						<span>
-							{gamesPlayed === 0
-								? "No games played"
-								: p.playoffRoundsWon < 0
-									? helpers.ordinal(p.rank) +
-										(p.playoffsByConf ? " in conference" : " in league")
-									: p.roundsWonText}
-						</span>
-					</div>
-				</div>
-				{next ? (
-					<div className="clubhouse-opponent">
-						{opponent?.imgURL ? <img src={opponent.imgURL} alt="" /> : null}
-						<div>
-							<span>
-								{next.homeTid === userTid ? "HOME" : "AWAY"} · DAY {next.day}
-							</span>
+			{phase >= PHASE.REGULAR_SEASON && phase <= PHASE.PLAYOFFS ? (
+				<SeasonCoverage {...p} />
+			) : (
+				<section
+					className="clubhouse-matchday"
+					aria-labelledby="clubhouse-next-game"
+				>
+					<div className="clubhouse-matchday-header">
+						<h2 id="clubhouse-next-game">Next on court</h2>
+						<div className="clubhouse-record">
 							<strong>
-								{opponent
-									? [opponent.region, opponent.name].join(" ")
-									: "Opponent to be confirmed"}
+								{p.won}–{p.lost}
+								{p.tied > 0 ? "–" + p.tied : ""}
+								{p.otl > 0 ? "–" + p.otl : ""}
 							</strong>
+							<span>
+								{gamesPlayed === 0
+									? "No games played"
+									: p.playoffRoundsWon < 0
+										? helpers.ordinal(p.rank) +
+											(p.playoffsByConf ? " in conference" : " in league")
+										: p.roundsWonText}
+							</span>
 						</div>
 					</div>
-				) : (
-					<p className="clubhouse-empty">No game scheduled in this phase.</p>
-				)}
-				{p.showPlayoffSeries && p.series ? (
-					<div className="clubhouse-matchday-series">
-						<PlayoffMatchup
-							expandTeamNames
-							numGamesToWinSeries={p.numGamesToWinSeries}
-							season={season}
-							series={p.series}
-							userTid={userTid}
-						/>
-					</div>
-				) : null}
-
-				<a
-					className="clubhouse-panel-footer"
-					href={helpers.leagueUrl(["schedule"])}
-				>
-					Open schedule
-				</a>
-			</section>
+					{next ? (
+						<div className="clubhouse-opponent">
+							{opponent?.imgURL ? <img src={opponent.imgURL} alt="" /> : null}
+							<div>
+								<span>
+									{next.homeTid === userTid ? "HOME" : "AWAY"} · DAY {next.day}
+								</span>
+								<strong>
+									{opponent
+										? [opponent.region, opponent.name].join(" ")
+										: "Opponent to be confirmed"}
+								</strong>
+							</div>
+						</div>
+					) : (
+						<p className="clubhouse-empty">No game scheduled in this phase.</p>
+					)}
+					<a
+						className="clubhouse-panel-footer"
+						href={helpers.leagueUrl(["schedule"])}
+					>
+						Open schedule
+					</a>
+				</section>
+			)}
 			<Panel
 				title="Inbox"
 				href={helpers.leagueUrl(["inbox"])}
@@ -256,7 +251,13 @@ const ClubhouseDashboard = (p: View<"leagueDashboard">) => {
 											<img src={t.imgURLSmall ?? t.imgURL} alt="" />
 										) : null}
 										<strong>{t?.abbrev ?? "TBD"}</strong>
-										<span>{home ? "Home" : "Away"}</span>
+										<span>
+											{game.neutralSite
+												? "Neutral site"
+												: home
+													? "Home"
+													: "Away"}
+										</span>
 									</a>
 								);
 							})
