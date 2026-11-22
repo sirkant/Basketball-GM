@@ -1,77 +1,88 @@
+import { tradeNegotiationKey } from "../../../common/tradeNegotiation.ts";
+import type { TradeTeams } from "../../../common/types.ts";
 import { idb } from "../../db/index.ts";
-import { g, helpers } from "../../util/index.ts";
+import { helpers } from "../../util/index.ts";
 import makeItWork from "./makeItWork.ts";
 import summary from "./summary.ts";
 import get from "./get.ts";
 import { ValueChangeCalculator } from "../team/ValueChangeCalculator.ts";
 
-/**
- * Make a trade work
- *
- * This should be called for a trade negotiation, as it will update the trade objectStore.
- *
- * @memberOf core.trade
- * @return {Promise.string} Resolves to a string containing a message to be dispalyed to the user, as if it came from the AI GM.
- */
-const makeItWorkTrade = async () => {
-	const tr = await get();
-	const teams0 = tr.teams;
-	const valueChangeCalculator = new ValueChangeCalculator();
-	const teams = await makeItWork(helpers.deepCopy(teams0), {
+type AssetChange = {
+	side: 0 | 1;
+	action: "added" | "removed";
+	type: "player" | "pick";
+	id: number;
+};
+
+type EvaluatedOffer = {
+	offerKey: string;
+	warning: string | null;
+};
+
+export type TradeNegotiationFeedback = EvaluatedOffer &
+	(
+		| { status: "noDeal" | "unchanged" }
+		| {
+				status: "counteroffer";
+				changes: AssetChange[];
+				previousTeams: TradeTeams;
+		  }
+	);
+
+const getChanges = (before: TradeTeams, after: TradeTeams): AssetChange[] => {
+	const changes: AssetChange[] = [];
+	for (const side of [0, 1] as const) {
+		for (const [key, type] of [
+			["pids", "player"],
+			["dpids", "pick"],
+		] as const) {
+			for (const id of after[side][key]) {
+				if (!before[side][key].includes(id)) {
+					changes.push({ side, action: "added", type, id });
+				}
+			}
+			for (const id of before[side][key]) {
+				if (!after[side][key].includes(id)) {
+					changes.push({ side, action: "removed", type, id });
+				}
+			}
+		}
+	}
+	return changes;
+};
+
+const makeItWorkTrade = async (): Promise<
+	TradeNegotiationFeedback | { status: "stale" }
+> => {
+	const previousTeams = helpers.deepCopy((await get()).teams);
+	const previousOfferKey = tradeNegotiationKey(previousTeams);
+	const candidate = await makeItWork(helpers.deepCopy(previousTeams), {
 		holdUserConstant: false,
-		valueChangeCalculator,
+		valueChangeCalculator: new ValueChangeCalculator(),
 	});
 
-	if (!teams) {
-		return {
-			changed: false,
-			message: `${
-				g.get("teamInfoCache")[teams0[1].tid]?.region
-			} GM: "I can't afford to give up so much."`,
-		};
+	const { warning } = await summary(candidate ?? previousTeams);
+	const trade = await get();
+	if (tradeNegotiationKey(trade.teams) !== previousOfferKey) {
+		return { status: "stale" };
 	}
 
-	const s = await summary(teams); // Store AI's proposed trade in database, if it's different
-
-	let updated = false;
-
-	for (const i of [0, 1] as const) {
-		if (teams[i].tid !== teams0[i].tid) {
-			updated = true;
-			break;
-		}
-
-		if (teams[i].pids.toString() !== teams0[i].pids.toString()) {
-			updated = true;
-			break;
-		}
-
-		if (teams[i].dpids.toString() !== teams0[i].dpids.toString()) {
-			updated = true;
-			break;
-		}
+	if (!candidate) {
+		return { status: "noDeal", offerKey: previousOfferKey, warning };
 	}
 
-	if (updated) {
-		const tr2 = await get();
-		tr2.teams = teams;
-		await idb.cache.trade.put(tr2);
+	const changes = getChanges(previousTeams, candidate);
+	if (changes.length === 0) {
+		return { status: "unchanged", offerKey: previousOfferKey, warning };
 	}
 
-	if (s.warning) {
-		return {
-			changed: updated,
-			message: `${
-				g.get("teamInfoCache")[teams[1].tid]?.region
-			} GM: "Something like this would work if you can figure out how to get it done without breaking the salary cap rules."`,
-		};
-	}
-
+	await idb.cache.trade.put({ ...trade, teams: candidate });
 	return {
-		changed: updated,
-		message: `${
-			g.get("teamInfoCache")[teams[1].tid]?.region
-		} GM: "How does this sound?"`,
+		status: "counteroffer",
+		offerKey: tradeNegotiationKey(candidate),
+		warning,
+		changes,
+		previousTeams,
 	};
 };
 

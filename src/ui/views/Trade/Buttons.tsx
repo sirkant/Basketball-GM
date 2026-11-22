@@ -50,6 +50,7 @@ const Buttons = ({
 						<input
 							className="form-check-input me-1"
 							type="checkbox"
+							disabled={asking}
 							onChange={handleClickForceTrade}
 							checked={forceTrade}
 						/>
@@ -63,6 +64,7 @@ const Buttons = ({
 					variant="secondary"
 					disabled={numAssets === 0}
 					processing={asking}
+					processingText="Asking GM"
 					onClick={handleClickAsk}
 				>
 					What would make this deal work?
@@ -72,13 +74,14 @@ const Buttons = ({
 				<button
 					type="submit"
 					className="btn btn-primary"
-					disabled={!enablePropose && !forceTrade}
+					disabled={asking || (!enablePropose && !forceTrade)}
 					onClick={handleClickPropose}
 				>
 					Propose trade
 				</button>
 				<SplitButton
 					variant="secondary"
+					disabled={asking}
 					onClick={onClick(defaultType)}
 					title="Clear"
 					align="end"
