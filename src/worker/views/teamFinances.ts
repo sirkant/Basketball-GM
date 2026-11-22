@@ -1,5 +1,6 @@
 import { PHASE } from "../../common/constants.ts";
 import { getOwnershipBoard } from "../core/finances/ownership.ts";
+import { getSalaryPlan } from "../core/finances/salaryPlanner.ts";
 import { getContractSalary } from "../../common/contractSalary.ts";
 import { finances, team } from "../core/index.ts";
 import { idb } from "../db/index.ts";
@@ -243,6 +244,8 @@ export default defineView({
 			return {
 				abbrev: inputs.abbrev,
 				financialStatus: await getFinancialStatus(inputs.tid, payroll * 1000),
+				salaryPlan:
+					__SPORT === "basketball" ? getSalaryPlan(contractsRaw) : undefined,
 				ownership: await getOwnershipBoard(inputs.tid),
 				autoTicketPrice,
 				tid: inputs.tid,

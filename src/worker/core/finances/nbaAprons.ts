@@ -16,8 +16,8 @@ export const apronsEnabled = () =>
 	__SPORT === "basketball" && g.get("salaryCapType") === "soft";
 
 // The game keeps the completed season number throughout the offseason.
-export const salaryYear = () =>
-	g.get("season") + (g.get("phase") > PHASE.PLAYOFFS ? 1 : 0);
+export const salaryYear = (phase = g.get("phase")) =>
+	g.get("season") + (phase > PHASE.PLAYOFFS ? 1 : 0);
 export const currentApronState = (t: Team | undefined) =>
 	t?.apronState?.season === salaryYear() ? t.apronState : undefined;
 
